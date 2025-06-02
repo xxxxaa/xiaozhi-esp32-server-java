@@ -4,7 +4,6 @@ usr/
 node_modules/
 out/
 gen/
-build/
 dist/
 avatar/
 # 忽略特定格式的文件

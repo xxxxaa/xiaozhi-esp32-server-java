@@ -1,11 +1,16 @@
-# 使用Alpine作为基础镜像，大大减小体积
-FROM alpine:3.16 AS builder
+# Use Eclipse Temurin for both build and runtime stages
+FROM eclipse-temurin:21-jdk AS builder
 
 # 添加构建参数，默认使用标准模型
 ARG VOSK_MODEL_SIZE=standard
 
-# 安装必要的构建工具，使用Alpine的包管理器
-RUN apk add --no-cache openjdk8 maven wget unzip curl
+# 安装必要的构建工具
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    maven \
+    wget \
+    unzip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
@@ -53,8 +58,8 @@ RUN mkdir -p /vosk_cache && \
         cp -r /vosk_cache/vosk-model-cn-0.22 /build/models/vosk-model; \
     fi
 
-# 使用基于Debian的JRE镜像，而不是Alpine
-FROM eclipse-temurin:8-jre
+# 使用更小的JRE镜像作为运行时环境
+FROM eclipse-temurin:21-jre
 
 # 安装必要的运行时依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
