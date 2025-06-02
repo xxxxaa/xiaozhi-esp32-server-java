@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.model.NoopApiKey;
 import org.springframework.ai.model.SimpleApiKey;
+import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaOptions;
@@ -31,8 +32,8 @@ import org.springframework.util.StringUtils;
  */
 @Component
 public class ChatModelFactory {
-    @Autowired
-    private SysConfigService configService;
+    @Autowired private SysConfigService configService;
+    @Autowired private ToolCallingManager toolCallingManager;
     private final Logger logger = LoggerFactory.getLogger(ChatModelFactory.class);
 
     /**
@@ -107,6 +108,7 @@ public class ChatModelFactory {
         var chatModel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)
                 .defaultOptions(openAiChatOptions)
+                .toolCallingManager(toolCallingManager)
                 .build();
         logger.info( "Using OpenAi model: {}" , model);
         return chatModel;

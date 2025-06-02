@@ -40,7 +40,7 @@ public class ChangeRoleFunction implements ToolsGlobalRegistry.GlobalFunction {
         queryRole.setUserId(sysDevice.getUserId());
         PageFilter pageFilter = new PageFilter(1, 5);
         List<SysRole> roleList = sysRoleService.query(queryRole, pageFilter);
-        if(!roleList.isEmpty()){
+        if(!roleList.isEmpty() && roleList.size() > 1) {
             return FunctionToolCallback
                     .builder("func_changeRole", (Map<String, String> params, ToolContext toolContext) -> {
                         String roleName = params.get("roleName");
