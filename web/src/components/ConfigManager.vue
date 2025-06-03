@@ -202,7 +202,7 @@ export default {
             { label: 'Ollama', value: 'ollama', key: '1' },
             { label: 'Spark', value: 'spark', key: '2' },
             { label: 'Zhipu', value: 'zhipu', key: '3' },
-            { label: 'Ali', value: 'ali', key: '4'},
+            { label: 'AliYun', value: 'aliyun', key: '4'},
             { label: 'Doubao', value: 'doubao', key: '5'},
             { label: 'DeepSeek', value: 'deepseek', key: '6'},
             { label: 'ChatGLM', value: 'chatglm', key: '7'},

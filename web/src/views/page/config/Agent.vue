@@ -122,8 +122,8 @@ export default {
       },
       // 平台选项
       providerOptions: [
-        { label: 'Coze', value: 'Coze' },
-        { label: 'Dify', value: 'Dify' }
+        { label: 'Coze', value: 'coze' },
+        { label: 'Dify', value: 'dify' }
       ],
       // 表格列定义
       tableColumns: [
@@ -162,34 +162,34 @@ export default {
           type: 'select',
           placeholder: '请选择平台类型',
           options: [
-            { label: 'Coze', value: 'Coze' },
-            { label: 'Dify', value: 'Dify' }
+            { label: 'Coze', value: 'coze' },
+            { label: 'Dify', value: 'dify' }
           ]
         },
         {
           field: 'appId',
           label: 'Space ID',
           placeholder: '请输入Coze Space ID',
-          condition: { field: 'provider', value: 'Coze' }
+          condition: { field: 'provider', value: 'coze' }
         },
         {
           field: 'apiSecret',
           label: 'Secret token',
           placeholder: '请输入Secret token',
-          condition: { field: 'provider', value: 'Coze' }
+          condition: { field: 'provider', value: 'coze' }
         },
         {
           field: 'apiUrl',
           label: 'apiUrl',
           placeholder: '请输入apiUrl',
-          condition: { field: 'provider', value: 'Dify' },
+          condition: { field: 'provider', value: 'dify' },
           suffix: '/chat_message'
         },
         {
            field: 'apiKey',
            label: 'apiKey',
            placeholder: '请输入apiKey',
-           condition: { field: 'provider', value: 'Dify' }
+           condition: { field: 'provider', value: 'dify' }
         },
       ],
 
@@ -211,7 +211,7 @@ export default {
       const columns = [...this.tableColumns];
       
       // 如果当前选择的是Coze平台，则插入智能体ID列
-      if (this.query.provider === 'Coze') {
+      if (this.query.provider === 'coze') {
         const botIdColumn = { 
           title: '智能体ID', 
           dataIndex: 'botId', 
@@ -232,7 +232,7 @@ export default {
   watch: {
     // 监听平台类型变化，根据不同平台设置不同的默认值
     'platformForm.provider': function(newVal) {
-      if (newVal === 'Dify') {
+      if (newVal === 'dify') {
         // 如果切换到Dify平台，设置默认的apiUrl
         this.platformForm.apiUrl = 'https://api.dify.ai/v1';
       }
@@ -292,7 +292,7 @@ export default {
           this.platformModalLoading = true;
 
           // 如果是Dify平台，确保apiUrl有正确的后缀
-          if (this.platformForm.provider === 'Dify' && this.platformForm.apiUrl) {
+          if (this.platformForm.provider === 'dify' && this.platformForm.apiUrl) {
             // 确保URL末尾没有斜杠
             let baseUrl = this.platformForm.apiUrl;
             if (baseUrl.endsWith('/')) {

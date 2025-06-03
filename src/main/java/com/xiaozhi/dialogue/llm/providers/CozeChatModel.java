@@ -38,7 +38,7 @@ public class CozeChatModel implements ChatModel {
     private final String appId;
     private final String apiSecret;
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    public static final String PROVIDER_NAME = "Coze";
+    public static final String PROVIDER_NAME = "coze";
 
     /**
      * 构造函数
