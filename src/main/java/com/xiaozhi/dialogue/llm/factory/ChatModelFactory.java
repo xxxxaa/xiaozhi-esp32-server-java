@@ -4,6 +4,10 @@ import com.xiaozhi.dialogue.llm.providers.CozeChatModel;
 import com.xiaozhi.dialogue.llm.providers.DifyChatModel;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.service.SysConfigService;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
@@ -20,11 +24,15 @@ import org.springframework.ai.zhipuai.ZhiPuAiChatModel;
 import org.springframework.ai.zhipuai.ZhiPuAiChatOptions;
 import org.springframework.ai.zhipuai.api.ZhiPuAiApi;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.http.client.reactive.JdkClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * ChatModel工厂
@@ -32,17 +40,20 @@ import org.springframework.util.StringUtils;
  */
 @Component
 public class ChatModelFactory {
-    @Autowired private SysConfigService configService;
-    @Autowired private ToolCallingManager toolCallingManager;
+    @Autowired
+    private SysConfigService configService;
+    @Autowired
+    private ToolCallingManager toolCallingManager;
     private final Logger logger = LoggerFactory.getLogger(ChatModelFactory.class);
 
     /**
      * 根据配置ID创建ChatModel，首次调用时缓存，缓存key为配置ID。
-     * @see SysConfigService#selectConfigById(Integer)  已经进行了Cacheable,所以此处没有必要缓存
+     * 
+     * @see SysConfigService#selectConfigById(Integer) 已经进行了Cacheable,所以此处没有必要缓存
      * @param configId 配置ID，实际是模型ID。
      * @return
      */
-    public ChatModel takeChatModel(Integer configId){
+    public ChatModel takeChatModel(Integer configId) {
         Assert.notNull(configId, "配置ID不能为空");
         // 根据配置ID查询配置
         SysConfig config = configService.selectConfigById(configId);
@@ -51,6 +62,7 @@ public class ChatModelFactory {
 
     /**
      * 创建ChatModel
+     * 
      * @param config
      * @return
      */
@@ -87,7 +99,7 @@ public class ChatModelFactory {
                                 .model(model)
                                 .build())
                 .build();
-        logger.info( "Using Ollama model: {}" , model);
+        logger.info("Using Ollama model: {}", model);
         return chatModel;
     }
 
@@ -95,11 +107,24 @@ public class ChatModelFactory {
         MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
         headers.add("Content-Type", "application/json");
 
+        // LM Studio不支持Http/2，所以需要强制使用HTTP/1.1
         var openAiApi = OpenAiApi.builder()
                 .apiKey(StringUtils.hasText(apiKey) ? new SimpleApiKey(apiKey) : new NoopApiKey())
                 .baseUrl(endpoint)
                 .completionsPath("/chat/completions")
                 .headers(headers)
+                .webClientBuilder(WebClient.builder()
+                        // Force HTTP/1.1 for streaming
+                        .clientConnector(new JdkClientHttpConnector(HttpClient.newBuilder()
+                                .version(HttpClient.Version.HTTP_1_1)
+                                .connectTimeout(Duration.ofSeconds(30))
+                                .build())))
+                .restClientBuilder(RestClient.builder()
+                        // Force HTTP/1.1 for non-streaming
+                        .requestFactory(new JdkClientHttpRequestFactory(HttpClient.newBuilder()
+                                .version(HttpClient.Version.HTTP_1_1)
+                                .connectTimeout(Duration.ofSeconds(30))
+                                .build())))
                 .build();
         var openAiChatOptions = OpenAiChatOptions.builder()
                 .model(model)
@@ -110,17 +135,17 @@ public class ChatModelFactory {
                 .defaultOptions(openAiChatOptions)
                 .toolCallingManager(toolCallingManager)
                 .build();
-        logger.info( "Using OpenAi model: {}" , model);
+        logger.info("Using OpenAi model: {}", model);
         return chatModel;
     }
 
     private ChatModel newZhipuChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model) {
-        var zhiPuAiApi = new ZhiPuAiApi(endpoint,apiKey);
+        var zhiPuAiApi = new ZhiPuAiApi(endpoint, apiKey);
 
         var chatModel = new ZhiPuAiChatModel(zhiPuAiApi, ZhiPuAiChatOptions.builder()
                 .model(model)
                 .build());
-        logger.info( "Using zhiPu model: {}" , model);
+        logger.info("Using zhiPu model: {}", model);
         return chatModel;
     }
 }

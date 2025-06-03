@@ -484,7 +484,7 @@ export default {
       
       // 如果已连接但配置改变，提示重新连接
       if (isConnected) {
-        message.info('配置已保存，需要重新连接才能生效');
+        this.$message.info('配置已保存，需要重新连接才能生效');
       } else {
         // 尝试连接
         this.connect();
@@ -518,7 +518,7 @@ export default {
       // 立即更新本地状态
       this.localIsConnected = false;
       this.localConnectionStatus = '已断开';
-      message.info('已断开连接');
+      this.message.info('已断开连接');
     },
   }
 };
