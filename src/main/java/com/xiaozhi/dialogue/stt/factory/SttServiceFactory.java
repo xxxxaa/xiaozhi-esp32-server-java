@@ -1,10 +1,7 @@
 package com.xiaozhi.dialogue.stt.factory;
 
 import com.xiaozhi.dialogue.stt.SttService;
-import com.xiaozhi.dialogue.stt.providers.AliyunSttService;
-import com.xiaozhi.dialogue.stt.providers.FunASRSttService;
-import com.xiaozhi.dialogue.stt.providers.TencentSttService;
-import com.xiaozhi.dialogue.stt.providers.VoskSttService;
+import com.xiaozhi.dialogue.stt.providers.*;
 import com.xiaozhi.entity.SysConfig;
 
 import org.slf4j.Logger;
@@ -164,6 +161,8 @@ public class SttServiceFactory {
             return new AliyunSttService(config);
         } else if ("funasr".equals(provider)) {
             return new FunASRSttService(config);
+        } else if ("xfyun".equals(provider)) {
+            return new XfyunSttService(config);
         }
         // 可以添加其他服务提供商的支持
 
