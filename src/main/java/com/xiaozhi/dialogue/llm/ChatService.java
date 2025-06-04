@@ -170,8 +170,9 @@ public class ChatService {
         List<Message> historyMessages =  session.getHistoryMessages();
 
         UserMessage userMessage = new UserMessage(message);
-        Prompt prompt = Prompt.builder().messages(historyMessages).messages(userMessage).
-                chatOptions(chatOptions).build();
+        historyMessages.add(userMessage);
+        Prompt prompt = Prompt.builder().messages(historyMessages).chatOptions(chatOptions).build();
+
         // 调用实际的流式聊天方法
 //        return chatModel.stream(prompt).map(response -> (response.getResult() == null || response.getResult().getOutput() == null
 //                || response.getResult().getOutput().getText() == null) ? ""
