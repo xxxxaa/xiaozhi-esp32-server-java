@@ -518,7 +518,7 @@ export default {
       // 立即更新本地状态
       this.localIsConnected = false;
       this.localConnectionStatus = '已断开';
-      this.message.info('已断开连接');
+      this.$message.info('已断开连接');
     },
   }
 };
