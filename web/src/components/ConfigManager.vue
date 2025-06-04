@@ -228,7 +228,7 @@ export default {
               { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
               { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://open.bigmodel.cn/api/paas/v4" }
             ],
-            ali: [
+            aliyun: [
               { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
               { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://dashscope.aliyuncs.com/compatible-mode/v1" }
             ],
