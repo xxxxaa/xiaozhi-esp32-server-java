@@ -94,13 +94,6 @@ public class MessageHandler {
         if (!ObjectUtils.isEmpty(device)) {
             device.setDeviceId(deviceId);
             device.setSessionId(sessionId);
-            // 更新设备状态
-            deviceService.updateNoRefreshCache(new SysDevice()
-                    .setDeviceId(device.getDeviceId())
-                    .setState(SysDevice.DEVICE_STATE_ONLINE)
-                    .setLastLogin(new Date().toString()));
-            device.setDeviceId(deviceId);
-            device.setSessionId(sessionId);
             sessionManager.registerDevice(sessionId, device);
             //这里需要放在虚拟线程外
             ToolsSessionHolder toolsSessionHolder = new ToolsSessionHolder(chatSession.getSessionId(),

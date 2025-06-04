@@ -26,7 +26,7 @@ public class AudioService {
     private static final Logger logger = LoggerFactory.getLogger(AudioService.class);
 
     // 帧发送时间间隔略小于OPUS_FRAME_DURATION_MS，避免因某些调度原因，导致没能在规定时间内发送，设备出现杂音
-    private static final long OPUS_FRAME_SEND_INTERVAL_MS = AudioUtils.OPUS_FRAME_DURATION_MS - 5;
+    private static final long OPUS_FRAME_SEND_INTERVAL_MS = AudioUtils.OPUS_FRAME_DURATION_MS - 2;
 
     @Autowired
     private OpusProcessor opusProcessor;
