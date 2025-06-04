@@ -207,9 +207,9 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 
 ### 微信
 
-微信群超200人无法扫码进群，可以加我微信备注 **小智** 我拉你进微信群
+一群已满，扫码加入二群
 
-<img src="./web/static/img/wechat.jpg" alt="微信" width="200" />
+<img src="docs/images/wechat_group.jpg" alt="微信" width="200" />
 
 ### QQ
 
@@ -220,6 +220,8 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 ### 定制开发
 
 我们接受各种定制化开发项目，如果您有特定需求，欢迎通过微信联系洽谈。
+
+<img src="./web/static/img/wechat.jpg" alt="微信" width="200" />
 
 ---
 
