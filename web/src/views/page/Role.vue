@@ -85,7 +85,7 @@
                           <a-select-option value="edge">微软Edge</a-select-option>
                           <a-select-option value="aliyun">阿里云</a-select-option>
                           <a-select-option value="volcengine">火山引擎（豆包）</a-select-option>
-                           <a-select-option value="xfyun">讯飞云</a-select-option>
+                          <a-select-option value="xfyun">讯飞云</a-select-option>
                         </a-select>
                       </a-form-item>
                     </a-col>
@@ -234,10 +234,10 @@ export default {
         },
       ],
       // 语音相关
-      edgeVoices: [],
-      aliyunVoices: [],
-      volcengineVoices: [], // 新增火山引擎语音列表
-      xfyunVoices: [],
+      edgeVoices: [], // Edge语音列表
+      aliyunVoices: [], // 阿里云语音列表
+      volcengineVoices: [], // 火山引擎语音列表
+      xfyunVoices: [], // 讯飞语音列表
       voiceLoading: false, // 语音列表加载状态
       selectedProvider: 'edge', // 默认使用Edge语音
       selectedGender: '', // 存储当前选择的性别
@@ -324,8 +324,8 @@ export default {
       } else if (this.selectedProvider === 'volcengine') {
         return this.volcengineVoices;
       } else if (this.selectedProvider === 'xfyun') {
-              return this.xfyunVoices;
-            }
+        return this.xfyunVoices;
+      }
       return [];
     },
     filteredVoices() {
