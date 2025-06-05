@@ -85,6 +85,7 @@
                           <a-select-option value="edge">微软Edge</a-select-option>
                           <a-select-option value="aliyun">阿里云</a-select-option>
                           <a-select-option value="volcengine">火山引擎（豆包）</a-select-option>
+                          <a-select-option value="xfyun">讯飞云</a-select-option>
                         </a-select>
                       </a-form-item>
                     </a-col>
@@ -233,9 +234,10 @@ export default {
         },
       ],
       // 语音相关
-      edgeVoices: [],
-      aliyunVoices: [],
-      volcengineVoices: [], // 新增火山引擎语音列表
+      edgeVoices: [], // Edge语音列表
+      aliyunVoices: [], // 阿里云语音列表
+      volcengineVoices: [], // 火山引擎语音列表
+      xfyunVoices: [], // 讯飞语音列表
       voiceLoading: false, // 语音列表加载状态
       selectedProvider: 'edge', // 默认使用Edge语音
       selectedGender: '', // 存储当前选择的性别
@@ -304,7 +306,7 @@ export default {
     this.loadEdgeVoices();
     this.loadAliyunVoices();
     this.loadVolcengineVoices();
-
+    this.loadXfyunVoices();
     this.getData();
 
     // 初始化设置Edge默认TTS配置
@@ -321,6 +323,8 @@ export default {
         return this.aliyunVoices;
       } else if (this.selectedProvider === 'volcengine') {
         return this.volcengineVoices;
+      } else if (this.selectedProvider === 'xfyun') {
+        return this.xfyunVoices;
       }
       return [];
     },
@@ -705,7 +709,42 @@ export default {
           this.voiceLoading = false;
         });
     },
+    // 加载讯飞云语音列表 - 从本地文件加载
+    loadXfyunVoices() {
+      this.voiceLoading = true;
 
+      // 直接从本地文件加载火山引擎语音列表
+      fetch('/static/assets/xfyunVoicesList.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('加载讯飞云语音列表失败');
+          }
+          return response.json();
+        })
+        .then(voices => {
+          // 保存语音列表
+          this.xfyunVoices = voices;
+
+          // 加载完语音列表后，设置默认语音
+          this.$nextTick(() => {
+            if (
+              this.selectedProvider === "xfyun" &&
+              this.xfyunVoices.length > 0 &&
+              this.activeTabKey === "1"
+            ) {
+              this.roleForm.setFieldsValue({
+                voiceName: this.defaultVoiceName,
+              });
+            }
+          });
+        })
+        .catch(error => {
+          this.$message.error('加载讯飞云语音列表失败，请确认文件是否存在');
+        })
+        .finally(() => {
+          this.voiceLoading = false;
+        });
+    },
     // 提交表单
     handleSubmit(e) {
       e.preventDefault();
