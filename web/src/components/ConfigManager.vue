@@ -152,6 +152,7 @@
 import axios from '@/services/axios'
 import api from '@/services/api'
 import mixin from '@/mixins/index'
+import { configTypeMap } from '@/config/providerConfig'
 
 export default {
   name: 'ConfigManager',
@@ -192,119 +193,6 @@ export default {
         spark: "请输入星火大模型官方模型名称，如：Lite, Pro, Max等"
       },
 
-      // 配置类型信息
-      configTypeMap: {
-        llm: {
-          label: '模型',
-          // 模型类别选项
-          typeOptions: [
-            { label: 'OpenAI', value: 'openai', key: '0' },
-            { label: 'Ollama', value: 'ollama', key: '1' },
-            { label: 'Spark', value: 'spark', key: '2' },
-            { label: 'Zhipu', value: 'zhipu', key: '3' },
-            { label: 'AliYun', value: 'aliyun', key: '4'},
-            { label: 'Doubao', value: 'doubao', key: '5'},
-            { label: 'DeepSeek', value: 'deepseek', key: '6'},
-            { label: 'ChatGLM', value: 'chatglm', key: '7'},
-            { label: 'Gemini', value: 'gemini', key: '8'},
-            { label: 'LMStudio', value: 'lmstudio', key: '9'},
-            { label: 'Fastgpt', value: 'fastgpt', key: '10'},
-            { label: 'Xinference', value: 'xinference', key: '11'},
-          ],
-          // 各类别对应的参数字段定义
-          typeFields: {
-            openai: [
-              { name: 'apiKey', label: 'API Key', required: true, span: 12 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions' },
-            ],
-            ollama: [
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/api/chat', defaultUrl:"http://localhost:11434" }
-            ],
-            spark: [
-              { name: 'apiKey', label: 'API Key', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://spark-api-open.xf-yun.com/v1" }
-            ],
-            zhipu: [
-              { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://open.bigmodel.cn/api/paas/v4" }
-            ],
-            aliyun: [
-              { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://dashscope.aliyuncs.com/compatible-mode/v1" }
-            ],
-            doubao: [
-              { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://ark.cn-beijing.volces.com/api/v3" }
-            ],
-            deepseek: [
-              { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://api.deepseek.com" }
-            ],
-            chatglm: [
-              { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://open.bigmodel.cn/api/paas/v4/" }
-            ],
-            gemini: [
-              { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://generativelanguage.googleapis.com/v1beta/" }
-            ],
-            lmstudio: [
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"http://localhost:1234/v1" }
-            ],
-            fastgpt: [
-              { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"http://localhost:3000/api/v1" }
-            ],
-            xinference: [
-              { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-              { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"http://localhost:9997/v1" }
-            ]
-          }
-        },
-        stt: {
-          label: '语音识别',
-          typeOptions: [
-            { label: 'Tencent', value: 'tencent', key: '0' },
-            { label: 'Aliyun', value: 'aliyun', key: '1' },
-            { label: 'FunASR', value: 'funasr', key: '2' }
-          ],
-          typeFields: {
-            tencent: [
-              { name: 'appId', label: 'App Id', required: true, span: 12 },
-              { name: 'apiKey', label: 'Secret Id', required: true, span: 12 },
-              { name: 'apiSecret', label: 'Secret Key', required: true, span: 12 },
-            ],
-            aliyun: [
-              { name: 'apiKey', label: 'API Key', required: true, span: 12 },
-            ],
-            funasr: [
-              { name: 'apiUrl', label: 'Websocket URL', required: true, span: 12, defaultUrl:"ws://127.0.0.1:10095" }
-            ]
-          }
-        },
-        tts: {
-          label: '语音合成',
-          typeOptions: [
-            { label: 'Tencent', value: 'tencent', key: '0' },
-            { label: 'Aliyun', value: 'aliyun', key: '1' },
-            { label: 'Volcengine(doubao)', value: 'volcengine', key: '2' }
-          ],
-          typeFields: {
-            tencent: [
-              { name: 'appId', label: 'App Id', required: true, span: 12 },
-              { name: 'apiKey', label: 'Secret Id', required: true, span: 12 },
-              { name: 'apiSecret', label: 'Secret Key', required: true, span: 12 },
-            ],
-            aliyun: [
-              { name: 'apiKey', label: 'API Key', required: true, span: 12 },
-            ],
-            volcengine: [
-              { name: 'appId', label: 'App Id', required: true, span: 12 },
-              { name: 'apiKey', label: 'Access Token', required: true, span: 12 }
-            ]
-          }
-        }
-      },
       columns: [
         {
           title: '类别',
@@ -364,7 +252,7 @@ export default {
   computed: {
     // 当前配置类型的信息
     configTypeInfo() {
-      return this.configTypeMap[this.configType] || {};
+      return configTypeMap[this.configType] || {};
     },
     // 当前配置类型的选项
     typeOptions() {
@@ -439,7 +327,7 @@ export default {
 
       //填写llm默认url
       if (this.configType === 'llm') {
-        const apiUrlField = this.configTypeMap.llm.typeFields[value].find(item => item.name === 'apiUrl');
+        const apiUrlField = configTypeMap.llm.typeFields[value].find(item => item.name === 'apiUrl');
         if (apiUrlField && apiUrlField.defaultUrl) {
           newValues.apiUrl = apiUrlField.defaultUrl;
         }

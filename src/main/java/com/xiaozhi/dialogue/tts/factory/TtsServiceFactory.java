@@ -1,9 +1,7 @@
 package com.xiaozhi.dialogue.tts.factory;
 
 import com.xiaozhi.dialogue.tts.TtsService;
-import com.xiaozhi.dialogue.tts.providers.AliyunTtsService;
-import com.xiaozhi.dialogue.tts.providers.EdgeTtsService;
-import com.xiaozhi.dialogue.tts.providers.VolcengineTtsService;
+import com.xiaozhi.dialogue.tts.providers.*;
 import com.xiaozhi.entity.SysConfig;
 
 import org.slf4j.Logger;
@@ -98,7 +96,9 @@ public class TtsServiceFactory {
             return new AliyunTtsService(config, voiceName, outputPath);
         } else if ("volcengine".equals(provider)) {
             return new VolcengineTtsService(config, voiceName, outputPath);
-        } /*
+        } else if ("xfyun".equals(provider)) {
+            return new XfyunTtsService(config, voiceName, outputPath);
+        }/*
            * else if ("tencent".equals(provider)) {
            * return new TencentTtsService(config, voiceName, outputPath);
            * }
