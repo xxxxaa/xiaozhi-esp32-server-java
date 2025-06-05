@@ -150,7 +150,7 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 
 我们提供了多种部署方式，以满足不同用户的需求：
 
-### 1. 本地源码运行
+### 1. 本地源码运行（该文档基于旧版本JDK8编写，暂未更新，目前项目依赖JDK21）
 
 - [Windows部署文档](./docs/WINDOWS_DEVELOPMENT.md) - 适合Windows环境开发和测试 - 由群友"汇合"提供
 - [CentOS部署文档](./docs/CENTOS_DEVELOPMENT.md) - 适合Linux服务器环境部署 - 由群友"汇合"提供
