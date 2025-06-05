@@ -23,7 +23,11 @@ public interface TtsService {
    * 
    */
   boolean isSupportStreamTts();
-
+  /**
+   * 是否依赖Ffmpeg,如果依赖，检查Ffmpeg是否安装
+   * @return
+   */
+  boolean isInstallFfmpeg();
   /**
    * 将文本转换为语音（带自定义语音）
    * 

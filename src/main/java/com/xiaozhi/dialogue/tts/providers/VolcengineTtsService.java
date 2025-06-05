@@ -52,7 +52,10 @@ public class VolcengineTtsService implements TtsService {
     public boolean isSupportStreamTts() {
         return false;
     }
-
+    @Override
+    public boolean isInstallFfmpeg() {
+        return true;
+    }
     @Override
     public String getAudioFileName() {
         String uuid = UUID.randomUUID().toString().replace("-", "");

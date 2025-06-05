@@ -22,7 +22,7 @@ public class TtsServiceFactory {
     private final Map<String, TtsService> serviceCache = new ConcurrentHashMap<>();
 
     // 语音生成文件保存地址
-    private static final String outputPath = "audio/";
+    private static final String OUT_PUT_PATH = "audio/";
 
     // 默认服务提供商名称
     private static final String DEFAULT_PROVIDER = "edge";
@@ -35,13 +35,32 @@ public class TtsServiceFactory {
      */
     public TtsService getDefaultTtsService() {
         // 如果缓存中没有默认服务，则创建一个
-        TtsService edgeService = new EdgeTtsService(DEFAULT_VOICE, outputPath);
-
-        return edgeService;
+        return getTtsService(DEFAULT_VOICE);
     }
 
     public TtsService getTtsService() {
-        return new EdgeTtsService(DEFAULT_VOICE, outputPath);
+        return getTtsService(DEFAULT_VOICE);
+    }
+
+    private TtsService getTtsService(String voiceName) {
+        TtsService ttsService = new EdgeTtsService(voiceName, OUT_PUT_PATH);
+        if(!ttsService.isInstallFfmpeg()){
+            logger.warn("请先安装ffmpeg");
+        }
+        return ttsService;
+    }
+
+    private String createCacheKey(SysConfig config,String provider){
+        // 对于API服务，使用"provider:configId"作为缓存键，确保每个配置使用独立的服务实例
+        String configIdStr;
+        if (config == null) {
+            configIdStr = "default";
+        }else{
+            Integer configId = config.getConfigId();
+            configIdStr = configId != null ? String.valueOf(configId) : "default";
+        }
+        String cacheKey = provider + ":" + configIdStr;
+        return cacheKey;
     }
 
     /**
@@ -56,30 +75,37 @@ public class TtsServiceFactory {
         } else {
             provider = config.getProvider();
         }
-        // 如果是默认提供商且尚未初始化，则初始化
-        if (DEFAULT_PROVIDER.equals(provider)) {
-            TtsService edgeService = new EdgeTtsService(StringUtils.hasText(voiceName) ? voiceName : DEFAULT_VOICE, outputPath);
-            return edgeService;
-        }
-
-        // 对于API服务，使用"provider:configId"作为缓存键，确保每个配置使用独立的服务实例
-        Integer configId = config.getConfigId();
-        String cacheKey = provider + ":" + (configId != null ? configId : "default");
-
+        String cacheKey = createCacheKey(config,provider);
         // 检查是否已有该配置的服务实例
         if (serviceCache.containsKey(cacheKey)) {
             return serviceCache.get(cacheKey);
-        }
-
-        // 创建新的服务实例
-        try {
-            TtsService service;
-            // 创建其他API服务
-            service = createApiService(config, voiceName, outputPath);
-            return service;
-        } catch (Exception e) {
-            logger.error("创建{}服务失败", provider, e);
-            return getDefaultTtsService(); // 失败时返回默认服务
+        }else{
+            // 如果是默认提供商且尚未初始化，则初始化
+            if (DEFAULT_PROVIDER.equals(provider)) {
+                if(StringUtils.hasText(voiceName)){
+                    TtsService ttsService = getTtsService(voiceName);
+                    serviceCache.put(cacheKey, ttsService);
+                    return ttsService;
+                }else{
+                    TtsService ttsService = getTtsService();
+                    serviceCache.put(cacheKey, ttsService);
+                    return ttsService;
+                }
+            }
+            // 创建新的服务实例
+            try {
+                TtsService service;
+                // 创建其他API服务
+                service = createApiService(config, voiceName, OUT_PUT_PATH);
+                if(!service.isInstallFfmpeg()){
+                    logger.warn("请先安装ffmpeg");
+                }
+                serviceCache.put(cacheKey, service);
+                return service;
+            } catch (Exception e) {
+                logger.error("创建{}服务失败", provider, e);
+                return getDefaultTtsService(); // 失败时返回默认服务
+            }
         }
     }
 
