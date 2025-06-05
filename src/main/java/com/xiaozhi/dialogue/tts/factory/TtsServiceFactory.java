@@ -44,9 +44,6 @@ public class TtsServiceFactory {
 
     private TtsService getTtsService(String voiceName) {
         TtsService ttsService = new EdgeTtsService(voiceName, OUT_PUT_PATH);
-        if(!ttsService.isInstallFfmpeg()){
-            logger.warn("请先安装ffmpeg");
-        }
         return ttsService;
     }
 
@@ -97,9 +94,6 @@ public class TtsServiceFactory {
                 TtsService service;
                 // 创建其他API服务
                 service = createApiService(config, voiceName, OUT_PUT_PATH);
-                if(!service.isInstallFfmpeg()){
-                    logger.warn("请先安装ffmpeg");
-                }
                 serviceCache.put(cacheKey, service);
                 return service;
             } catch (Exception e) {

@@ -41,17 +41,7 @@ public class EdgeTtsService implements TtsService {
     public boolean isSupportStreamTts() {
         return false;
     }
-    @Override
-    public boolean isInstallFfmpeg() {
-        try {
-            logger.info("is Install Ffmpeg");
-            Process p = new ProcessBuilder("ffmpeg", "-version").start();
-            p.waitFor();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
+
     @Override
     public String getAudioFileName() {
         String uuid = UUID.randomUUID().toString().replace("-", "");
