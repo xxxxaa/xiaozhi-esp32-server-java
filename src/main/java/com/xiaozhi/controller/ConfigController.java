@@ -98,7 +98,6 @@ public class ConfigController extends BaseController {
     @ResponseBody
     public AjaxResult add(SysConfig config) {
         try {
-
             config.setUserId(CmsUtils.getUserId());
             configService.add(config);
             return AjaxResult.success();

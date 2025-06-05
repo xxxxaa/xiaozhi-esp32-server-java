@@ -118,7 +118,7 @@ export default {
       // 查询参数
       query: {
         agentName: '',
-        provider: 'Coze'
+        provider: 'coze'
       },
       // 平台选项
       providerOptions: [
@@ -145,7 +145,7 @@ export default {
       // 平台表单对象
       platformForm: {
         configType: 'agent',
-        provider: 'Coze',
+        provider: 'coze',
         configName: '',
         configDesc: '',
         appId: '',
@@ -275,7 +275,7 @@ export default {
       // 重置表单
       this.platformForm = {
         configType: 'agent',
-        provider: 'Coze',
+        provider: 'coze',
         appId: '',
         apiSecret: '',
         apiKey: '',
