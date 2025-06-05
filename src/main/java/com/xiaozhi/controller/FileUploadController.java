@@ -5,10 +5,8 @@ import com.xiaozhi.utils.FileUploadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -30,14 +28,14 @@ public class FileUploadController {
     /**
      * 通用文件上传方法
      * 
-     * @param filePart 上传的文件
+     * @param file 上传的文件
      * @param type 文件类型（可选，用于分类存储）
      * @return 文件访问URL
      */
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/upload")
     @ResponseBody
     public AjaxResult uploadFile(
-            @RequestPart("file") FilePart filePart,
+            @RequestParam("file") MultipartFile file,
             @RequestParam(value = "type", required = false, defaultValue = "common") String type) {
 
         // 构建文件存储路径，按日期和类型分类
@@ -45,14 +43,13 @@ public class FileUploadController {
         String relativePath = type + "/" + datePath;
 
         // 生成唯一文件名
-        String originalFilename = filePart.filename();
+        String originalFilename = file.getOriginalFilename();
         String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         String fileName = UUID.randomUUID().toString().replaceAll("-", "") + extension;
 
         // 使用FileUploadUtils进行智能上传（根据配置自动选择上传到本地或腾讯云COS）
-        try{
-            Mono<String> fileUrlMono = FileUploadUtils.smartUploadFilePart(uploadPath, relativePath, fileName, filePart);
-            String fileUrl = fileUrlMono.block();
+        try {
+            String fileUrl = FileUploadUtils.smartUpload(uploadPath, relativePath, fileName, file);
             logger.info("文件上传成功: {}", fileUrl);
 
             // 判断是否是COS URL
@@ -71,7 +68,7 @@ public class FileUploadController {
             }
 
             return result;
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error("文件上传失败: {}", e.getMessage(), e);
             return AjaxResult.error("文件上传失败: " + e.getMessage());
         }

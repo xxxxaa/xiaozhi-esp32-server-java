@@ -7,12 +7,9 @@ import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.model.ObjectMetadata;
 import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.region.Region;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Mono;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -68,36 +65,6 @@ public class FileUploadUtils {
     }
 
     /**
-     * 上传FilePart文件
-     *
-     * @param baseDir      基础目录
-     * @param relativePath 相对路径
-     * @param fileName     文件名
-     * @param filePart     文件部分
-     * @return 包含文件完整路径的Mono
-     */
-    public static Mono<String> uploadFilePart(String baseDir, String relativePath, String fileName, FilePart filePart) {
-        // 创建目录
-        String fullPath = baseDir + File.separator + relativePath;
-        Path uploadPath = Paths.get(fullPath);
-
-        try {
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // 保存文件
-            Path filePath = uploadPath.resolve(fileName);
-
-            // 使用FilePart的transferTo方法将内容写入目标文件
-            return filePart.transferTo(filePath)
-                    .then(Mono.just(filePath.toString()));
-        } catch (IOException e) {
-            return Mono.error(e);
-        }
-    }
-
-    /**
      * 检查文件大小和类型
      *
      * @param file 上传的文件
@@ -109,16 +76,17 @@ public class FileUploadUtils {
     }
 
     /**
-     * 智能上传FilePart文件（根据配置决定上传到本地还是腾讯云COS）
+     * 智能上传文件（根据配置决定上传到本地还是腾讯云COS）
      *
      * @param baseDir      本地基础目录
      * @param relativePath 相对路径
      * @param fileName     文件名
-     * @param filePart     文件部分
-     * @return 包含文件访问路径的Mono
+     * @param file         文件
+     * @return 文件访问路径
+     * @throws IOException 如果上传过程中发生IO错误
      */
-    public static Mono<String> smartUploadFilePart(String baseDir, String relativePath, String fileName,
-            FilePart filePart) {
+    public static String smartUpload(String baseDir, String relativePath, String fileName,
+            MultipartFile file) throws IOException {
         // 检查配置文件中是否有腾讯云COS的配置
         Properties properties = new Properties();
         try (InputStream inputStream = FileUploadUtils.class.getClassLoader()
@@ -144,90 +112,18 @@ public class FileUploadUtils {
                         cosPath = cosPath + "/";
                     }
 
-                    // 先将FilePart保存到临时文件，然后上传到COS
-                    return uploadFilePartToTempAndThenToCos(filePart, bucketName, secretId, secretKey, region,
+                    // 上传到COS
+                    return uploadToCos(file, bucketName, secretId, secretKey, region,
                             cosPath + relativePath + "/");
                 }
             }
         } catch (Exception e) {
             // 如果读取配置或上传到COS出错，则回退到本地上传
-            return uploadFilePart(baseDir, relativePath, fileName, filePart);
+            return uploadFile(baseDir, relativePath, fileName, file);
         }
 
         // 如果没有COS配置或配置不完整，则上传到本地
-        return uploadFilePart(baseDir, relativePath, fileName, filePart);
-    }
-
-    /**
-     * 将FilePart先保存到临时文件，然后上传到腾讯云COS
-     *
-     * @param filePart   文件部分
-     * @param bucketName 存储桶名称
-     * @param secretId   腾讯云SecretId
-     * @param secretKey  腾讯云SecretKey
-     * @param region     地域信息
-     * @param cosPath    COS路径
-     * @return 包含文件访问URL的Mono
-     */
-    private static Mono<String> uploadFilePartToTempAndThenToCos(FilePart filePart, String bucketName, String secretId,
-            String secretKey, String region, String cosPath) {
-        try {
-            // 创建临时文件
-            Path tempFile = Files.createTempFile("cos_upload_", ".tmp");
-
-            // 将FilePart内容写入临时文件
-            return filePart.transferTo(tempFile)
-                    .then(Mono.fromCallable(() -> {
-                        try {
-                            // 生成唯一文件名
-                            String originalFilename = filePart.filename();
-                            String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
-                            String fileName = UUID.randomUUID().toString().replaceAll("-", "") + suffix;
-
-                            // 构建完整的对象键（Key）
-                            String key = cosPath + fileName;
-
-                            // 创建 COSClient 实例
-                            COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
-                            ClientConfig clientConfig = new ClientConfig(new Region(region));
-                            COSClient cosClient = new COSClient(cred, clientConfig);
-
-                            try {
-                                // 获取临时文件大小
-                                long fileSize = Files.size(tempFile);
-
-                                // 上传文件
-                                ObjectMetadata metadata = new ObjectMetadata();
-                                metadata.setContentLength(fileSize);
-
-                                // 尝试设置内容类型
-                                String contentType = determineContentType(originalFilename);
-                                if (contentType != null) {
-                                    metadata.setContentType(contentType);
-                                }
-
-                                try (InputStream fileInputStream = new FileInputStream(tempFile.toFile())) {
-                                    PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, key,
-                                            fileInputStream, metadata);
-                                    cosClient.putObject(putObjectRequest);
-                                }
-
-                                // 生成文件访问URL
-                                return "https://" + bucketName + ".cos." + region + ".myqcloud.com/" + key;
-                            } finally {
-                                cosClient.shutdown();
-                                // 删除临时文件
-                                Files.deleteIfExists(tempFile);
-                            }
-                        } catch (Exception e) {
-                            // 确保临时文件被删除
-                            Files.deleteIfExists(tempFile);
-                            throw e;
-                        }
-                    }));
-        } catch (IOException e) {
-            return Mono.error(e);
-        }
+        return uploadFile(baseDir, relativePath, fileName, file);
     }
 
     /**
@@ -303,7 +199,13 @@ public class FileUploadUtils {
             // 上传文件
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(file.getSize());
-            metadata.setContentType(file.getContentType());
+            
+            // 设置内容类型
+            String contentType = file.getContentType();
+            if (contentType == null || contentType.isEmpty()) {
+                contentType = determineContentType(originalFilename);
+            }
+            metadata.setContentType(contentType);
 
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, key, file.getInputStream(), metadata);
             cosClient.putObject(putObjectRequest);
