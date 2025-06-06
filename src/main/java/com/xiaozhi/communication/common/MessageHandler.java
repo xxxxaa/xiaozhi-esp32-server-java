@@ -276,12 +276,11 @@ public class MessageHandler {
                 // 停止监听
                 logger.info("停止监听");
 
-                chatSession.setClientVoiceStop(true);
                 // 关闭音频流
-                // sessionManager.closeAudioStream(sessionId);
-                // sessionManager.setStreamingState(sessionId, false);
+                sessionManager.closeAudioStream(sessionId);
+                sessionManager.setStreamingState(sessionId, false);
                 // 重置VAD会话
-                // vadService.resetSession(sessionId);
+                vadService.resetSession(sessionId);
                 break;
 
             case ListenState.Text:
