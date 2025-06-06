@@ -52,7 +52,7 @@
                       @click="setAsDefault(record)">设为默认</a>
                     <a-popconfirm :title="`确定要删除这个${configTypeInfo.label}配置吗?`"
                       @confirm="deleteConfig(record.configId)">
-                      <a href="javascript:" style="color: #ff4d4f">删除</a>
+                      <a v-if="record.isDefault != 1" href="javascript:" style="color: #ff4d4f">删除</a>
                     </a-popconfirm>
                   </a-space>
                 </template>

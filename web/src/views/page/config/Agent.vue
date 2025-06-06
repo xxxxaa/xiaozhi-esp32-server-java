@@ -66,7 +66,7 @@
                 <!-- 添加设为默认按钮 -->
                 <a v-if="record.isDefault != 1" href="javascript:" :disabled="record.isDefault == 1" @click="setAsDefault(record)">设为默认</a>
                 <a-popconfirm title="确定要删除此智能体吗？" @confirm="handleDelete(record)">
-                  <a href="javascript:" style="color: #ff4d4f">删除</a>
+                  <a v-if="record.isDefault != 1" href="javascript:" style="color: #ff4d4f">删除</a>
                 </a-popconfirm>
               </a-space>
             </template>
