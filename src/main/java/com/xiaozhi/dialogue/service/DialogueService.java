@@ -57,6 +57,9 @@ public class DialogueService {
     private MessageService messageService;
 
     @Resource
+    private MusicService musicService;
+
+    @Resource
     private VadService vadService;
 
     @Resource
@@ -896,6 +899,10 @@ public class DialogueService {
                 sessionManager.closeAudioStream(sessionId);
                 sessionManager.setStreamingState(sessionId, false);
 
+                if (sessionManager.isMusicPlaying(sessionId)) {
+                    musicService.stopMusic(sessionId);
+                    return;
+                }
                 // 清空句子队列
                 CopyOnWriteArrayList<Sentence> queue = sentenceQueue.get(sessionId);
                 if (queue != null) {

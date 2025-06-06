@@ -32,7 +32,7 @@ public class PlayMusicFunction implements ToolsGlobalRegistry.GlobalFunction {
                         return "音乐播放失败";
                     }else{
                         musicService.playMusic(chatSession, songName, null);
-                        return "尝试播放歌曲"+songName;
+                        return "尝试播放歌曲《"+songName+"》";
                     }
                 }catch (Exception e){
                     logger.error("device 音乐播放异常，song name: {}", songName, e);

@@ -87,6 +87,12 @@ public class AudioService {
         String sessionId = session.getSessionId();
 
         try {
+
+            // 如果在播放音乐，则不停止
+            if (sessionManager.isMusicPlaying(sessionId)) {
+                return CompletableFuture.completedFuture(null);
+            }
+
             // 标记播放结束
             AtomicBoolean playingState = isPlaying.computeIfAbsent(sessionId, k -> new AtomicBoolean());
             playingState.set(false);
@@ -308,7 +314,7 @@ public class AudioService {
     /**
      * 取消调度任务
      */
-    private void cancelScheduledTask(String sessionId) {
+    public void cancelScheduledTask(String sessionId) {
         ScheduledFuture<?> task = scheduledTasks.remove(sessionId);
         if (task != null && !task.isDone()) {
             task.cancel(false);
