@@ -424,27 +424,6 @@ public class SessionManager {
     }
 
     /**
-     * 设置客户端是否停止说话
-     */
-    public void setClientVoiceStop(String sessionId, boolean clientVoiceStop) {
-        ChatSession chatSession = sessions.get(sessionId);
-        if (chatSession != null) {
-            chatSession.setClientVoiceStop(clientVoiceStop);
-        }
-    }
-
-    /**
-     * 客户端是否停止说话
-     */
-    public boolean isClientVoiceStop(String sessionId) {
-        ChatSession chatSession = sessions.get(sessionId);
-        if (chatSession != null) {
-            return chatSession.isClientVoiceStop();
-        }
-        return false;
-    }
-
-    /**
      * 设备状态
      *
      * @param sessionId

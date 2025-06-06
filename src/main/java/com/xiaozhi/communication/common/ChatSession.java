@@ -53,10 +53,6 @@ public abstract class ChatSession {
      */
     protected boolean playing;
     /**
-     * 客户端停止说话
-     */
-    protected boolean clientVoiceStop = false;
-    /**
      * 设备状态（auto, realTime)
      */
     protected ListenMode mode;
