@@ -195,9 +195,9 @@ public class IotService {
             var propName = entry.getKey();
             var propInfo = entry.getValue();
             // 创建函数名称，格式：iot_get_{IoTName}_{PropName}
-            var funcName = STR."iot_get_\{iotName.toLowerCase()}_\{propName.toLowerCase()}";
+            var funcName = "iot_get_" + iotName.toLowerCase() + "_" + propName.toLowerCase();
             var toolCallback = FunctionToolCallback
-                    .builder(funcName, (Map<String, String> params, ToolContext _) -> {
+                    .builder(funcName, (Map<String, String> params, ToolContext toolContext) -> {
                         Object value = getIotStatus(sessionId, iotName, propName);
                         if (value != null) {
                             // 获取参数
@@ -208,7 +208,7 @@ public class IotService {
                                     response_success = response_success.replace("{value}", String.valueOf(value));
                                 }
                             } else {
-                                response_success = STR."当前的设置为\{value}";
+                                response_success = "当前的设置为" + value;
                             }
                             return response_success;
                         } else {
@@ -216,7 +216,7 @@ public class IotService {
                         }
                     })
                     .toolMetadata(ToolMetadata.builder().returnDirect(true).build())
-                    .description(STR."查询\{iotName}的\{propInfo.getDescription()}")
+                    .description("查询" + iotName + "的" + propInfo.getDescription())
                     .inputSchema("""
                                 {
                                     "type": "object",
@@ -253,7 +253,7 @@ public class IotService {
             var methodName = entry.getKey();
             var method = entry.getValue();
             // 创建函数名称，格式：iot_{IoTName}_{MethodName}
-            var funcName = STR."iot_\{iotName}_\{methodName}";
+            var funcName = "iot_" + iotName + "_" + methodName;
 
             Map<String, String> valueMap = new HashMap<>();
             //获取iotMethod方法参数，添加到函数参数中。 iot方法都是单参数
@@ -282,7 +282,7 @@ public class IotService {
                     """, valueMap);
 
             var toolCallback = FunctionToolCallback
-                    .builder(funcName, (Map<String, Object> params, ToolContext _) -> {
+                    .builder(funcName, (Map<String, Object> params, ToolContext toolContext) -> {
                         String actFuncName = funcName.substring(4); // 原始方法调用，去掉iot_前缀
                         String response_success = (String) params.get("response_success");
                         params.remove("response_success"); // 移除response_success参数，避免传递给设备
@@ -298,7 +298,7 @@ public class IotService {
                         }
                     })
                     .toolMetadata(ToolMetadata.builder().returnDirect(true).build())
-                    .description(STR."\{iotDescriptor.getDescription()} - \{method.getDescription()}")
+                    .description(iotDescriptor.getDescription() + " - " + method.getDescription())
                     .inputSchema(inputSchema)
                     .inputType(Map.class)
                     .toolCallResultConverter(ToolCallStringResultConverter.INSTANCE)
