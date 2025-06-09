@@ -118,13 +118,15 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
 
     @Override
     public void handleTransportError(org.springframework.web.socket.WebSocketSession session, Throwable exception) {
+        String sessionId = session.getId();
         // 检查是否是客户端正常关闭连接导致的异常
         if (isClientCloseRequest(exception)) {
             // 客户端主动关闭，记录为信息级别日志而非错误
-            logger.info("WebSocket连接被客户端主动关闭 - SessionId: {}", session.getId());
+            logger.info("WebSocket连接被客户端主动关闭 - SessionId: {}", sessionId);
+            messageHandler.afterConnectionClosed(sessionId);
         } else {
             // 真正的传输错误
-            logger.error("WebSocket传输错误 - SessionId: {}", session.getId(), exception);
+            logger.error("WebSocket传输错误 - SessionId: {}", sessionId, exception);
         }
     }
 
