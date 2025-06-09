@@ -105,12 +105,10 @@ public class SysAgentServiceImpl implements SysAgentService {
      * @return 智能体集合
      */
     private List<SysAgent> getDifyAgents(SysAgent agent) {
-        Integer userId = agent.getUserId();
         List<SysAgent> agentList = new ArrayList<>();
         
         // 查询所有类型的Dify配置
         SysConfig queryConfig = new SysConfig();
-        queryConfig.setUserId(userId);
         queryConfig.setProvider("dify");
         List<SysConfig> allConfigs = configMapper.query(queryConfig);
         
@@ -137,6 +135,8 @@ public class SysAgentServiceImpl implements SysAgentService {
             String apiKey = agentConfig.getApiKey();
             String apiUrl = agentConfig.getApiUrl();
             Integer configId = agentConfig.getConfigId();
+            Integer userId = agentConfig.getUserId();
+
             
             // 检查是否已存在对应的llm配置
             SysConfig existingLlmConfig = llmConfigMap.get(apiKey);
@@ -275,7 +275,8 @@ public class SysAgentServiceImpl implements SysAgentService {
         // 获取API密钥和空间ID
         String apiSecret = config.getApiSecret();
         String spaceId = config.getAppId();
-        Integer userId = agent.getUserId();
+        // 普通用户应该只能查询使用管理员配置的内容
+        Integer userId = config.getUserId();
 
         try {
             // 调用Coze API获取智能体列表
