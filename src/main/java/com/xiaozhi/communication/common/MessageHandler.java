@@ -1,9 +1,6 @@
 package com.xiaozhi.communication.common;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.xiaozhi.communication.domain.AbortMessage;
-import com.xiaozhi.communication.domain.GoodbyeMessage;
-import com.xiaozhi.communication.domain.ListenMessage;
+import com.xiaozhi.communication.domain.*;
 import com.xiaozhi.dialogue.llm.ChatService;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
 import com.xiaozhi.dialogue.llm.tool.ToolsGlobalRegistry;
@@ -69,7 +66,7 @@ public class MessageHandler {
     private ChatService chatService;
 
     @Resource
-    private ChatModelFactory  chatModelFactory;
+    private ChatModelFactory chatModelFactory;
 
     @Resource
     private ToolsGlobalRegistry toolsGlobalRegistry;
@@ -82,6 +79,7 @@ public class MessageHandler {
 
     /**
      * 处理连接建立事件.
+     *
      * @param chatSession
      * @param deviceIdAuth
      */
@@ -145,11 +143,12 @@ public class MessageHandler {
 
     /**
      * 处理连接关闭事件.
+     *
      * @param sessionId
      */
     public void afterConnectionClosed(String sessionId) {
         ChatSession chatSession = sessionManager.getSession(sessionId);
-        if(chatSession == null || !chatSession.isOpen()){
+        if (chatSession == null || !chatSession.isOpen()) {
             return;
         }
         // 连接关闭时清理资源
@@ -179,12 +178,13 @@ public class MessageHandler {
 
     /**
      * 处理音频数据
+     *
      * @param sessionId
      * @param opusData
      */
     public void handleBinaryMessage(String sessionId, byte[] opusData) {
         ChatSession chatSession = sessionManager.getSession(sessionId);
-        if((chatSession == null || !chatSession.isOpen()) && !vadService.isSessionInitialized(sessionId)){
+        if ((chatSession == null || !chatSession.isOpen()) && !vadService.isSessionInitialized(sessionId)) {
             return;
         }
         // 委托给DialogueService处理音频数据
@@ -195,7 +195,7 @@ public class MessageHandler {
     public void handleUnboundDevice(String sessionId, SysDevice device) {
         String deviceId = device.getDeviceId();
         ChatSession chatSession = sessionManager.getSession(sessionId);
-        if(chatSession == null || !chatSession.isOpen()){
+        if (chatSession == null || !chatSession.isOpen()) {
             return;
         }
         // 检查是否已经在处理中，使用CAS操作保证线程安全
@@ -257,7 +257,7 @@ public class MessageHandler {
         });
     }
 
-    public void handleListenMessage(ChatSession chatSession, ListenMessage message) {
+    private void handleListenMessage(ChatSession chatSession, ListenMessage message) {
         String sessionId = chatSession.getSessionId();
         logger.info("收到listen消息 - SessionId: {}, State: {}, Mode: {}", sessionId, message.getState(), message.getMode());
         chatSession.setMode(message.getMode());
@@ -301,32 +301,42 @@ public class MessageHandler {
         }
     }
 
-    public void handleAbortMessage(ChatSession session, AbortMessage message) {
+    private void handleAbortMessage(ChatSession session, AbortMessage message) {
         dialogueService.abortDialogue(session, message.getReason());
     }
 
-    public void handleIotMessage(ChatSession chatSession, JsonNode jsonNode) {
+    private void handleIotMessage(ChatSession chatSession, IotMessage message) {
         String sessionId = chatSession.getSessionId();
         logger.info("收到IoT消息 - SessionId: {}", sessionId);
 
         // 处理设备描述信息
-        if (jsonNode.has("descriptors")) {
-            JsonNode descriptors = jsonNode.path("descriptors");
-            logger.info("收到设备描述信息: {}", descriptors);
+        if (message.getDescriptors() != null) {
+            logger.info("收到设备描述信息: {}", message.getDescriptors());
             // 处理设备描述信息的逻辑
-            iotService.handleDeviceDescriptors(sessionId, descriptors);
+            iotService.handleDeviceDescriptors(sessionId, message.getDescriptors());
         }
 
         // 处理设备状态更新
-        if (jsonNode.has("states")) {
-            JsonNode states = jsonNode.path("states");
-            logger.info("收到设备状态更新: {}", states);
+        if (message.getStates() != null) {
+            logger.info("收到设备状态更新: {}", message.getStates());
             // 处理设备状态更新的逻辑
-            iotService.handleDeviceStates(sessionId, states);
+            iotService.handleDeviceStates(sessionId, message.getStates());
         }
     }
 
-    public void handleGoodbyeMessage(ChatSession session, GoodbyeMessage message) {
+    private void handleGoodbyeMessage(ChatSession session, GoodbyeMessage message) {
         sessionManager.closeSession(session);
+    }
+
+    public void handleMessage(Message msg, String sessionId) {
+        var chatSession = sessionManager.getSession(sessionId);
+        switch (msg) {
+            case ListenMessage m -> handleListenMessage(chatSession, m);
+            case IotMessage m -> handleIotMessage(chatSession, m);
+            case AbortMessage m -> handleAbortMessage(chatSession, m);
+            case GoodbyeMessage m -> handleGoodbyeMessage(chatSession, m);
+            default -> {
+            }
+        }
     }
 }

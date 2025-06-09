@@ -5,10 +5,8 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public final class AbortMessage extends Message {
-    public AbortMessage() {
-        super("abort");
+public final class UnknownMessage extends Message {
+    public UnknownMessage() {
+        super("unknown");
     }
-
-    private String reason;
 }

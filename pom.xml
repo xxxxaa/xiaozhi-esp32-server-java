@@ -72,6 +72,7 @@
             <version>1.18.32</version>
             <scope>provided</scope>
         </dependency>
+
         <!--
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -282,6 +283,7 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <compilerArgs>--enable-preview</compilerArgs>
                 </configuration>
             </plugin>
             <!-- 添加 Surefire 插件配置 -->

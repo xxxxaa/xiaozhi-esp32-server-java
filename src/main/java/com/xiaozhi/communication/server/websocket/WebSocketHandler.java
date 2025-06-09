@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 public class WebSocketHandler extends AbstractWebSocketHandler {
@@ -83,25 +84,21 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
                 device = deviceService.selectDeviceById(deviceId);
             }
         }
-        if (device.getModelId() == null) {
-            // 设备未绑定，处理未绑定设备的消息
-            device = new SysDevice();
-            device.setDeviceId(deviceId);
-            messageHandler.handleUnboundDevice(sessionId, device);
-        } else {
-            sessionManager.registerDevice(sessionId, device);
-        }
-        // 首先尝试解析JSON消息
+
         try {
             var msg = JsonUtil.fromJson(payload, Message.class);
-            var chatSession = sessionManager.getSession(sessionId);
-            switch (msg) {
-                case HelloMessage m -> handleHelloMessage(session, m);
-                case ListenMessage m -> messageHandler.handleListenMessage(chatSession, m);
-                // case IotMessage m -> messageHandler.handleIotMessage(chatSession, m);
-                case IotMessage m -> messageHandler.handleIotMessage(chatSession, JsonUtil.OBJECT_MAPPER.readTree(payload));
-                case AbortMessage m -> messageHandler.handleAbortMessage(chatSession, m);
-                case GoodbyeMessage m -> messageHandler.handleGoodbyeMessage(chatSession, m);
+            if (Objects.requireNonNull(msg) instanceof HelloMessage m) {
+                handleHelloMessage(session, m);
+            } else {
+                if (device.getModelId() == null) {
+                    // 设备未绑定，处理未绑定设备的消息
+                    device = new SysDevice();
+                    device.setDeviceId(deviceId);
+                    messageHandler.handleUnboundDevice(sessionId, device);
+                } else {
+                    sessionManager.registerDevice(sessionId, device);
+                }
+                messageHandler.handleMessage(msg, sessionId);
             }
         } catch (Exception e) {
             logger.error("handleTextMessage处理失败", e);

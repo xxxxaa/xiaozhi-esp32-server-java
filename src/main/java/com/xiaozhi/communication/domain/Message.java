@@ -17,10 +17,15 @@ import javax.validation.constraints.NotNull;
         @JsonSubTypes.Type(value = ListenMessage.class, name = "listen"),
         @JsonSubTypes.Type(value = IotMessage.class, name = "iot"),
         @JsonSubTypes.Type(value = AbortMessage.class, name = "abort"),
-        @JsonSubTypes.Type(value = GoodbyeMessage.class, name = "goodbye")
+        @JsonSubTypes.Type(value = GoodbyeMessage.class, name = "goodbye"),
+        @JsonSubTypes.Type(value = UnknownMessage.class, name = "unknown")
 })
 public sealed abstract class Message
-        permits AbortMessage, GoodbyeMessage, HelloMessage, IotMessage, ListenMessage {
+        permits AbortMessage, GoodbyeMessage, HelloMessage, IotMessage, ListenMessage, UnknownMessage {
+
+    public Message() {
+        this.type = "unknown";
+    }
 
     public Message(String type) {
         this.type = type;

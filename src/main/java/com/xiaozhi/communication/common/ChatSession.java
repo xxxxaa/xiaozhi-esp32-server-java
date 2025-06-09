@@ -1,6 +1,6 @@
 package com.xiaozhi.communication.common;
 
-import com.xiaozhi.dialogue.iot.IotDescriptor;
+import com.xiaozhi.communication.domain.IotDescriptor;
 import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
