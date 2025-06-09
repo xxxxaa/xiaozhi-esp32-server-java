@@ -1,6 +1,5 @@
 package com.xiaozhi.dialogue.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.communication.common.SessionManager;
@@ -13,7 +12,6 @@ import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
-import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.stereotype.Service;
@@ -53,7 +51,7 @@ public class IotService {
      * @param sessionId 会话ID
      * @param states    iot状体消息内容
      */
-    public void handleDeviceStates(String sessionId, List<IotMessage.IotState> states) {
+    public void handleDeviceStates(String sessionId, List<IotState> states) {
 
         for (var state : states) {
             var iotDescriptor = sessionManager.getIotDescriptor(sessionId, state.getName());

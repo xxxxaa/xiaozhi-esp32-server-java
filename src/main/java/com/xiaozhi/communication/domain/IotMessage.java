@@ -1,7 +1,6 @@
 package com.xiaozhi.communication.domain;
 
 import java.util.List;
-import java.util.Map;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,10 +16,4 @@ public final class IotMessage extends Message {
     private String sessionId;
     private List<IotState> states;
     private List<IotDescriptor> descriptors;
-
-    @Data
-    public static class IotState {
-        private String name;
-        private Map<String, Object> state;
-    }
 }
