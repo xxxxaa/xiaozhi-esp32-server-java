@@ -77,7 +77,8 @@ export const configTypeMap = {
     typeOptions: [
       { label: 'Tencent', value: 'tencent', key: '0' },
       { label: 'Aliyun', value: 'aliyun', key: '1' },
-      { label: 'Xfyun', value: 'xfyun', key: '2'}
+      { label: 'Xfyun', value: 'xfyun', key: '2'},
+      { label: 'FunASR', value: 'funasr', key: '3' }
     ],
     typeFields: {
       tencent: [
@@ -86,14 +87,15 @@ export const configTypeMap = {
         { name: 'apiSecret', label: 'Secret Key', required: true, span: 12 },
       ],
       aliyun: [
-        { name: 'apiKey', label: 'App Key', required: true, span: 12 },
-        { name: 'appId', label: 'Access Key Id', required: true, span: 12 },
-        { name: 'apiSecret', label: 'Access Key Secret', required: true, span: 12 }
+        { name: 'apiKey', label: 'App Key', required: true, span: 12 }
       ],
       xfyun: [
         { name: 'appId', label: 'App Id', required: true, span: 12 },
         { name: 'apiSecret', label: 'Api Secret', required: true, span: 12 },
         { name: 'apiKey', label: 'Api Key', required: true, span: 12 }
+      ],
+      funasr: [
+        { name: 'apiUrl', label: 'Websocket URL', required: true, span: 12, defaultUrl:"ws://127.0.0.1:10095" }
       ]
     }
   },
