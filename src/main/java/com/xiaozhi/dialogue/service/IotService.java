@@ -1,13 +1,9 @@
 package com.xiaozhi.dialogue.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.communication.common.SessionManager;
-import com.xiaozhi.dialogue.iot.IotDescriptor;
-import com.xiaozhi.dialogue.iot.IotMethod;
-import com.xiaozhi.dialogue.iot.IotMethodParameter;
-import com.xiaozhi.dialogue.iot.IotProperty;
+import com.xiaozhi.communication.domain.*;
 import com.xiaozhi.dialogue.llm.tool.ToolCallStringResultConverter;
 import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
 import com.xiaozhi.utils.JsonUtil;
@@ -16,15 +12,11 @@ import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
-import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Iot服务 - 负责iot处理和WebSocket发送
@@ -43,30 +35,13 @@ public class IotService {
     /**
      * 处理iot设备描述信息，形成function_call，注册进sessionManager，用于后续的llm调用及设备调用
      *
-     * @param sessionId 会话ID
-     * @param descriptors  iot设备描述消息内容
+     * @param sessionId   会话ID
+     * @param descriptors iot设备描述消息内容
      */
-    public void handleDeviceDescriptors(String sessionId, JsonNode descriptors) {
-        Iterator<JsonNode> iotDescriptorIterator = descriptors.elements();
-        while (iotDescriptorIterator.hasNext()) {
-            JsonNode iotDescriptorJson = iotDescriptorIterator.next();
-
-            String iotName = iotDescriptorJson.path("name").asText();
-            String description = iotDescriptorJson.path("description").asText();
-            JsonNode properties = iotDescriptorJson.path("properties");
-            JsonNode methods = iotDescriptorJson.path("methods");
-            if(properties.isMissingNode() && methods.isMissingNode()) {
-                return;
-            }
-            // 记录iot设备描述信息
-            IotDescriptor iotDescriptor = new IotDescriptor(
-                    iotName,
-                    description,
-                    properties,
-                    methods
-            );
-            sessionManager.registerIot(sessionId, iotDescriptor);
-            registerFunctionTools(sessionId, iotDescriptor);
+    public void handleDeviceDescriptors(String sessionId, List<IotDescriptor> descriptors) {
+        for (var descriptor : descriptors) {
+            sessionManager.registerIot(sessionId, descriptor);
+            registerFunctionTools(sessionId, descriptor);
         }
     }
 
@@ -74,39 +49,26 @@ public class IotService {
      * 处理iot设备状态变更信息，可用于更新设备状态或进行其他操作
      *
      * @param sessionId 会话ID
-     * @param states  iot状体消息内容
+     * @param states    iot状体消息内容
      */
-    public void handleDeviceStates(String sessionId, JsonNode states) {
-        Iterator<JsonNode> iotStateIterator = states.elements();
+    public void handleDeviceStates(String sessionId, List<IotState> states) {
 
-        while (iotStateIterator.hasNext()) {
-            JsonNode iotState = iotStateIterator.next();
-
-            String iotName = iotState.path("name").asText();
-            IotDescriptor iotDescriptor = sessionManager.getIotDescriptor(sessionId, iotName);
+        for (var state : states) {
+            var iotDescriptor = sessionManager.getIotDescriptor(sessionId, state.getName());
             if (iotDescriptor == null) {
-                logger.error("[{}] - SessionId: {} 未找到设备: {} 的描述信息", TAG, sessionId, iotName);
+                logger.error("[{}] - SessionId: {} 未找到设备: {} 的描述信息", TAG, sessionId, state.getName());
                 continue;
             }
-            JsonNode iotStateValues = iotState.path("state");
-            Iterator<String> stateIterator = iotStateValues.fieldNames();
-            while (stateIterator.hasNext()) {
-                String propertyName = stateIterator.next();
-                //获取新的属性值
-                JsonNode propertyValue = iotStateValues.path(propertyName);
 
-                IotProperty property = iotDescriptor.getProperties().get(propertyName);
+            for (var stateProp : state.getState().entrySet()) {
+                var propName = stateProp.getKey();
+                var propValue = stateProp.getValue();
+                var property = iotDescriptor.getProperties().get(propName);
                 if (property != null) {
-                    // 类型检查
-                    String newValueType = propertyValue.getNodeType().toString();
-                    if (!property.getType().equalsIgnoreCase(newValueType)) {
-                        logger.error("[{}] - SessionId: {} handleDeviceStates 属性: {} 的值类型不匹配, 注册类型: {}, 入参类型: {}", TAG, sessionId, propertyName, property.getType(), newValueType);
-                        continue;
-                    }
-                    property.setValue(propertyValue);
-                    logger.info("[{}] - SessionId: {} handleDeviceStates 物联网状态更新: {} , {} = {}", TAG, sessionId, iotName, propertyName, propertyValue);
-                }else{
-                    logger.error("[{}] - SessionId: {} handleDeviceStates 未找到设备 {} 的属性 {}", TAG, sessionId, iotName, propertyName);
+                    property.setValue(propValue);
+                    logger.info("[{}] - SessionId: {} handleDeviceStates 物联网状态更新: {} , {} = {}", TAG, sessionId, state.getName(), propName, propValue);
+                } else {
+                    logger.error("[{}] - SessionId: {} handleDeviceStates 未找到设备 {} 的属性 {}", TAG, sessionId, state.getName(), propName);
                 }
             }
         }
@@ -115,8 +77,8 @@ public class IotService {
     /**
      * 获取物联网状态
      *
-     * @param sessionId 会话ID
-     * @param iotName iot设备名称
+     * @param sessionId    会话ID
+     * @param iotName      iot设备名称
      * @param propertyName 属性名称
      * @return 属性值，如未找到则返回null
      */
@@ -127,10 +89,10 @@ public class IotService {
             IotProperty property = iotDescriptor.getProperties().get(propertyName);
             if (property != null) {
                 return property.getValue();
-            }else{
+            } else {
                 logger.error("[{}] - SessionId: {} getIotStatus 未找到设备 {} 的属性 {}", TAG, sessionId, iotName, propertyName);
             }
-        }else{
+        } else {
             logger.error("[{}] - SessionId: {} getIotStatus 未找到设备 {}", TAG, sessionId, iotName);
         }
         return null;
@@ -139,10 +101,10 @@ public class IotService {
     /**
      * 设置物联网状态
      *
-     * @param sessionId 会话ID
-     * @param iotName iot设备名称
+     * @param sessionId    会话ID
+     * @param iotName      iot设备名称
      * @param propertyName 属性名称
-     * @param value 属性值
+     * @param value        属性值
      * @return 是否设置成功
      */
     public boolean setIotStatus(String sessionId, String iotName, String propertyName, Object value) {
@@ -153,13 +115,13 @@ public class IotService {
             if (property != null) {
                 // 类型检查
                 boolean typeCheck = false;
-                if(property.getType().equalsIgnoreCase(JsonNodeType.OBJECT.name())){
+                if (property.getType().equalsIgnoreCase(JsonNodeType.OBJECT.name())) {
                     typeCheck = true;
-                }else if(value instanceof Number && property.getType().equalsIgnoreCase(JsonNodeType.NUMBER.name())){
+                } else if (value instanceof Number && property.getType().equalsIgnoreCase(JsonNodeType.NUMBER.name())) {
                     typeCheck = true;
-                }else if(value instanceof String && property.getType().equalsIgnoreCase(JsonNodeType.STRING.name())){
+                } else if (value instanceof String && property.getType().equalsIgnoreCase(JsonNodeType.STRING.name())) {
                     typeCheck = true;
-                }else if(value instanceof Boolean && property.getType().equalsIgnoreCase(JsonNodeType.BOOLEAN.name())){
+                } else if (value instanceof Boolean && property.getType().equalsIgnoreCase(JsonNodeType.BOOLEAN.name())) {
                     typeCheck = true;
                 }
                 if (!typeCheck) {
@@ -180,8 +142,8 @@ public class IotService {
     /**
      * 发送iot消息到设备
      *
-     * @param sessionId 会话ID
-     * @param iotName   iot设备名称
+     * @param sessionId  会话ID
+     * @param iotName    iot设备名称
      * @param methodName 方法名称
      * @param parameters 方法参数
      */
@@ -191,14 +153,14 @@ public class IotService {
                     iotName, methodName, JsonUtil.toJson(parameters));
             ChatSession session = sessionManager.getSession(sessionId);
             IotDescriptor iotDescriptor = sessionManager.getIotDescriptor(sessionId, iotName);
-            if(iotDescriptor != null && iotDescriptor.getMethods().containsKey(methodName)){
+            if (iotDescriptor != null && iotDescriptor.getMethods().containsKey(methodName)) {
                 Map<String, Object> command = new HashMap<>();
                 command.put("name", iotName);
                 command.put("method", methodName);
                 command.put("parameters", parameters);
                 messageService.sendIotCommandMessage(session, Collections.singletonList(command));
                 return true;
-            }else{
+            } else {
                 logger.error("[{}] - SessionId: {}, {} method not found: {}", TAG, sessionId, iotName, methodName);
             }
         } catch (Exception e) {
@@ -206,11 +168,12 @@ public class IotService {
         }
         return false;
     }
+
     /**
      * 注册iot设备的函数到FunctionHolder
      *
-     * @param sessionId 会话ID
-     * @param iotDescriptor  session绑定的FunctionHolder
+     * @param sessionId     会话ID
+     * @param iotDescriptor session绑定的FunctionHolder
      */
     private void registerFunctionTools(String sessionId, IotDescriptor iotDescriptor) {
         ToolsSessionHolder toolsSessionHolder = sessionManager.getFunctionSessionHolder(sessionId);
@@ -221,18 +184,19 @@ public class IotService {
     /**
      * 注册iot设备的属性的查询方法到FunctionHolder
      *
-     * @param sessionId 会话ID
+     * @param sessionId          会话ID
      * @param toolsSessionHolder session绑定的FunctionHolder
-     * @param iotDescriptor  iot信息
+     * @param iotDescriptor      iot信息
      */
     private void registerPropertiesFunctionTools(String sessionId, ToolsSessionHolder toolsSessionHolder, IotDescriptor iotDescriptor) {
         //遍历properties，生成FunctionCallTool
-        String iotName = iotDescriptor.getName();
-        for (IotProperty propInfo : iotDescriptor.getProperties().values()) {
-            String propName = propInfo.getName();
-            // 创建函数名称，格式：get_{属性名称}
-            String funcName = "iot_get_" + iotName.toLowerCase() + "_" + propName.toLowerCase();
-            ToolCallback toolCallback = FunctionToolCallback
+        var iotName = iotDescriptor.getName();
+        for (var entry : iotDescriptor.getProperties().entrySet()) {
+            var propName = entry.getKey();
+            var propInfo = entry.getValue();
+            // 创建函数名称，格式：iot_get_{IoTName}_{PropName}
+            var funcName = "iot_get_" + iotName.toLowerCase() + "_" + propName.toLowerCase();
+            var toolCallback = FunctionToolCallback
                     .builder(funcName, (Map<String, String> params, ToolContext toolContext) -> {
                         Object value = getIotStatus(sessionId, iotName, propName);
                         if (value != null) {
@@ -240,10 +204,10 @@ public class IotService {
                             String response_success = params.get("response_success");
                             //如果有success参数，并且有{value}占位符，用相关参数替换
                             if (response_success != null) {
-                                if(response_success.contains("{value}")){
+                                if (response_success.contains("{value}")) {
                                     response_success = response_success.replace("{value}", String.valueOf(value));
                                 }
-                            }else{
+                            } else {
                                 response_success = "当前的设置为" + value;
                             }
                             return response_success;
@@ -254,17 +218,17 @@ public class IotService {
                     .toolMetadata(ToolMetadata.builder().returnDirect(true).build())
                     .description("查询" + iotName + "的" + propInfo.getDescription())
                     .inputSchema("""
-                        {
-                            "type": "object",
-                            "properties": {
-                                "response_success": {
-                                    "type": "string",
-                                    "description": "查询成功时的友好回复，必须使用{value}作为占位符表示查询到的值"
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "response_success": {
+                                            "type": "string",
+                                            "description": "查询成功时的友好回复，必须使用{value}作为占位符表示查询到的值"
+                                        }
+                                    },
+                                    "required": ["response_success"]
                                 }
-                            },
-                            "required": ["response_success"]
-                        }
-                    """)
+                            """)
                     .inputType(Map.class)
                     .toolCallResultConverter(ToolCallStringResultConverter.INSTANCE)
                     .build();
@@ -277,24 +241,28 @@ public class IotService {
     /**
      * 注册iot设备的可调用方法到FunctionHolder
      *
-     * @param sessionId 会话ID
+     * @param sessionId          会话ID
      * @param toolsSessionHolder FunctionHolder实例
-     * @param iotDescriptor  iot信息
+     * @param iotDescriptor      iot信息
      */
     private void registerMethodFunctionTools(String sessionId, ToolsSessionHolder toolsSessionHolder, IotDescriptor iotDescriptor) {
         // 遍历methods，生成FunctionCallTool
-        String iotName = iotDescriptor.getName();
+        var iotName = iotDescriptor.getName();
 
-        for (IotMethod iotMethod : iotDescriptor.getMethods().values()) {
-            // 创建函数名称，格式：iot_{iotName}_{methodName}
-            String funcName = "iot_" + iotMethod.getName();
+        for (var entry : iotDescriptor.getMethods().entrySet()) {
+            var methodName = entry.getKey();
+            var method = entry.getValue();
+            // 创建函数名称，格式：iot_{IoTName}_{MethodName}
+            var funcName = "iot_" + iotName + "_" + methodName;
 
             Map<String, String> valueMap = new HashMap<>();
             //获取iotMethod方法参数，添加到函数参数中。 iot方法都是单参数
-            for (IotMethodParameter iotMethodParameter : iotMethod.getParameters().values()) {
-                valueMap.put("paramName", iotMethodParameter.getName());
-                valueMap.put("paramType", iotMethodParameter.getType());
-                valueMap.put("paramDescription", iotMethodParameter.getDescription());
+            for (var paramEntry : method.getParameters().entrySet()) {
+                var paramName = paramEntry.getKey();
+                var paramInfo = paramEntry.getValue();
+                valueMap.put("paramName", paramName);
+                valueMap.put("paramType", paramInfo.getType());
+                valueMap.put("paramDescription", paramInfo.getDescription());
             }
             String inputSchema = StringSubstitutor.replace("""
                         {
@@ -313,10 +281,10 @@ public class IotService {
                         }
                     """, valueMap);
 
-            ToolCallback toolCallback = FunctionToolCallback
+            var toolCallback = FunctionToolCallback
                     .builder(funcName, (Map<String, Object> params, ToolContext toolContext) -> {
                         String actFuncName = funcName.substring(4); // 原始方法调用，去掉iot_前缀
-                        String response_success = (String)params.get("response_success");
+                        String response_success = (String) params.get("response_success");
                         params.remove("response_success"); // 移除response_success参数，避免传递给设备
                         boolean result = sendIotMessage(sessionId, iotName, actFuncName, params);
                         if (result) {
@@ -330,7 +298,7 @@ public class IotService {
                         }
                     })
                     .toolMetadata(ToolMetadata.builder().returnDirect(true).build())
-                    .description(iotDescriptor.getDescription() + " - " + iotMethod.getDescription())
+                    .description(iotDescriptor.getDescription() + " - " + method.getDescription())
                     .inputSchema(inputSchema)
                     .inputType(Map.class)
                     .toolCallResultConverter(ToolCallStringResultConverter.INSTANCE)
