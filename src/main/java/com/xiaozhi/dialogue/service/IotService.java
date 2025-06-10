@@ -3,7 +3,9 @@ package com.xiaozhi.dialogue.service;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.communication.common.SessionManager;
-import com.xiaozhi.communication.domain.*;
+import com.xiaozhi.communication.domain.iot.IotDescriptor;
+import com.xiaozhi.communication.domain.iot.IotProperty;
+import com.xiaozhi.communication.domain.iot.IotState;
 import com.xiaozhi.dialogue.llm.tool.ToolCallStringResultConverter;
 import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
 import com.xiaozhi.utils.JsonUtil;
@@ -16,7 +18,10 @@ import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Iot服务 - 负责iot处理和WebSocket发送
@@ -39,8 +44,9 @@ public class IotService {
      * @param descriptors iot设备描述消息内容
      */
     public void handleDeviceDescriptors(String sessionId, List<IotDescriptor> descriptors) {
+        ChatSession chatSession = sessionManager.getSession(sessionId);
         for (var descriptor : descriptors) {
-            sessionManager.registerIot(sessionId, descriptor);
+            chatSession.getIotDescriptors().put(descriptor.getName(), descriptor);
             registerFunctionTools(sessionId, descriptor);
         }
     }
@@ -52,14 +58,13 @@ public class IotService {
      * @param states    iot状体消息内容
      */
     public void handleDeviceStates(String sessionId, List<IotState> states) {
-
+        ChatSession chatSession = sessionManager.getSession(sessionId);
         for (var state : states) {
-            var iotDescriptor = sessionManager.getIotDescriptor(sessionId, state.getName());
+            var iotDescriptor = chatSession.getIotDescriptors().get(state.getName());
             if (iotDescriptor == null) {
                 logger.error("[{}] - SessionId: {} 未找到设备: {} 的描述信息", TAG, sessionId, state.getName());
                 continue;
             }
-
             for (var stateProp : state.getState().entrySet()) {
                 var propName = stateProp.getKey();
                 var propValue = stateProp.getValue();
@@ -83,8 +88,8 @@ public class IotService {
      * @return 属性值，如未找到则返回null
      */
     public Object getIotStatus(String sessionId, String iotName, String propertyName) {
-        IotDescriptor iotDescriptor = sessionManager.getIotDescriptor(sessionId, iotName);
-
+        ChatSession chatSession = sessionManager.getSession(sessionId);
+        var iotDescriptor = chatSession.getIotDescriptors().get(iotName);
         if (iotDescriptor != null) {
             IotProperty property = iotDescriptor.getProperties().get(propertyName);
             if (property != null) {
@@ -108,8 +113,8 @@ public class IotService {
      * @return 是否设置成功
      */
     public boolean setIotStatus(String sessionId, String iotName, String propertyName, Object value) {
-        IotDescriptor iotDescriptor = sessionManager.getIotDescriptor(sessionId, iotName);
-
+        ChatSession chatSession = sessionManager.getSession(sessionId);
+        var iotDescriptor = chatSession.getIotDescriptors().get(iotName);
         if (iotDescriptor != null) {
             IotProperty property = iotDescriptor.getProperties().get(propertyName);
             if (property != null) {
@@ -151,14 +156,14 @@ public class IotService {
         try {
             logger.info("[{}] - SessionId: {}, message send iotName: {}, methodName: {}, parameters: {}", TAG, sessionId,
                     iotName, methodName, JsonUtil.toJson(parameters));
-            ChatSession session = sessionManager.getSession(sessionId);
-            IotDescriptor iotDescriptor = sessionManager.getIotDescriptor(sessionId, iotName);
+            ChatSession chatSession = sessionManager.getSession(sessionId);
+            IotDescriptor iotDescriptor = chatSession.getIotDescriptors().get(iotName);
             if (iotDescriptor != null && iotDescriptor.getMethods().containsKey(methodName)) {
                 Map<String, Object> command = new HashMap<>();
                 command.put("name", iotName);
                 command.put("method", methodName);
                 command.put("parameters", parameters);
-                messageService.sendIotCommandMessage(session, Collections.singletonList(command));
+                messageService.sendIotCommandMessage(chatSession, Collections.singletonList(command));
                 return true;
             } else {
                 logger.error("[{}] - SessionId: {}, {} method not found: {}", TAG, sessionId, iotName, methodName);

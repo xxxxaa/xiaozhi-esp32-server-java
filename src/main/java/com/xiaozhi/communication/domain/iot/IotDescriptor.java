@@ -1,4 +1,4 @@
-package com.xiaozhi.communication.domain;
+package com.xiaozhi.communication.domain.iot;
 
 import com.xiaozhi.utils.JsonUtil;
 import lombok.Data;

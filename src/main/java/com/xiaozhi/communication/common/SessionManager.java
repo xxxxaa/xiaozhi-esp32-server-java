@@ -1,6 +1,5 @@
 package com.xiaozhi.communication.common;
 
-import com.xiaozhi.communication.domain.IotDescriptor;
 import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
@@ -17,7 +16,6 @@ import reactor.core.publisher.Sinks;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -159,7 +157,7 @@ public class SessionManager {
             logger.info("会话已关闭 - SessionId: {} SessionType: {}", chatSession.getSessionId(), chatSession.getClass().getSimpleName());
         } catch (Exception e) {
             logger.error("清理会话资源时发生错误 - SessionId: {}",
-                chatSession.getSessionId(), e);
+                    chatSession.getSessionId(), e);
         }
     }
 
@@ -176,48 +174,6 @@ public class SessionManager {
             chatSession.setSysDevice(device);
             updateLastActivity(sessionId); // 更新活动时间
             logger.debug("设备配置已注册 - SessionId: {}, DeviceId: {}", sessionId, device.getDeviceId());
-        }
-    }
-
-    /**
-     * 注册设备iot部件描述信息
-     *
-     * @param sessionId 会话ID
-     * @param iotDescriptor iot部件描述信息
-     */
-    public void registerIot(String sessionId, IotDescriptor iotDescriptor) {
-        ChatSession chatSession = sessions.get(sessionId);
-        if(chatSession != null){
-            // 先检查是否已存在该sessionId的配置
-            Map<String, IotDescriptor> existingIotDescriptors = chatSession.getIotDescriptors();
-            existingIotDescriptors.put(iotDescriptor.getName(), iotDescriptor);
-            logger.debug("设备iot部件已注册 - SessionId: {}, Iot: {}", sessionId, iotDescriptor.getName());
-        }
-    }
-
-    /**
-     * 注册会话的function_call
-     *
-     * @param sessionId 会话ID
-     * @param toolsSessionHolder function_call工具
-     */
-    public void registerFunctionSessionHolder(String sessionId, ToolsSessionHolder toolsSessionHolder) {
-        ChatSession chatSession = sessions.get(sessionId);
-        if(chatSession != null){
-            chatSession.setFunctionSessionHolder(toolsSessionHolder);
-        }
-    }
-
-    /**
-     * 注册设备iot部件描述信息
-     *
-     * @param sessionId 会话ID
-     * @param roles 可用角色列表
-     */
-    public void registerRoles(String sessionId, List<SysRole> roles) {
-        ChatSession chatSession = sessions.get(sessionId);
-        if(chatSession != null){
-            chatSession.setSysRoleList(roles);
         }
     }
 
@@ -305,38 +261,6 @@ public class SessionManager {
         ChatSession chatSession = sessions.get(sessionId);
         if (chatSession != null) {
             return chatSession.getSysDevice();
-        }
-        return null;
-    }
-
-    /**
-     * 获取Iot部件描述信息
-     *
-     * @param sessionId 会话ID
-     * @return 设备配置
-     */
-    public Map<String, IotDescriptor> getAllIotDescriptor(String sessionId) {
-        ChatSession chatSession = sessions.get(sessionId);
-        if (chatSession != null) {
-            return chatSession.getIotDescriptors();
-        }
-        return null;
-    }
-
-    /**
-     * 获取Iot部件描述信息
-     *
-     * @param sessionId 会话ID
-     * @param iotName IoT名称
-     * @return 设备配置
-     */
-    public IotDescriptor getIotDescriptor(String sessionId, String iotName) {
-        ChatSession chatSession = sessions.get(sessionId);
-        if (chatSession != null) {
-            Map<String, IotDescriptor> descriptors = chatSession.getIotDescriptors();
-            if (descriptors != null) {
-                return descriptors.get(iotName);
-            }
         }
         return null;
     }
