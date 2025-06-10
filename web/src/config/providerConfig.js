@@ -108,9 +108,7 @@ export const configTypeMap = {
     ],
     typeFields: {
       aliyun: [
-        { name: 'apiKey', label: 'API Key', required: true, span: 12 },
-        { name: 'appId', label: 'Access Key Id', required: true, span: 12 },
-        { name: 'apiSecret', label: 'Access Key Secret', required: true, span: 12 }
+        { name: 'apiKey', label: 'API Key', required: true, span: 12 }
       ],
       volcengine: [
         { name: 'appId', label: 'App Id', required: true, span: 12 },
