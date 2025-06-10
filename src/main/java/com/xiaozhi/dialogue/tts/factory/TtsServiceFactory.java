@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,8 +44,7 @@ public class TtsServiceFactory {
     }
 
     private TtsService getTtsService(String voiceName) {
-        TtsService ttsService = new EdgeTtsService(voiceName, OUT_PUT_PATH);
-        return ttsService;
+        return getTtsService(null, voiceName);
     }
 
     private String createCacheKey(SysConfig config,String provider){
@@ -56,8 +56,7 @@ public class TtsServiceFactory {
             Integer configId = config.getConfigId();
             configIdStr = configId != null ? String.valueOf(configId) : "default";
         }
-        String cacheKey = provider + ":" + configIdStr;
-        return cacheKey;
+        return provider + ":" + configIdStr;
     }
 
     /**
@@ -107,8 +106,10 @@ public class TtsServiceFactory {
      * 根据配置创建API类型的TTS服务
      */
     private TtsService createApiService(SysConfig config, String voiceName, String outputPath) {
-        String provider = config.getProvider();
+        // Make sure output dir exists
+        ensureOutputPath(outputPath);
 
+        var provider = config.getProvider();
         // 如果是Edge，直接返回Edge服务
         if (DEFAULT_PROVIDER.equals(provider)) {
             return new EdgeTtsService(voiceName, outputPath);
@@ -118,11 +119,9 @@ public class TtsServiceFactory {
             return new VolcengineTtsService(config, voiceName, outputPath);
         } else if ("xfyun".equals(provider)) {
             return new XfyunTtsService(config, voiceName, outputPath);
-        }/*
-           * else if ("tencent".equals(provider)) {
-           * return new TencentTtsService(config, voiceName, outputPath);
-           * }
-           */
+        } else if ("minimax".equals(provider)) {
+            return new MiniMaxTtsService(config, voiceName, outputPath);
+        }
 
         logger.warn("不支持的TTS服务提供商: {}", provider);
         return null;
@@ -136,4 +135,8 @@ public class TtsServiceFactory {
         serviceCache.remove(cacheKey);
     }
 
+    private void ensureOutputPath(String outputPath) {
+        File dir = new File(outputPath);
+        if (!dir.exists()) dir.mkdirs();
+    }
 }
