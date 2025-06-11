@@ -210,7 +210,7 @@ public class MessageHandler {
                 if (device.getDeviceName() != null && device.getModelId() == null) {
                     String message = "设备未配置对话模型，请到配置页面完成配置后开始对话";
 
-                    String audioFilePath = ttsService.getTtsService().textToSpeech(message);
+                    String audioFilePath = ttsService.getDefaultTtsService().textToSpeech(message);
                     audioService.sendAudioMessage(chatSession, new DialogueService.Sentence(message, audioFilePath), true,
                             true);
 
@@ -230,7 +230,7 @@ public class MessageHandler {
                 String audioFilePath;
                 if (!StringUtils.hasText(codeResult.getAudioPath())) {
                     String codeMessage = "请到设备管理页面添加设备，输入验证码" + codeResult.getCode();
-                    audioFilePath = ttsService.getTtsService().textToSpeech(codeMessage);
+                    audioFilePath = ttsService.getDefaultTtsService().textToSpeech(codeMessage);
                     codeResult.setDeviceId(deviceId);
                     codeResult.setSessionId(sessionId);
                     codeResult.setAudioPath(audioFilePath);

@@ -22,13 +22,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 public class AliyunTtsService implements TtsService {
     private static final Logger logger = LoggerFactory.getLogger(AliyunTtsService.class);
@@ -59,23 +57,8 @@ public class AliyunTtsService implements TtsService {
     }
 
     @Override
-    public boolean isSupportStreamTts() {
-        return false;
-    }
-
-    @Override
-    public String getAudioFileName() {
-        String uuid = UUID.randomUUID().toString().replace("-", "");
-        return uuid + ".wav";
-    }
-
-    @Override
     public String textToSpeech(String text) throws Exception {
         try {
-            File outputDir = new File(outputPath);
-            if (!outputDir.exists()) {
-                outputDir.mkdirs();
-            }
             if (voiceName.contains("sambert")) {
                 return ttsSambert(text);
             } else if (getVoiceByName(voiceName) != null) {
@@ -394,9 +377,4 @@ public class AliyunTtsService implements TtsService {
         return StrUtil.EMPTY;
     }
 
-    @Override
-    public void streamTextToSpeech(String text, Consumer<byte[]> audioDataConsumer) throws Exception {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'streamTextToSpeech'");
-    }
 }

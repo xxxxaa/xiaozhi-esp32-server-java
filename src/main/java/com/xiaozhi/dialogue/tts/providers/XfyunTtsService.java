@@ -13,10 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 public class XfyunTtsService implements TtsService {
     private static final Logger logger = LoggerFactory.getLogger(XfyunTtsService.class);
@@ -50,14 +48,8 @@ public class XfyunTtsService implements TtsService {
     }
 
     @Override
-    public boolean isSupportStreamTts() {
-        return false;
-    }
-
-    @Override
-    public String getAudioFileName() {
-        String uuid = UUID.randomUUID().toString().replace("-", "");
-        return uuid + ".mp3";
+    public String audioFormat() {
+        return "mp3";
     }
 
     @Override
@@ -137,12 +129,6 @@ public class XfyunTtsService implements TtsService {
             logger.warn("讯飞云识别超时");
         }
         return true;
-    }
-
-    @Override
-    public void streamTextToSpeech(String text, Consumer<byte[]> audioDataConsumer) throws Exception {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'streamTextToSpeech'");
     }
 
 }

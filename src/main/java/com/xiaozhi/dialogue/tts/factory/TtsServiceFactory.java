@@ -8,8 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 
+import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,98 +34,49 @@ public class TtsServiceFactory {
      * 获取默认TTS服务
      */
     public TtsService getDefaultTtsService() {
-        // 如果缓存中没有默认服务，则创建一个
-        return getTtsService(DEFAULT_VOICE);
+        var config = new SysConfig().setProvider(DEFAULT_PROVIDER);
+        return getTtsService(config, TtsServiceFactory.DEFAULT_VOICE);
     }
 
-    public TtsService getTtsService() {
-        return getTtsService(DEFAULT_VOICE);
-    }
-
-    private TtsService getTtsService(String voiceName) {
-        TtsService ttsService = new EdgeTtsService(voiceName, OUT_PUT_PATH);
-        return ttsService;
-    }
-
-    private String createCacheKey(SysConfig config,String provider){
-        // 对于API服务，使用"provider:configId"作为缓存键，确保每个配置使用独立的服务实例
-        String configIdStr;
-        if (config == null) {
-            configIdStr = "default";
-        }else{
-            Integer configId = config.getConfigId();
-            configIdStr = configId != null ? String.valueOf(configId) : "default";
-        }
-        String cacheKey = provider + ":" + configIdStr;
-        return cacheKey;
+    // 对于API服务，使用"provider:configId"作为缓存键，确保每个配置使用独立的服务实例
+    private String createCacheKey(SysConfig config, String provider) {
+        var configId = config.getConfigId();
+        var configIdStr = configId != null ? String.valueOf(configId) : "default";
+        return provider + ":" + configIdStr;
     }
 
     /**
      * 根据配置获取TTS服务
      */
     public TtsService getTtsService(SysConfig config, String voiceName) {
-
-        String provider;
         // 如果提供商为空，则使用默认提供商
-        if (ObjectUtils.isEmpty(config)) {
-            provider = DEFAULT_PROVIDER;
-        } else {
-            provider = config.getProvider();
-        }
-        String cacheKey = createCacheKey(config,provider);
+        var provider = ObjectUtils.isEmpty(config) ? DEFAULT_PROVIDER : config.getProvider();
+        var cacheKey = createCacheKey(config, provider);
+
         // 检查是否已有该配置的服务实例
         if (serviceCache.containsKey(cacheKey)) {
             return serviceCache.get(cacheKey);
-        }else{
-            // 如果是默认提供商且尚未初始化，则初始化
-            if (DEFAULT_PROVIDER.equals(provider)) {
-                if(StringUtils.hasText(voiceName)){
-                    TtsService ttsService = getTtsService(voiceName);
-                    serviceCache.put(cacheKey, ttsService);
-                    return ttsService;
-                }else{
-                    TtsService ttsService = getTtsService();
-                    serviceCache.put(cacheKey, ttsService);
-                    return ttsService;
-                }
-            }
-            // 创建新的服务实例
-            try {
-                TtsService service;
-                // 创建其他API服务
-                service = createApiService(config, voiceName, OUT_PUT_PATH);
-                serviceCache.put(cacheKey, service);
-                return service;
-            } catch (Exception e) {
-                logger.error("创建{}服务失败", provider, e);
-                return getDefaultTtsService(); // 失败时返回默认服务
-            }
         }
+
+        var service = createApiService(config, voiceName, OUT_PUT_PATH);
+        serviceCache.put(cacheKey, service);
+        return service;
     }
 
     /**
      * 根据配置创建API类型的TTS服务
      */
     private TtsService createApiService(SysConfig config, String voiceName, String outputPath) {
-        String provider = config.getProvider();
+        // Make sure output dir exists
+        ensureOutputPath(outputPath);
 
-        // 如果是Edge，直接返回Edge服务
-        if (DEFAULT_PROVIDER.equals(provider)) {
-            return new EdgeTtsService(voiceName, outputPath);
-        } else if ("aliyun".equals(provider)) {
-            return new AliyunTtsService(config, voiceName, outputPath);
-        } else if ("volcengine".equals(provider)) {
-            return new VolcengineTtsService(config, voiceName, outputPath);
-        } else if ("xfyun".equals(provider)) {
-            return new XfyunTtsService(config, voiceName, outputPath);
-        }/*
-           * else if ("tencent".equals(provider)) {
-           * return new TencentTtsService(config, voiceName, outputPath);
-           * }
-           */
-
-        logger.warn("不支持的TTS服务提供商: {}", provider);
-        return null;
+        return switch (config.getProvider()) {
+            case "aliyun" -> new AliyunTtsService(config, voiceName, outputPath);
+            case "volcengine" -> new VolcengineTtsService(config, voiceName, outputPath);
+            case "xfyun" -> new XfyunTtsService(config, voiceName, outputPath);
+            case "minimax" -> new MiniMaxTtsService(config, voiceName, outputPath);
+            default -> new EdgeTtsService(voiceName, outputPath);
+        };
     }
 
     public void removeCache(SysConfig config) {
@@ -136,4 +87,8 @@ public class TtsServiceFactory {
         serviceCache.remove(cacheKey);
     }
 
+    private void ensureOutputPath(String outputPath) {
+        File dir = new File(outputPath);
+        if (!dir.exists()) dir.mkdirs();
+    }
 }
