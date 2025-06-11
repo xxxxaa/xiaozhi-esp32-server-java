@@ -18,7 +18,7 @@ public class TtsServiceFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(TtsServiceFactory.class);
 
-    // 缓存已初始化的服务：对于API服务，键为"provider:configId"格式；对于本地服务，键为provider名称
+    // 缓存已初始化的服务：键为"provider:configId:voiceName"格式，确保音色变化时创建新实例
     private final Map<String, TtsService> serviceCache = new ConcurrentHashMap<>();
 
     // 语音生成文件保存地址
@@ -38,11 +38,11 @@ public class TtsServiceFactory {
         return getTtsService(config, TtsServiceFactory.DEFAULT_VOICE);
     }
 
-    // 对于API服务，使用"provider:configId"作为缓存键，确保每个配置使用独立的服务实例
-    private String createCacheKey(SysConfig config, String provider) {
+    // 创建缓存键，包含provider、configId和voiceName，确保音色变化时创建新的服务实例
+    private String createCacheKey(SysConfig config, String provider, String voiceName) {
         var configId = config.getConfigId();
         var configIdStr = configId != null ? String.valueOf(configId) : "default";
-        return provider + ":" + configIdStr;
+        return provider + ":" + configIdStr + ":" + voiceName;
     }
 
     /**
@@ -51,7 +51,7 @@ public class TtsServiceFactory {
     public TtsService getTtsService(SysConfig config, String voiceName) {
         // 如果提供商为空，则使用默认提供商
         var provider = ObjectUtils.isEmpty(config) ? DEFAULT_PROVIDER : config.getProvider();
-        var cacheKey = createCacheKey(config, provider);
+        var cacheKey = createCacheKey(config, provider, voiceName);
 
         // 检查是否已有该配置的服务实例
         if (serviceCache.containsKey(cacheKey)) {
@@ -79,13 +79,6 @@ public class TtsServiceFactory {
         };
     }
 
-    public void removeCache(SysConfig config) {
-        // 对于API服务，使用"provider:configId"作为缓存键，确保每个配置使用独立的服务实例
-        Integer configId = config.getConfigId();
-        String provider = config.getProvider();
-        String cacheKey = provider + ":" + (configId != null ? configId : "default");
-        serviceCache.remove(cacheKey);
-    }
 
     private void ensureOutputPath(String outputPath) {
         File dir = new File(outputPath);

@@ -169,12 +169,4 @@ public class SttServiceFactory {
         logger.warn("不支持的STT服务提供商: {}", provider);
         return null;
     }
-
-    public void removeCache(SysConfig config) {
-        // 对于API服务，使用"provider:configId"作为缓存键，确保每个配置使用独立的服务实例
-        Integer configId = config.getConfigId();
-        String provider = config.getProvider();
-        String cacheKey = provider + ":" + (configId != null ? configId : "default");
-        serviceCache.remove(cacheKey);
-    }
 }
