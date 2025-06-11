@@ -374,6 +374,18 @@ public class SessionManager {
     }
 
     /**
+     * 清空缓存记忆
+     * 
+     * @param sessionId
+     */
+    public voic setChatMemory(String sessionId, chatMemory memory) {
+        ChatSession chatSession = sessions.get(sessionId);
+        if (chatSession != null) {
+            chatSession.setChatMemory(memory);
+        }
+    }
+
+    /**
      * 设置流式识别状态
      *
      * @param sessionId   会话ID

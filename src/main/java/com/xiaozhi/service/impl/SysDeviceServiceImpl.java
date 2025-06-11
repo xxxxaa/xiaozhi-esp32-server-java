@@ -225,6 +225,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     @Override
     @Transactional(transactionManager = "transactionManager")
     public int updateNoRefreshCache(SysDevice device) {
+        ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
         if (!ObjectUtils.isEmpty(device.getRoleId())) {
             SysRole role = roleMapper.selectRoleById(device.getRoleId());
             if (role != null) {
@@ -238,6 +239,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
                         message.setDeviceId(device.getDeviceId());
                         // 清空设备聊天记录
                         messageMapper.delete(message);
+                        session.setChatMemory(sesseion.getId(), null);
                     }
                 }
             }
