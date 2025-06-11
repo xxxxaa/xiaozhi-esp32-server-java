@@ -13,14 +13,14 @@ export const configTypeMap = {
       { label: 'Ollama', value: 'ollama', key: '1' },
       { label: 'Spark', value: 'spark', key: '2' },
       { label: 'Zhipu', value: 'zhipu', key: '3' },
-      { label: 'AliYun', value: 'aliyun', key: '4'},
-      { label: 'Doubao', value: 'doubao', key: '5'},
-      { label: 'DeepSeek', value: 'deepseek', key: '6'},
-      { label: 'ChatGLM', value: 'chatglm', key: '7'},
-      { label: 'Gemini', value: 'gemini', key: '8'},
-      { label: 'LMStudio', value: 'lmstudio', key: '9'},
-      { label: 'Fastgpt', value: 'fastgpt', key: '10'},
-      { label: 'Xinference', value: 'xinference', key: '11'},
+      { label: 'AliYun', value: 'aliyun', key: '4' },
+      { label: 'Doubao', value: 'doubao', key: '5' },
+      { label: 'DeepSeek', value: 'deepseek', key: '6' },
+      { label: 'ChatGLM', value: 'chatglm', key: '7' },
+      { label: 'Gemini', value: 'gemini', key: '8' },
+      { label: 'LMStudio', value: 'lmstudio', key: '9' },
+      { label: 'Fastgpt', value: 'fastgpt', key: '10' },
+      { label: 'Xinference', value: 'xinference', key: '11' },
     ],
     // 各类别对应的参数字段定义
     typeFields: {
@@ -29,46 +29,46 @@ export const configTypeMap = {
         { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions' },
       ],
       ollama: [
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/api/chat', defaultUrl:"http://localhost:11434" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/api/chat', defaultUrl: "http://localhost:11434" }
       ],
       spark: [
         { name: 'apiKey', label: 'API Key', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://spark-api-open.xf-yun.com/v1" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://spark-api-open.xf-yun.com/v1" }
       ],
       zhipu: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://open.bigmodel.cn/api/paas" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://open.bigmodel.cn/api/paas" }
       ],
       aliyun: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://dashscope.aliyuncs.com/compatible-mode/v1" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1" }
       ],
       doubao: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://ark.cn-beijing.volces.com/api/v3" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://ark.cn-beijing.volces.com/api/v3" }
       ],
       deepseek: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://api.deepseek.com" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://api.deepseek.com" }
       ],
       chatglm: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://open.bigmodel.cn/api/paas/v4/" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://open.bigmodel.cn/api/paas/v4/" }
       ],
       gemini: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"https://generativelanguage.googleapis.com/v1beta/" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://generativelanguage.googleapis.com/v1beta/" }
       ],
       lmstudio: [
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"http://localhost:1234/v1" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "http://localhost:1234/v1" }
       ],
       fastgpt: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"http://localhost:3000/api/v1" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "http://localhost:3000/api/v1" }
       ],
       xinference: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl:"http://localhost:9997/v1" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "http://localhost:9997/v1" }
       ]
     }
   },
@@ -77,7 +77,7 @@ export const configTypeMap = {
     typeOptions: [
       { label: 'Tencent', value: 'tencent', key: '0' },
       { label: 'Aliyun', value: 'aliyun', key: '1' },
-      { label: 'Xfyun', value: 'xfyun', key: '2'},
+      { label: 'Xfyun', value: 'xfyun', key: '2' },
       { label: 'FunASR', value: 'funasr', key: '3' }
     ],
     typeFields: {
@@ -95,7 +95,7 @@ export const configTypeMap = {
         { name: 'apiKey', label: 'Api Key', required: true, span: 12 }
       ],
       funasr: [
-        { name: 'apiUrl', label: 'Websocket URL', required: true, span: 12, defaultUrl:"ws://127.0.0.1:10095" }
+        { name: 'apiUrl', label: 'Websocket URL', required: true, span: 12, defaultUrl: "ws://127.0.0.1:10095" }
       ]
     }
   },
@@ -104,7 +104,8 @@ export const configTypeMap = {
     typeOptions: [
       { label: 'Aliyun', value: 'aliyun', key: '0' },
       { label: 'Volcengine(doubao)', value: 'volcengine', key: '1' },
-      { label: 'Xfyun', value: 'xfyun', key: '2' }
+      { label: 'Xfyun', value: 'xfyun', key: '2' },
+      { label: 'Minimax', value: 'minimax', key: '3' }
     ],
     typeFields: {
       aliyun: [
@@ -118,7 +119,11 @@ export const configTypeMap = {
         { name: 'appId', label: 'App Id', required: true, span: 12 },
         { name: 'apiSecret', label: 'Api Secret', required: true, span: 12 },
         { name: 'apiKey', label: 'Api Key', required: true, span: 12 }
-      ]
+      ],
+      minimax: [
+        { name: 'appId', label: 'Group Id', required: true, span: 12 },
+        { name: 'apiKey', label: 'API Key', required: true, span: 12 }
+      ],
     }
   }
 };

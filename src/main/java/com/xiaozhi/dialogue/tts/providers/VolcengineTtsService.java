@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Base64;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 public class VolcengineTtsService implements TtsService {
     private static final Logger logger = LoggerFactory.getLogger(VolcengineTtsService.class);
@@ -34,7 +33,7 @@ public class VolcengineTtsService implements TtsService {
     private String appId;
     private String accessToken; // 对应 apiKey
 
-    private final OkHttpClient client = HttpUtil.client;;
+    private final OkHttpClient client = HttpUtil.client;
 
     public VolcengineTtsService(SysConfig config, String voiceName, String outputPath) {
         this.voiceName = voiceName;
@@ -46,17 +45,6 @@ public class VolcengineTtsService implements TtsService {
     @Override
     public String getProviderName() {
         return PROVIDER_NAME;
-    }
-
-    @Override
-    public boolean isSupportStreamTts() {
-        return false;
-    }
-
-    @Override
-    public String getAudioFileName() {
-        String uuid = UUID.randomUUID().toString().replace("-", "");
-        return uuid + ".wav";
     }
 
     @Override
@@ -163,12 +151,6 @@ public class VolcengineTtsService implements TtsService {
                         String base64Audio = jsonResponse.get("data").getAsString();
                         byte[] audioData = Base64.getDecoder().decode(base64Audio);
 
-                        // 确保目录存在
-                        File audioFileDir = new File(outputPath);
-                        if (!audioFileDir.exists()) {
-                            audioFileDir.mkdirs();
-                        }
-
                         // 保存音频文件
                         File audioFile = new File(audioFilePath);
                         try (FileOutputStream fout = new FileOutputStream(audioFile)) {
@@ -189,12 +171,6 @@ public class VolcengineTtsService implements TtsService {
             logger.error("发送TTS请求时发生错误", e);
             throw new Exception("发送TTS请求失败", e);
         }
-    }
-
-    @Override
-    public void streamTextToSpeech(String text, Consumer<byte[]> audioDataConsumer) throws Exception {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'streamTextToSpeech'");
     }
 
 }
