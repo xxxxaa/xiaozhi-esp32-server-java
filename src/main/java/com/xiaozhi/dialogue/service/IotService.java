@@ -288,7 +288,7 @@ public class IotService {
 
             var toolCallback = FunctionToolCallback
                     .builder(funcName, (Map<String, Object> params, ToolContext toolContext) -> {
-                        String actFuncName = funcName.substring(4); // 原始方法调用，去掉iot_前缀
+                        String actFuncName = funcName.replace("iot_" + iotName + "_", ""); // 原始方法调用，去掉iot_iotName_前缀
                         String response_success = (String) params.get("response_success");
                         params.remove("response_success"); // 移除response_success参数，避免传递给设备
                         boolean result = sendIotMessage(sessionId, iotName, actFuncName, params);
