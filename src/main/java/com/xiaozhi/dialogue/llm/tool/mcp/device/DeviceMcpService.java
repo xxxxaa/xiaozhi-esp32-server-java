@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class DeviceMcpService {
@@ -167,7 +168,7 @@ public class DeviceMcpService {
         DeviceMcpMessage response = null;
         try {
             // 阻塞并等待异步操作完成
-            response = future.get();//等待2秒，没反应则退出 2, TimeUnit.SECONDS
+            response = future.get(2, TimeUnit.SECONDS);//等待2秒，没反应则退出
         } catch (Exception e) {
             logger.error("SessionId: {}, Error sending MCP request", chatSession.getSessionId(), e);
             chatSession.getDeviceMcpHolder().getMcpPendingRequests().remove(id);
