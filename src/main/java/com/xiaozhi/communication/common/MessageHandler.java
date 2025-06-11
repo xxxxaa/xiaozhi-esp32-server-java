@@ -26,6 +26,7 @@ import org.springframework.util.StringUtils;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -328,6 +329,15 @@ public class MessageHandler {
         sessionManager.closeSession(session);
     }
 
+    private void handleDeviceMcpMessage(ChatSession chatSession, DeviceMcpMessage message) {
+        Long mcpRequestId = message.getPayload().getId();
+        CompletableFuture<DeviceMcpMessage> future = chatSession.getDeviceMcpHolder().getMcpPendingRequests().get(mcpRequestId);
+        if(future != null){
+            future.complete(message);
+            chatSession.getDeviceMcpHolder().getMcpPendingRequests().remove(mcpRequestId);
+        }
+    }
+
     public void handleMessage(Message msg, String sessionId) {
         var chatSession = sessionManager.getSession(sessionId);
         switch (msg) {
@@ -335,6 +345,7 @@ public class MessageHandler {
             case IotMessage m -> handleIotMessage(chatSession, m);
             case AbortMessage m -> handleAbortMessage(chatSession, m);
             case GoodbyeMessage m -> handleGoodbyeMessage(chatSession, m);
+            case DeviceMcpMessage m -> handleDeviceMcpMessage(chatSession, m);
             default -> {
             }
         }

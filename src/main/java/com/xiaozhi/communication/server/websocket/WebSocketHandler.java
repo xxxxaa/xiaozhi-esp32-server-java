@@ -2,6 +2,7 @@ package com.xiaozhi.communication.server.websocket;
 
 import com.xiaozhi.communication.common.*;
 import com.xiaozhi.communication.domain.*;
+import com.xiaozhi.dialogue.llm.tool.mcp.device.DeviceMcpService;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.service.SysDeviceService;
 import com.xiaozhi.utils.JsonUtil;
@@ -32,6 +33,9 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
 
     @Resource
     private SysDeviceService deviceService;
+
+    @Resource
+    private DeviceMcpService deviceMcpService;
 
     @Override
     public void afterConnectionEstablished(org.springframework.web.socket.WebSocketSession session) {
@@ -175,6 +179,13 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
 
         try {
             session.sendMessage(new TextMessage(JsonUtil.toJson(resp)));
+            if(message.getFeatures() != null && message.getFeatures().getMcp()) {
+                //如果客户端开启mcp协议，异步初始化MCP工具
+                ChatSession chatSession = sessionManager.getSession(sessionId);
+                Thread.startVirtualThread(() -> {
+                    deviceMcpService.initialize(chatSession);
+                });
+            }
         } catch (Exception e) {
             logger.error("发送hello响应失败", e);
         }

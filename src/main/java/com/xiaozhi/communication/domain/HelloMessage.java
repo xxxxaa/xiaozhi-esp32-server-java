@@ -10,5 +10,6 @@ public final class HelloMessage extends Message {
         super("hello");
     }
 
+    private HelloFeatures features;
     private AudioParams audioParams;
 }

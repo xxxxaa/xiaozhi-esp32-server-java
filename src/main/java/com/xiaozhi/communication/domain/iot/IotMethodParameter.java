@@ -1,23 +1,21 @@
-package com.xiaozhi.communication.domain;
+package com.xiaozhi.communication.domain.iot;
 
 import com.xiaozhi.utils.JsonUtil;
 import lombok.Data;
 
-import java.util.Map;
-
 /**
- * function_call的方法定义
+ * function_call的参数定义
  */
 @Data
-public class IotMethod {
+public class IotMethodParameter {
     /**
-     * 方法描述
+     * 参数描述
      */
     private String description;
     /**
-     * 方法参数
+     * 参数类型
      */
-    private Map<String, IotMethodParameter> parameters;
+    private String type;
 
     @Override
     public String toString() {

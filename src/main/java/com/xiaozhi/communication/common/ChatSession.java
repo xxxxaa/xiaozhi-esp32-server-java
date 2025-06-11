@@ -1,7 +1,8 @@
 package com.xiaozhi.communication.common;
 
-import com.xiaozhi.communication.domain.IotDescriptor;
+import com.xiaozhi.communication.domain.iot.IotDescriptor;
 import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
+import com.xiaozhi.dialogue.llm.tool.mcp.device.DeviceMcpHolder;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.enums.ListenMode;
@@ -76,6 +77,9 @@ public abstract class ChatSession {
      * 会话属性存储
      */
     protected final ConcurrentHashMap<String, Object> attributes = new ConcurrentHashMap<>();
+
+    //--------------------设备mcp-------------------------
+    private DeviceMcpHolder deviceMcpHolder = new DeviceMcpHolder();
 
     public ChatSession(String sessionId) {
         this.sessionId = sessionId;

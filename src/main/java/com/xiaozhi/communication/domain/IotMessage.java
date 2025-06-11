@@ -1,9 +1,11 @@
 package com.xiaozhi.communication.domain;
 
-import java.util.List;
-
+import com.xiaozhi.communication.domain.iot.IotDescriptor;
+import com.xiaozhi.communication.domain.iot.IotState;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
