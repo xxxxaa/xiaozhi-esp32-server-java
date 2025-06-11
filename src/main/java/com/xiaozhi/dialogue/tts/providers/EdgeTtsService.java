@@ -6,8 +6,6 @@ import io.github.whitemagic2014.tts.bean.Voice;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -38,14 +36,8 @@ public class EdgeTtsService implements TtsService {
     }
 
     @Override
-    public boolean isSupportStreamTts() {
-        return false;
-    }
-
-    @Override
-    public String getAudioFileName() {
-        String uuid = UUID.randomUUID().toString().replace("-", "");
-        return uuid + ".mp3";
+    public String audioFormat() {
+        return "mp3";
     }
 
     @Override
@@ -80,9 +72,4 @@ public class EdgeTtsService implements TtsService {
         return AudioUtils.AUDIO_PATH + resampledFileName;
     }
 
-    @Override
-    public void streamTextToSpeech(String text, Consumer<byte[]> audioDataConsumer) throws Exception {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'streamTextToSpeech'");
-    }
 }
