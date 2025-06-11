@@ -14,13 +14,14 @@ export const configTypeMap = {
       { label: 'Spark', value: 'spark', key: '2' },
       { label: 'Zhipu', value: 'zhipu', key: '3' },
       { label: 'AliYun', value: 'aliyun', key: '4' },
-      { label: 'Doubao', value: 'doubao', key: '5' },
-      { label: 'DeepSeek', value: 'deepseek', key: '6' },
-      { label: 'ChatGLM', value: 'chatglm', key: '7' },
-      { label: 'Gemini', value: 'gemini', key: '8' },
-      { label: 'LMStudio', value: 'lmstudio', key: '9' },
-      { label: 'Fastgpt', value: 'fastgpt', key: '10' },
-      { label: 'Xinference', value: 'xinference', key: '11' },
+      { label: 'Qwen', value: 'qwen', key: '5' },
+      { label: 'Doubao', value: 'doubao', key: '6' },
+      { label: 'DeepSeek', value: 'deepseek', key: '7' },
+      { label: 'ChatGLM', value: 'chatglm', key: '8' },
+      { label: 'Gemini', value: 'gemini', key: '9' },
+      { label: 'LMStudio', value: 'lmstudio', key: '10' },
+      { label: 'Fastgpt', value: 'fastgpt', key: '11' },
+      { label: 'Xinference', value: 'xinference', key: '12' },
     ],
     // 各类别对应的参数字段定义
     typeFields: {
@@ -40,6 +41,10 @@ export const configTypeMap = {
         { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://open.bigmodel.cn/api/paas" }
       ],
       aliyun: [
+        { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1" }
+      ],
+      qwen: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
         { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1" }
       ],
