@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +26,7 @@ public class AudioUtils {
 
     /**
      * 将原始音频数据保存为MP3文件
-     * 
+     *
      * @param audio PCM音频数据
      * @return 文件名
      */
@@ -102,9 +103,9 @@ public class AudioUtils {
         }
     }
 
-        /**
+    /**
      * 将原始音频数据保存为WAV文件
-     * 
+     *
      * @param audioData 音频数据
      * @return 文件名
      */
@@ -118,9 +119,9 @@ public class AudioUtils {
         try {
             // 确保音频目录存在
             Files.createDirectories(Paths.get(AUDIO_PATH));
-            
+
             try (FileOutputStream fos = new FileOutputStream(filePath);
-                    DataOutputStream dos = new DataOutputStream(fos)) {
+                 DataOutputStream dos = new DataOutputStream(fos)) {
 
                 // 写入WAV文件头
                 // RIFF头
@@ -155,50 +156,43 @@ public class AudioUtils {
     }
 
     /**
-     * 合并多个WAV文件为一个WAV文件
-     * 
-     * @param wavPaths 要合并的WAV文件路径列表
+     * 合并多个音频文件为一个WAV文件
+     * 支持合并的格式： wav, mp3, pcm
+     *
+     * @param audioPaths 要合并的音频文件路径列表
      * @return 合并后的WAV文件名
      */
-    public static String mergeWavFiles(List<String> wavPaths) {
-        
-        if (wavPaths.size() == 1) {
-            // 如果只有一个文件，直接返回该文件名
-            String singlePath = wavPaths.get(0);
-            if (singlePath.startsWith(AUDIO_PATH)) {
-                return singlePath.substring(AUDIO_PATH.length());
-            }
-            return singlePath;
+    public static String mergeAudioFiles(List<String> audioPaths) {
+        if (audioPaths.size() == 1) {
+            return Paths.get(audioPaths.getFirst()).getFileName().toString();
         }
-        
-        String uuid = UUID.randomUUID().toString().replace("-", "");
-        String outputFileName = uuid + ".wav";
-        String outputPath = AUDIO_PATH + outputFileName;
-        
+        var uuid = UUID.randomUUID().toString().replace("-", "");
+        var outputFileName = uuid + ".wav";
+        var outputPath = Paths.get(AUDIO_PATH, outputFileName).toString();
+
         try {
-            // 确保音频目录存在
-            Files.createDirectories(Paths.get(AUDIO_PATH));
-            
             // 计算所有PCM数据的总大小
-            long totalPcmSize = 0;
-            for (String wavPath : wavPaths) {
-                String fullPath = wavPath.startsWith(AUDIO_PATH) ? wavPath : AUDIO_PATH + wavPath;
-                byte[] pcmData = wavToPcm(fullPath);
+            var totalPcmSize = 0L;
+            var audioChunks = new ArrayList<byte[]>();
+            for (var audioPath : audioPaths) {
+                var fullPath = audioPath.startsWith(AUDIO_PATH) ? audioPath : AUDIO_PATH + audioPath;
+                byte[] pcmData = readAsPcm(fullPath);
                 totalPcmSize += pcmData.length;
+                audioChunks.add(pcmData);
             }
-            
+
             // 创建输出WAV文件
             try (FileOutputStream fos = new FileOutputStream(outputPath);
-                DataOutputStream dos = new DataOutputStream(fos)) {
-                
+                 DataOutputStream dos = new DataOutputStream(fos)) {
+
                 // 写入WAV文件头
                 int bitsPerSample = 16; // 16位采样
-                
+
                 // RIFF头
                 dos.writeBytes("RIFF");
-                dos.writeInt(Integer.reverseBytes(36 + (int)totalPcmSize)); // 文件长度
+                dos.writeInt(Integer.reverseBytes(36 + (int) totalPcmSize)); // 文件长度
                 dos.writeBytes("WAVE");
-                
+
                 // fmt子块
                 dos.writeBytes("fmt ");
                 dos.writeInt(Integer.reverseBytes(16)); // 子块大小
@@ -208,29 +202,27 @@ public class AudioUtils {
                 dos.writeInt(Integer.reverseBytes(SAMPLE_RATE * CHANNELS * bitsPerSample / 8)); // 字节率
                 dos.writeShort(Short.reverseBytes((short) (CHANNELS * bitsPerSample / 8))); // 块对齐
                 dos.writeShort(Short.reverseBytes((short) bitsPerSample)); // 每个样本的位数
-                
+
                 // data子块
                 dos.writeBytes("data");
-                dos.writeInt(Integer.reverseBytes((int)totalPcmSize)); // 数据大小
-                
+                dos.writeInt(Integer.reverseBytes((int) totalPcmSize)); // 数据大小
+
                 // 依次写入每个文件的PCM数据
-                for (String wavPath : wavPaths) {
-                    String fullPath = wavPath.startsWith(AUDIO_PATH) ? wavPath : AUDIO_PATH + wavPath;
-                    byte[] pcmData = wavToPcm(fullPath);
+                for (var pcmData : audioChunks) {
                     dos.write(pcmData);
                 }
             }
-            
+
             return outputFileName;
         } catch (Exception e) {
-            logger.error("合并WAV文件时发生错误", e);
+            logger.error("合并音频文件时发生错误", e);
             return null;
         }
     }
 
     /**
      * 从WAV文件中提取PCM数据
-     * 
+     *
      * @param wavPath WAV文件路径
      * @return PCM数据字节数组
      */
@@ -242,7 +234,7 @@ public class AudioUtils {
 
     /**
      * 从WAV字节数据中提取PCM数据
-     * 
+     *
      * @param wavData WAV文件的字节数据
      * @return PCM数据字节数组
      */
@@ -282,7 +274,7 @@ public class AudioUtils {
 
     /**
      * 从文件读取PCM数据，自动处理WAV和MP3格式
-     * 
+     *
      * @param filePath 音频文件路径
      * @return PCM数据字节数组
      */
@@ -301,7 +293,7 @@ public class AudioUtils {
 
     /**
      * 将MP3转换为PCM格式
-     * 
+     *
      * @param mp3Path MP3文件路径
      * @return PCM数据字节数组
      */
@@ -356,7 +348,7 @@ public class AudioUtils {
 
     /**
      * 检测音频文件格式并返回MIME类型
-     * 
+     *
      * @param filePath 音频文件路径
      * @return MIME类型字符串
      */
