@@ -1,4 +1,22 @@
 # 变更日志
+## [2.7.60] - 2025-06-11
+
+### 新功能
+- Merge pull request #96 from vritser/main
+- feat(tts): support minimax t2a
+
+### 修复
+- fix:修复阿里语音合成多余参数，删除
+- fix(tts): tts service factory
+
+### 其他变更
+- chore: update version to 2.7.60 [skip ci]
+- docs: update changelog for v2.7.59 [skip ci]
+- chore: update version to 2.7.59 [skip ci]
+- refactor(tts): add default implements
+- docs: update changelog for v2.7.58 [skip ci]
+- chore: update version to 2.7.58 [skip ci]
+
 ## [2.7.59] - 2025-06-11
 
 ### 新功能
