@@ -33,22 +33,22 @@ public class PlayHuiBenFunction implements ToolsGlobalRegistry.GlobalFunction {
                     if (num == null || num < 5 || num > 1100) {
                         num = RandomUtil.randomInt(5, 1100);
                     }
-                    huiBenService.playMusic(chatSession, num);
+                    huiBenService.playHuiBen(chatSession, num);
                     return "尝试播放绘本《" + num + "》";
 
                 } catch (Exception e) {
-                    logger.error("device 绘本播放异常，song name: {}", num, e);
+                    logger.error("播放绘本异常，绘本编号: {}", num, e);
                     return "绘本播放失败";
                 }
             })
             .toolMetadata(ToolMetadata.builder().returnDirect(true).build())
-            .description("绘本播放助手,需要用户提供绘本数字编号")
+            .description("绘本播放助手，需要用户提供绘本数字编号")
             .inputSchema("""
                         {
                             "type": "object",
                             "properties": {
-                                "songName": {
-                                    "type": "string",
+                                "num": {
+                                    "type": "integer",
                                     "description": "要播放的绘本数字编号"
                                 }
                             },

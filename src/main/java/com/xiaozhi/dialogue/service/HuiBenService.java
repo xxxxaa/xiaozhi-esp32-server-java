@@ -22,7 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 绘本
+ * 绘本服务，负责处理绘本播放和文本同步
+ * 使用JDK 21虚拟线程和结构化并发实现异步处理
  */
 @Service
 public class HuiBenService {
@@ -55,8 +56,8 @@ public class HuiBenService {
             Runtime.getRuntime().availableProcessors(),
             Thread.ofVirtual().name("huiBen-scheduler-", 0).factory());
 
-    // 存储每个会话的当前歌词信息
-    private final Map<String, List<LyricLine>> sessionLyrics = new ConcurrentHashMap<>();
+    // 存储每个会话的当前文本信息
+    private final Map<String, List<TextLine>> sessionTexts = new ConcurrentHashMap<>();
 
     // 存储每个会话的当前播放时间
     private final Map<String, AtomicLong> playTime = new ConcurrentHashMap<>();
@@ -68,16 +69,19 @@ public class HuiBenService {
     private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     /**
-     * 歌词行数据结构 - 使用JDK 16+ Record类型
+     * 文本行数据结构 - 使用JDK 16+ Record类型
      */
-    private record LyricLine(long timeMs, String text) {
+    private record TextLine(long timeMs, String text) {
     }
 
     /**
-     * 搜索并播放绘本
+     * 播放绘本
      * 使用JDK 21虚拟线程和结构化并发实现异步处理
+     * 
+     * @param session 会话
+     * @param bookId 绘本ID
      */
-    public void playMusic(ChatSession session, Integer song) {
+    public void playHuiBen(ChatSession session, Integer bookId) {
         String sessionId = session.getSessionId();
 
         // 使用虚拟线程处理异步任务
@@ -93,13 +97,13 @@ public class HuiBenService {
                 cleanupAudioFile(sessionId);
 
                 // 1. 获取绘本信息
-                Map<String, String> musicInfo = getHuiBenInfo(song);
-                if (musicInfo == null) {
-                    throw new RuntimeException("无法找到歌曲: " + song );
+                Map<String, String> huiBenInfo = getHuiBenInfo(bookId);
+                if (huiBenInfo == null) {
+                    throw new RuntimeException("无法找到绘本: " + bookId);
                 }
 
                 // 2. 下载音频文件到本地临时目录，使用随机文件名避免冲突
-                String audioUrl = musicInfo.get("audioUrl");
+                String audioUrl = huiBenInfo.get("audioUrl");
                 String randomName = "huiBen_" + sessionId + "_" + UUID.randomUUID() + ".mp3";
                 String audioPath = downloadFile(audioUrl, randomName);
 
@@ -113,7 +117,7 @@ public class HuiBenService {
                 // 发送绘本开始消息
                 audioService.sendStart(session);
 
-                // 发送音频和同步歌词
+                // 发送音频和同步文本
                 sendAudio(session, audioPath);
 
             } catch (Exception e) {
@@ -141,12 +145,12 @@ public class HuiBenService {
                 logger.warn("删除音频文件失败: {}", audioPath, e);
             }
         }
-        // 清理会话的歌词数据
-        sessionLyrics.remove(sessionId);
+        // 清理会话的文本数据
+        sessionTexts.remove(sessionId);
     }
 
     /**
-     * 发送音频和同步歌词
+     * 发送音频和同步文本
      */
     private void sendAudio(ChatSession session, String audioPath) {
         String sessionId = session.getSessionId();
@@ -173,17 +177,17 @@ public class HuiBenService {
                 return;
             }
 
-            // 获取歌词
-            List<LyricLine> lyrics = sessionLyrics.getOrDefault(sessionId, Collections.emptyList());
+            // 获取文本
+            List<TextLine> texts = sessionTexts.getOrDefault(sessionId, Collections.emptyList());
             AtomicLong currPlayTime = playTime.computeIfAbsent(sessionId, k -> new AtomicLong(0));
 
-            // 预处理歌词时间点，将毫秒时间转换为帧索引
-            Map<Integer, String> lyricFrameMap = new HashMap<>();
-            for (LyricLine line : lyrics) {
-                // 计算歌词对应的帧索引
+            // 预处理文本时间点，将毫秒时间转换为帧索引
+            Map<Integer, String> textFrameMap = new HashMap<>();
+            for (TextLine line : texts) {
+                // 计算文本对应的帧索引
                 int frameIndex = (int) (line.timeMs() / OPUS_FRAME_INTERVAL_MS);
                 if (frameIndex < frames.size()) {
-                    lyricFrameMap.put(frameIndex, line.text());
+                    textFrameMap.put(frameIndex, line.text());
                 }
             }
 
@@ -204,10 +208,10 @@ public class HuiBenService {
                     // 更新当前播放时间
                     currPlayTime.set(currentIndex * OPUS_FRAME_INTERVAL_MS);
 
-                    // 先检查是否有对应这一帧的歌词需要发送
-                    String lyricText = lyricFrameMap.get(currentIndex);
-                    if (lyricText != null) {
-                        audioService.sendSentenceStart(session, lyricText);
+                    // 先检查是否有对应这一帧的文本需要发送
+                    String textContent = textFrameMap.get(currentIndex);
+                    if (textContent != null) {
+                        audioService.sendSentenceStart(session, textContent);
                     }
 
                     // 发送当前帧
@@ -246,13 +250,14 @@ public class HuiBenService {
     /**
      * 获取绘本信息（音频URL）
      */
-    private Map<String, String> getHuiBenInfo(Integer num) {
+    private Map<String, String> getHuiBenInfo(Integer bookId) {
         try {
             // 构建URL
+            String url = API_BASE_URL + bookId + ".html";
 
             // 使用OkHttp3发送请求
             Request request = new Request.Builder()
-                    .url(API_BASE_URL + num + ".html")
+                    .url(url)
                     .get()
                     .build();
 
@@ -262,14 +267,14 @@ public class HuiBenService {
                     return null;
                 }
 
-                // 解析JSON响应
+                // 解析响应
                 String responseBody = response.body() != null ? response.body().string() : null;
                 if (responseBody == null) {
                     logger.error("获取绘本信息失败，响应体为空");
                     return null;
                 }
 
-                String audioUrl = extractAudioSrcByRegex(responseBody.toString());
+                String audioUrl = extractAudioSrcByRegex(responseBody);
                 Map<String, String> result = new HashMap<>();
                 result.put("audioUrl", audioUrl);
                 return result;
@@ -280,7 +285,9 @@ public class HuiBenService {
         }
     }
 
-
+    /**
+     * 从HTML中提取音频源URL
+     */
     public static String extractAudioSrcByRegex(String html) {
         // 匹配 source 标签中的 src 属性
         Pattern pattern = Pattern.compile("<source\\s+[^>]*src\\s*=\\s*[\"']([^\"']+)[\"'][^>]*>");
@@ -292,7 +299,6 @@ public class HuiBenService {
 
         return null;
     }
-
 
     /**
      * 下载文件到临时目录
@@ -330,67 +336,11 @@ public class HuiBenService {
     }
 
     /**
-     * 解析LRC格式歌词
-     */
-    private List<LyricLine> parseLyrics(String lyricUrl) {
-        List<LyricLine> result = new ArrayList<>();
-
-        if (lyricUrl == null || lyricUrl.isEmpty()) {
-            logger.warn("歌词URL为空，无法解析歌词");
-            return result;
-        }
-
-        try {
-
-            // 使用OkHttp3发送请求
-            Request request = new Request.Builder()
-                    .url(lyricUrl)
-                    .get()
-                    .build();
-
-            try (Response response = okHttpClient.newCall(request).execute()) {
-                if (!response.isSuccessful() || response.body() == null) {
-                    logger.error("获取歌词失败，响应码: {}", response.code());
-                    return result;
-                }
-
-                String responseBody = response.body().string();
-
-                // LRC时间标签正则表达式: [mm:ss.xx]
-                Pattern pattern = Pattern.compile("\\[(\\d{2}):(\\d{2})\\.(\\d{2})\\](.*)");
-
-                // 使用Stream API处理每一行
-                return responseBody.lines()
-                        .map(pattern::matcher)
-                        .filter(Matcher::find)
-                        .map(matcher -> {
-                            int minutes = Integer.parseInt(matcher.group(1));
-                            int seconds = Integer.parseInt(matcher.group(2));
-                            int hundredths = Integer.parseInt(matcher.group(3));
-
-                            // 计算毫秒时间
-                            long timeMs = (minutes * 60 * 1000) + (seconds * 1000) + (hundredths * 10);
-                            String text = matcher.group(4).trim();
-
-                            return new LyricLine(timeMs, text);
-                        })
-                        .sorted(Comparator.comparingLong(LyricLine::timeMs))
-                        .toList();
-            }
-
-        } catch (Exception e) {
-            logger.error("解析歌词时发生错误", e);
-        }
-
-        return result;
-    }
-
-    /**
      * 停止播放绘本
      * 
      * @param sessionId 会话ID
      */
-    public void stopMusic(String sessionId) {
+    public void stopHuiBen(String sessionId) {
         Thread.startVirtualThread(() -> {
             try {
                 ScheduledFuture<?> task = scheduledTasks.remove(sessionId);
