@@ -524,7 +524,7 @@ export default {
                 });
               });
             } else {
-              this.$message.warning(`没有找到可用的 ${provider} 语音合成配置，请先添加`);
+              this.$message.warning(`没有找到可用的 ${provider} 语音合成配置，请先前往语音合成页面进行设置。`);
               this.selectedTtsId = null;
             }
           } else {
