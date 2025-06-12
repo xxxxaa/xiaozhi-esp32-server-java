@@ -239,7 +239,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
                         message.setDeviceId(device.getDeviceId());
                         // 清空设备聊天记录
                         messageMapper.delete(message);
-                        session.setChatMemory(sesseion.getId(), null);
+                        // TODO 未清空已缓存记忆内容
                     }
                 }
             }

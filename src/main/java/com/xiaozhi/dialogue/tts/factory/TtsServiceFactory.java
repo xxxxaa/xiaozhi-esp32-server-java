@@ -22,7 +22,7 @@ public class TtsServiceFactory {
     private final Map<String, TtsService> serviceCache = new ConcurrentHashMap<>();
 
     // 语音生成文件保存地址
-    private static final String OUT_PUT_PATH = "audio/";
+    private static final String OUTPUT_PATH = "audio/";
 
     // 默认服务提供商名称
     private static final String DEFAULT_PROVIDER = "edge";
@@ -40,17 +40,22 @@ public class TtsServiceFactory {
 
     // 创建缓存键，包含provider、configId和voiceName，确保音色变化时创建新的服务实例
     private String createCacheKey(SysConfig config, String provider, String voiceName) {
-        var configId = config.getConfigId();
-        var configIdStr = configId != null ? String.valueOf(configId) : "default";
-        return provider + ":" + configIdStr + ":" + voiceName;
+        Integer configId = -1;
+        if (config != null && config.getConfigId() != null) {
+            configId = config.getConfigId();
+        }
+        return provider + ":" + configId + ":" + voiceName;
     }
 
     /**
      * 根据配置获取TTS服务
      */
     public TtsService getTtsService(SysConfig config, String voiceName) {
+        
+        config = !ObjectUtils.isEmpty(config) ? config : new SysConfig().setProvider(DEFAULT_PROVIDER);
+
         // 如果提供商为空，则使用默认提供商
-        var provider = ObjectUtils.isEmpty(config) ? DEFAULT_PROVIDER : config.getProvider();
+        var provider = config.getProvider();
         var cacheKey = createCacheKey(config, provider, voiceName);
 
         // 检查是否已有该配置的服务实例
@@ -58,7 +63,7 @@ public class TtsServiceFactory {
             return serviceCache.get(cacheKey);
         }
 
-        var service = createApiService(config, voiceName, OUT_PUT_PATH);
+        var service = createApiService(config, voiceName, OUTPUT_PATH);
         serviceCache.put(cacheKey, service);
         return service;
     }
@@ -83,5 +88,28 @@ public class TtsServiceFactory {
     private void ensureOutputPath(String outputPath) {
         File dir = new File(outputPath);
         if (!dir.exists()) dir.mkdirs();
+    }
+
+    public void removeCache(SysConfig config) {
+        if (config == null) {
+            return;
+        }
+
+        String provider = config.getProvider();
+        Integer configId = config.getConfigId();
+        
+        // 遍历缓存的所有键，找到匹配的键并移除
+        serviceCache.keySet().removeIf(key -> {
+            String[] parts = key.split(":");
+            if (parts.length != 3) {
+                return false;
+            }
+            String keyProvider = parts[0];
+            String keyConfigId = parts[1];
+            
+            // 检查provider和configId是否匹配
+            return keyProvider.equals(provider) && keyConfigId.equals(String.valueOf(configId));
+        });
+        
     }
 }

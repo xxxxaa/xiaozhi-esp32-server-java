@@ -74,10 +74,12 @@ public class ConfigController extends BaseController {
             int rows = configService.update(config);
             if (rows > 0) {
                 configManager.getConfig(config.getConfigId());// 更新缓存
-                if(oldSysConfig != null){
-                    if("stt".equals(oldSysConfig.getConfigType()) && !oldSysConfig.getApiKey().equals(config.getApiKey())){
+                if (oldSysConfig != null) {
+                    if ("stt".equals(oldSysConfig.getConfigType())
+                            && !oldSysConfig.getApiKey().equals(config.getApiKey())) {
                         sttServiceFactory.removeCache(oldSysConfig);
-                    }else if("tts".equals(oldSysConfig.getConfigType()) && !oldSysConfig.getApiKey().equals(config.getApiKey())){
+                    } else if ("tts".equals(oldSysConfig.getConfigType())
+                            && !oldSysConfig.getApiKey().equals(config.getApiKey())) {
                         ttsServiceFactory.removeCache(oldSysConfig);
                     }
                 }
