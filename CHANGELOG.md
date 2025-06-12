@@ -1,4 +1,20 @@
 # 变更日志
+## [2.7.64] - 2025-06-12
+
+### 修复
+- Merge pull request #98 from vritser/main
+- fix(audio): merge audio files
+
+### 其他变更
+- chore: update version to 2.7.64 [skip ci]
+- docs: update changelog for v2.7.63 [skip ci]
+- chore: update version to 2.7.63 [skip ci]
+
+## [2.7.63] - 2025-06-12
+
+### 其他变更
+- chore: update version to 2.7.63 [skip ci]
+
 ## [2.7.62] - 2025-06-11
 
 ### 其他变更

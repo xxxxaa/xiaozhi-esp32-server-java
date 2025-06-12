@@ -731,7 +731,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
             // 合并音频文件
             if (!audioFilesToMerge.isEmpty()) {
-                String mergedAudioPath = AudioUtils.AUDIO_PATH + AudioUtils.mergeWavFiles(audioFilesToMerge);
+                String mergedAudioPath = AudioUtils.AUDIO_PATH + AudioUtils.mergeAudioFiles(audioFilesToMerge);
 
                 // 保存合并后的音频路径
                 session.setAssistantAudioPath(mergedAudioPath);

@@ -225,6 +225,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     @Override
     @Transactional(transactionManager = "transactionManager")
     public int updateNoRefreshCache(SysDevice device) {
+        ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
         if (!ObjectUtils.isEmpty(device.getRoleId())) {
             SysRole role = roleMapper.selectRoleById(device.getRoleId());
             if (role != null) {
@@ -238,6 +239,8 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
                         message.setDeviceId(device.getDeviceId());
                         // 清空设备聊天记录
                         messageMapper.delete(message);
+                        // TODO 后期切换时可以不用删除数据库中的记录，而是采用roleId来获取记忆内容
+                        session.setChatMemory(null);
                     }
                 }
             }
