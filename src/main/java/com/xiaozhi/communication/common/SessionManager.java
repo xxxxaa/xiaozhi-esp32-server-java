@@ -4,6 +4,7 @@ import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.enums.ListenMode;
+import com.xiaozhi.event.ChatSessionCloseEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
@@ -153,6 +154,7 @@ public class SessionManager {
             // 重置会话状态
             chatSession.setStreamingState(false);
             chatSession.setAudioSinks(null);
+            applicationContext.publishEvent(new ChatSessionCloseEvent(chatSession));
             // 从会话映射中移除
             logger.info("会话已关闭 - SessionId: {} SessionType: {}", chatSession.getSessionId(), chatSession.getClass().getSimpleName());
         } catch (Exception e) {
