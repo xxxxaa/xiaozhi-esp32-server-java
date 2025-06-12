@@ -239,7 +239,8 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
                         message.setDeviceId(device.getDeviceId());
                         // 清空设备聊天记录
                         messageMapper.delete(message);
-                        // TODO 未清空已缓存记忆内容
+                        // TODO 后期切换时可以不用删除数据库中的记录，而是采用roleId来获取记忆内容
+                        session.setChatMemory(null);
                     }
                 }
             }
