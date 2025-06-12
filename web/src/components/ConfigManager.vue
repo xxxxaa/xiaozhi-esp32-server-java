@@ -48,8 +48,8 @@
                   <a-space>
                     <a href="javascript:" @click="edit(record)">编辑</a>
                     <!-- 添加设为默认按钮，但在TTS中不显示 -->
-                    <a v-if="configType !== 'tts' && record.isDefault != 1" href="javascript:" :disabled="record.isDefault == 1"
-                      @click="setAsDefault(record)">设为默认</a>
+                    <a v-if="configType !== 'tts' && record.isDefault != 1" href="javascript:"
+                      :disabled="record.isDefault == 1" @click="setAsDefault(record)">设为默认</a>
                     <a-popconfirm :title="`确定要删除这个${configTypeInfo.label}配置吗?`"
                       @confirm="deleteConfig(record.configId)">
                       <a v-if="record.isDefault != 1" href="javascript:" style="color: #ff4d4f">删除</a>
@@ -76,18 +76,29 @@
                   </a-col>
                   <a-col :xl="16" :lg="12" :xs="24">
                     <a-form-item :label="`${configTypeInfo.label}名称`">
-                      <!-- 修改这里，添加模型名称提示 -->
-                      <a-tooltip v-if="configType === 'llm' && currentType && getModelNameTip(currentType)"
-                        :title="getModelNameTip(currentType)" placement="top">
-                        <a-input v-decorator="[
+                      <!-- 如果是 llm 且有 currentType，变为可输入的下拉框 -->
+                      <a-select v-if="configType === 'llm' && currentType"
+                        v-decorator="[
                           'configName',
                           { rules: [{ required: true, message: `请输入${configTypeInfo.label}名称` }] }
-                        ]" autocomplete="off" :placeholder="`请输入${configTypeInfo.label}名称`" />
-                      </a-tooltip>
-                      <a-input v-else v-decorator="[
-                        'configName',
-                        { rules: [{ required: true, message: `请输入${configTypeInfo.label}名称` }] }
-                      ]" autocomplete="off" :placeholder="`请输入${configTypeInfo.label}名称`" />
+                        ]"
+                        showSearch
+                        allowClear
+                        :placeholder="`请输入${configTypeInfo.label}名称`"
+                        :options="modelOptions"
+                        :filterOption="modelFilterOption"
+                        @search="handleModelInputChange"
+                        @change="handleModelChange"
+                        @blur="handleModelBlur">
+                      </a-select>
+                      <!-- 如果不是 llm 或没有 currentType，保留原来的输入框 -->
+                      <a-input v-else
+                        v-decorator="[
+                          'configName',
+                          { rules: [{ required: true, message: `请输入${configTypeInfo.label}名称` }] }
+                        ]"
+                        autocomplete="off"
+                        :placeholder="`请输入${configTypeInfo.label}名称`" />
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -116,7 +127,8 @@
                             <a-input v-decorator="[
                               field.name,
                               { rules: [{ required: field.required, message: `请输入${field.label}` }] }
-                            ]" :placeholder="`请输入${field.label}`" :type="field.inputType || 'text'">
+                            ]" :placeholder="`请输入${field.label}`" :type="field.inputType || 'text'"
+                             @change="getModelList()">
                               <template v-if="field.suffix" slot="suffix">
                                 <span style="color: #999">{{ field.suffix }}</span>
                               </template>
@@ -185,13 +197,7 @@ export default {
       currentType: '',
       loading: false,
 
-      // 模型名称提示信息
-      // TODO 需要扩展每项模型提示，或者为每项增加默认模型名称
-      modelNameTips: {
-        openai: "请输入要调用的模型名称，如：gpt-3.5-turbo, gpt-4, qwen-max, deepseek-chat等",
-        ollama: "请输入要调用的Ollama模型名称，如：deepseek-r1, qwen2.5:7b, gemma3:12b等",
-        spark: "请输入星火大模型官方模型名称，如：Lite, Pro, Max等"
-      },
+      modelOptions: [], // 存储模型下拉框选项
 
       columns: [
         {
@@ -286,9 +292,77 @@ export default {
     this.getData()
   },
   methods: {
-    // 获取模型名称提示
-    getModelNameTip(providerType) {
-      return this.configType === 'llm' ? this.modelNameTips[providerType] : null;
+    getModelList() {
+
+      const formValues = this.configForm.getFieldsValue();
+      const apiKey = formValues.apiKey;
+      const apiUrl = formValues.apiUrl;
+
+      // 检查是否输入了必要的参数
+      if (!apiKey || !apiUrl) {
+        return;
+      }
+      axios
+        .post({
+          url: api.config.getModels,
+          data: {
+            ...formValues
+          }
+        })
+        .then(res => {
+          if (res.code === 200) {
+            this.modelOptions = res.data.map((item) => ({
+              value: item.id,
+              label: item.id,
+            }));
+          }
+        })
+        .catch(() => {
+          this.showError();
+        })
+    },
+
+    filterOption(input, option) {
+      return option.label.toLowerCase().includes(input.toLowerCase());
+    },
+
+    // 处理输入变化
+    handleModelInputChange(value) {
+      this.$nextTick(() => {
+        // 手动绑定输入的值到表单字段
+        setTimeout(() => {
+          this.configForm.setFieldsValue({
+            configName: value
+          });
+        }, 0);
+      });
+    },
+
+    // 处理选项变化
+    handleModelChange(value) {
+      // 如果用户选择了一个选项，直接更新表单字段
+      this.$nextTick(() => {
+        // 手动绑定输入的值到表单字段
+        setTimeout(() => {
+          this.configForm.setFieldsValue({
+            configName: value
+          });
+        }, 0);
+      });
+    },
+
+    // 处理失去焦点时的逻辑
+    handleModelBlur() {
+      const value = this.configForm.getFieldValue('configName');
+      // 如果输入的值不在选项列表中，保留用户输入的值
+      this.$nextTick(() => {
+        // 手动绑定输入的值到表单字段
+        setTimeout(() => {
+          this.configForm.setFieldsValue({
+            configName: value
+          });
+        }, 0);
+      });
     },
 
     // 处理标签页切换
@@ -313,7 +387,7 @@ export default {
         configName: formValues.configName,
         configDesc: formValues.configDesc
       };
-      
+
       // 如果不是TTS，添加isDefault字段
       if (this.configType !== 'tts') {
         newValues.isDefault = formValues.isDefault;
@@ -376,21 +450,28 @@ export default {
       e.preventDefault()
       this.configForm.validateFields((err, values) => {
         if (!err) {
-          this.loading = true
 
+          if (this.configType === 'llm') {
+            // 校验 configName 是否为英文、数字或者它们的组合
+            const configName = values.configName;
+            const containsChineseRegex = /[\u4e00-\u9fa5]/; // 检测是否包含中文字符
+            if (containsChineseRegex.test(configName)) {
+              this.$message.error('模型名称不能随意输入，请输入正确的模型名称，例如：deepseek-chat、qwen-plus官方名称');
+              return;
+            }
+          }
+          
           // 处理可能的URL后缀重复问题
-          if (values.apiUrl) {
-            const currentType = values.provider;
-            const typeFields = this.configTypeInfo.typeFields || {};
-            const apiUrlField = (typeFields[currentType] || []).find(field => field.name === 'apiUrl');
-            
-            if (apiUrlField && apiUrlField.suffix) {
-              const suffix = apiUrlField.suffix;
-              // 检查URL是否已经以后缀结尾，如果是则不再添加
-              if (values.apiUrl.endsWith(suffix)) {
-                // 移除URL末尾的后缀部分
-                values.apiUrl = values.apiUrl.substring(0, values.apiUrl.length - suffix.length);
-              }
+          const currentType = values.provider;
+          const typeFields = this.configTypeInfo.typeFields || {};
+          const apiUrlField = (typeFields[currentType] || []).find(field => field.name === 'apiUrl');
+
+          if (apiUrlField && apiUrlField.suffix) {
+            const suffix = apiUrlField.suffix;
+            // 检查URL是否已经以后缀结尾，如果是则不再添加
+            if (values.apiUrl.endsWith(suffix)) {
+              // 移除URL末尾的后缀部分
+              values.apiUrl = values.apiUrl.substring(0, values.apiUrl.length - suffix.length);
             }
           }
 
@@ -405,6 +486,7 @@ export default {
           if (this.configType !== 'tts') {
             formData.isDefault = values.isDefault ? 1 : 0;
           }
+          this.loading = true
 
           const url = this.editingConfigId
             ? api.config.update
@@ -451,14 +533,15 @@ export default {
 
         // 设置表单值，使用setTimeout确保表单已渲染
         setTimeout(() => {
-          const formValues = {...record};
-          
+          const formValues = { ...record };
+
           // 只有非TTS类型才设置isDefault
           if (this.configType !== 'tts') {
             formValues.isDefault = record.isDefault == 1;
           }
-          
+
           configForm.setFieldsValue(formValues);
+          this.getModelList();
         }, 0);
       })
     },
@@ -467,7 +550,7 @@ export default {
     setAsDefault(record) {
       // TTS不应该有这个功能，但为了安全起见，再次检查
       if (this.configType === 'tts') return;
-      
+
       this.$confirm({
         title: `确定要将此${this.configTypeInfo.label}设为默认吗？`,
         content: `设为默认后，系统将优先使用此${this.configTypeInfo.label}配置，原默认${this.configTypeInfo.label}将被取消默认状态。`,
@@ -534,6 +617,7 @@ export default {
     resetForm() {
       this.configForm.resetFields()
       this.currentType = ''
+      this.modelOptions = []
       this.editingConfigId = null
     }
   }
