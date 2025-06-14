@@ -22,7 +22,22 @@ public class SysRole extends Base {
 
     private Integer ttsId;
 
-    private String provider;
+    private Integer modelId;
+
+    private Integer sttId;
+
+    private Double temperature;
+
+    private Double topP;
+
+    private Float vadEnergyTh;
+    private Float vadSpeechTh;
+    private Float vadSilenceTh;
+    private Integer vadSilenceMs;
+
+    private String modelProvider;
+
+    private String ttsProvider;
 
     private String isDefault;
 
@@ -35,12 +50,93 @@ public class SysRole extends Base {
         return this;
     }
 
-    public String getProvider() {
-        return provider;
+        public Integer getModelId() {
+        return modelId;
+    }
+
+    public SysRole setModelId(Integer modelId) {
+        this.modelId = modelId;
+        return this;
+    }
+
+    public Integer getSttId() {
+        return sttId;
+    }
+
+    public SysRole setSttId(Integer sttId) {
+        this.sttId = sttId;
+        return this;
+    }
+
+    public Double getTemperature() {
+        return temperature;
+    }
+
+    public SysRole setTemperature(Double temperature) {
+        this.temperature = temperature;
+        return this;
+    }
+
+    public Double getTopP() {
+        return topP;
+    }
+
+    public SysRole setTopP(Double topP) {
+        this.topP = topP;
+        return this;
+    }
+
+    public Float getVadEnergyTh() {
+        return vadEnergyTh;
+    }
+
+    public SysRole setVadEnergyTh(Float vadEnergyTh) {
+        this.vadEnergyTh = vadEnergyTh;
+        return this;
+    }
+
+    public Float getVadSpeechTh() {
+        return vadSpeechTh;
+    }
+
+    public SysRole setVadSpeechTh(Float vadSpeechTh) {
+        this.vadSpeechTh = vadSpeechTh;
+        return this;
+    }
+
+    public Float getVadSilenceTh() {
+        return vadSilenceTh;
+    }
+
+    public SysRole setVadSilenceTh(Float vadSilenceTh) {
+        this.vadSilenceTh = vadSilenceTh;
+        return this;
+    }
+
+    public Integer getVadSilenceMs() {
+        return vadSilenceMs;
+    }
+
+    public SysRole setVadSilenceMs(Integer vadSilenceMs) {
+        this.vadSilenceMs = vadSilenceMs;
+        return this;
+    }
+
+    public String getTtsProvider() {
+        return ttsProvider;
     }
     
-    public SysRole setProvider(String provider) {
-        this.provider = provider;
+    public SysRole setTtsProvider(String ttsProvider) {
+        this.ttsProvider = ttsProvider;
+        return this;
+    }
+
+    public String getModelProvider() {
+        return modelProvider;
+    }
+    
+    public SysRole setModelProvider(String modelProvider) {
+        this.modelProvider = modelProvider;
         return this;
     }
 

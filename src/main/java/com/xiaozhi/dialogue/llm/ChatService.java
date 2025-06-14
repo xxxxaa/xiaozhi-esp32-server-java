@@ -80,33 +80,32 @@ public class ChatService {
     /**
      * 处理用户查询（同步方式）
      * 
-     * @param session 会话信息
-     * @param message 用户消息
+     * @param session         会话信息
+     * @param message         用户消息
      * @param useFunctionCall 是否使用函数调用
      * @return 模型回复
      */
     public String chat(ChatSession session, String message, boolean useFunctionCall) {
         try {
             SysDevice device = session.getSysDevice();
-            Integer configId = device.getModelId();
 
             // 获取ChatModel
-            ChatModel chatModel = chatModelFactory.takeChatModel( configId);
+            ChatModel chatModel = chatModelFactory.takeChatModel(device);
 
-            if(session.getChatMemory() == null){//如果记忆没初始化，则初始化一下
+            if (session.getChatMemory() == null) {// 如果记忆没初始化，则初始化一下
                 initializeHistory(session);
             }
 
             // 获取格式化的历史记录（包含当前用户消息）
-            List<Message> historyMessages =  session.getHistoryMessages();
+            List<Message> historyMessages = session.getHistoryMessages();
 
             ChatOptions chatOptions = ToolCallingChatOptions.builder()
-                    .toolCallbacks(useFunctionCall ? session.getToolCallbacks(): new ArrayList<>())
-                    .toolContext(TOOL_CONTEXT_SESSION_KEY,session)
+                    .toolCallbacks(useFunctionCall ? session.getToolCallbacks() : new ArrayList<>())
+                    .toolContext(TOOL_CONTEXT_SESSION_KEY, session)
                     .build();
-            UserMessage userMessage  = new UserMessage(message);
-            Prompt prompt = Prompt.builder().messages(historyMessages).
-                    messages(userMessage).chatOptions(chatOptions).build();
+            UserMessage userMessage = new UserMessage(message);
+            Prompt prompt = Prompt.builder().messages(historyMessages).messages(userMessage).chatOptions(chatOptions)
+                    .build();
 
             ChatResponse chatResponse = chatModel.call(prompt);
             if (chatResponse == null || chatResponse.getResult().getOutput().getText() == null) {
@@ -116,24 +115,24 @@ public class ChatService {
             String response = chatResponse.getResult().getOutput().getText();
             boolean hasToolCalls = chatResponse.hasToolCalls();
             String messageType = SysMessage.MESSAGE_TYPE_NORMAL;// 默认消息类型为普通消息
-            if(!hasToolCalls){//非function消息才加入对话历史，避免调用混乱
+            if (!hasToolCalls) {// 非function消息才加入对话历史，避免调用混乱
                 // 更新历史消息缓存
                 session.addHistoryMessage(userMessage);
-                if( response != null && !response.isEmpty()) {
+                if (response != null && !response.isEmpty()) {
                     session.addHistoryMessage(new AssistantMessage(response));
                 }
-            }else{
-                //TODO 后续还需要根据元数据判断是function_call还是mcp调用
+            } else {
+                // TODO 后续还需要根据元数据判断是function_call还是mcp调用
                 // 检查元数据中是否包含工具调用标识
                 // 发生了工具调用，获取函数调用的名称，通过名称反查类型
-//                String functionName = chatResponse.getMetadata().get("function_name");
+                // String functionName = chatResponse.getMetadata().get("function_name");
                 messageType = SysMessage.MESSAGE_TYPE_FUNCTION_CALL;// function消息类型
             }
             final String finalMessageType = messageType;
-            Thread.startVirtualThread(() -> {//异步持久化
+            Thread.startVirtualThread(() -> {// 异步持久化
                 // 保存用户消息，会被持久化至数据库。
                 this.addUserMessage(device, message, finalMessageType);
-                if( response != null && !response.isEmpty()) {
+                if (response != null && !response.isEmpty()) {
                     // 保存AI消息，会被持久化至数据库。
                     this.addAssistantMessage(device, response, finalMessageType);
                 }
@@ -149,69 +148,71 @@ public class ChatService {
     /**
      * 处理用户查询（流式方式）
      *
-     * @param device         设备信息
-     * @param message        用户消息
+     * @param device          设备信息
+     * @param message         用户消息
      * @param useFunctionCall 是否使用函数调用
      */
-    public Flux<ChatResponse> chatStream(ChatSession session,SysDevice device, String message, boolean useFunctionCall) {
-        Integer configId = device.getModelId();
+    public Flux<ChatResponse> chatStream(ChatSession session, SysDevice device, String message,
+            boolean useFunctionCall) {
         // 获取ChatModel
-        ChatModel chatModel = chatModelFactory.takeChatModel(configId);
+        ChatModel chatModel = chatModelFactory.takeChatModel(device);
 
         ChatOptions chatOptions = ToolCallingChatOptions.builder()
                 .toolCallbacks(useFunctionCall ? session.getToolCallbacks() : new ArrayList<>())
-                .toolContext(TOOL_CONTEXT_SESSION_KEY,session)
+                .toolContext(TOOL_CONTEXT_SESSION_KEY, session)
                 .build();
 
-        if(session.getChatMemory() == null){//如果记忆没初始化，则初始化一下
+        if (session.getChatMemory() == null) {// 如果记忆没初始化，则初始化一下
             initializeHistory(session);
         }
         // 获取格式化的历史记录（包含当前用户消息）
-        List<Message> historyMessages =  session.getHistoryMessages();
+        List<Message> historyMessages = session.getHistoryMessages();
 
         UserMessage userMessage = new UserMessage(message);
         historyMessages.add(userMessage);
         Prompt prompt = Prompt.builder().messages(historyMessages).chatOptions(chatOptions).build();
 
         // 调用实际的流式聊天方法
-//        return chatModel.stream(prompt).map(response -> (response.getResult() == null || response.getResult().getOutput() == null
-//                || response.getResult().getOutput().getText() == null) ? ""
-//                : response.getResult().getOutput().getText());
+        // return chatModel.stream(prompt).map(response -> (response.getResult() == null
+        // || response.getResult().getOutput() == null
+        // || response.getResult().getOutput().getText() == null) ? ""
+        // : response.getResult().getOutput().getText());
         return chatModel.stream(prompt);
     }
 
     public void chatStreamBySentence(ChatSession session, String message, boolean useFunctionCall,
-                                     TriConsumer<String, Boolean, Boolean> sentenceHandler) {
+            TriConsumer<String, Boolean, Boolean> sentenceHandler) {
         try {
             SysDevice device = session.getSysDevice();
             // 创建流式响应监听器
             StreamResponseListener streamListener = new TokenStreamResponseListener(session, message, sentenceHandler);
             final StringBuilder toolName = new StringBuilder(); // 当前句子的缓冲区
             // 调用现有的流式方法
-            chatStream(session,device, message, useFunctionCall)
+            chatStream(session, device, message, useFunctionCall)
                     .subscribe(
                             chatResponse -> {
-                                String token = chatResponse.getResult() == null || chatResponse.getResult().getOutput() == null
-                                        || chatResponse.getResult().getOutput().getText() == null ? "" : chatResponse.getResult().getOutput().getText();
-                                if(!token.isEmpty()){
+                                String token = chatResponse.getResult() == null
+                                        || chatResponse.getResult().getOutput() == null
+                                        || chatResponse.getResult().getOutput().getText() == null ? ""
+                                                : chatResponse.getResult().getOutput().getText();
+                                if (!token.isEmpty()) {
                                     streamListener.onToken(token);
                                 }
-                                if(toolName.isEmpty() && useFunctionCall){
+                                if (toolName.isEmpty() && useFunctionCall) {
                                     Generation generation = chatResponse.getResult();
-                                    //注意，不能用chatResponse.hasToolCalls()判断，当前chatResponse工具调用结果的返回，
+                                    // 注意，不能用chatResponse.hasToolCalls()判断，当前chatResponse工具调用结果的返回，
                                     // 是个文本类助手消息，hasToolCalls标识是false。必须溯源取meta
-                                    if(generation != null){
+                                    if (generation != null) {
                                         ChatGenerationMetadata chatGenerationMetadata = generation.getMetadata();
                                         String name = chatGenerationMetadata.get("toolName");
-                                        if(name != null && !name.isEmpty()){
+                                        if (name != null && !name.isEmpty()) {
                                             toolName.append(name);
                                         }
                                     }
                                 }
                             },
                             streamListener::onError,
-                            () -> streamListener.onComplete(toolName.toString())
-                    );
+                            () -> streamListener.onComplete(toolName.toString()));
         } catch (Exception e) {
             logger.error("处理LLM时出错: {}", e.getMessage(), e);
             // 发送错误信号
@@ -224,7 +225,7 @@ public class ChatService {
      *
      */
     public void initializeHistory(ChatSession chatSession) {
-        if(chatSession.getSysDevice() == null){
+        if (chatSession.getSysDevice() == null) {
             return;
         }
         SysDevice device = chatSession.getSysDevice();
@@ -232,7 +233,8 @@ public class ChatService {
         // 同一个设备重新连接至服务器，会被标识为不同的sessionId。
         // 可以将这理解为spring-ai的conversation会话,将sessionId作为conversationId
         // 从数据库加载历史记录
-        List<SysMessage> history = chatMemoryRepository.getMessages(device.getDeviceId(), SysMessage.MESSAGE_TYPE_NORMAL, DEFAULT_HISTORY_LIMIT);
+        List<SysMessage> history = chatMemoryRepository.getMessages(device.getDeviceId(),
+                SysMessage.MESSAGE_TYPE_NORMAL, DEFAULT_HISTORY_LIMIT);
         String systemMessage = chatMemoryRepository.getSystemMessage(device.getDeviceId(), device.getRoleId());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .maxMessages(DEFAULT_HISTORY_LIMIT)
@@ -251,6 +253,7 @@ public class ChatService {
     public void clearMessageCache(String deviceId) {
         chatMemoryRepository.clearMessages(deviceId);
     }
+
     /**
      * 添加用户消息
      *
@@ -258,7 +261,8 @@ public class ChatService {
      */
     public void addUserMessage(SysDevice device, String message, String messageType) {
         // 更新缓存
-        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), "user", message, device.getRoleId(), messageType, null);
+        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), "user", message,
+                device.getRoleId(), messageType, null);
     }
 
     /**
@@ -266,29 +270,32 @@ public class ChatService {
      *
      * @param message AI消息
      */
-    public void addAssistantMessage(SysDevice device,String message, String messageType) {
-        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), "assistant", message, device.getRoleId(), messageType, null);
+    public void addAssistantMessage(SysDevice device, String message, String messageType) {
+        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), "assistant", message,
+                device.getRoleId(), messageType, null);
     }
+
     /**
      * 通用添加消息
      *
-     * @param message 消息内容
-     * @param role 角色名称
+     * @param message     消息内容
+     * @param role        角色名称
      * @param messageType 消息类型
      */
-    public void addMessage(SysDevice device,String message, String role, String messageType, String audioPath) {
-        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), role, message, device.getRoleId(), messageType, audioPath);
+    public void addMessage(SysDevice device, String message, String role, String messageType, String audioPath) {
+        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), role, message, device.getRoleId(),
+                messageType, audioPath);
     }
-
 
     /**
      * 将数据库记录的SysMessag转换为spring-ai的Message。
      * 加载的历史都是普通消息(SysMessage.MESSAGE_TYPE_NORMAL)
+     * 
      * @param messages
      * @return
      */
-    private List<Message> convert(List<SysMessage> messages){
-        if(messages == null || messages.isEmpty()){
+    private List<Message> convert(List<SysMessage> messages) {
+        if (messages == null || messages.isEmpty()) {
             return Collections.emptyList();
         }
         return messages.stream()
@@ -297,7 +304,8 @@ public class ChatService {
                 .map(message -> {
                     String role = message.getSender();
                     // 一般消息("messageType", "NORMAL");//默认为普通消息
-                    Map<String, Object> metadata = Map.of("messageId", message.getMessageId(), "messageType", message.getMessageType());
+                    Map<String, Object> metadata = Map.of("messageId", message.getMessageId(), "messageType",
+                            message.getMessageType());
                     return switch (role) {
                         case "assistant" -> new AssistantMessage(message.getMessage(), metadata);
                         case "user" -> UserMessage.builder().text(message.getMessage()).metadata(metadata).build();
@@ -336,11 +344,12 @@ public class ChatService {
         final AtomicInteger sentenceCount = new AtomicInteger(0); // 已发送句子的计数
         final StringBuilder fullResponse = new StringBuilder(); // 完整响应的缓冲区
         final AtomicBoolean finalSentenceSent = new AtomicBoolean(false); // 跟踪最后一个句子是否已发送
-        String message;//用户消息内容
+        String message;// 用户消息内容
         ChatSession session;
         TriConsumer<String, Boolean, Boolean> sentenceHandler;
 
-        public TokenStreamResponseListener(ChatSession session, String message, TriConsumer<String, Boolean, Boolean> sentenceHandler) {
+        public TokenStreamResponseListener(ChatSession session, String message,
+                TriConsumer<String, Boolean, Boolean> sentenceHandler) {
             this.message = message;
             this.session = session;
             this.sentenceHandler = sentenceHandler;
@@ -348,7 +357,7 @@ public class ChatService {
 
         @Override
         public void onToken(String token) {
-            if(token == null || token.isEmpty()){
+            if (token == null || token.isEmpty()) {
                 return;
             }
             // 将token添加到完整响应
@@ -463,30 +472,35 @@ public class ChatService {
         void persistMessages(String toolName) {
             // TODO 是否需要把content为空和角色为tool的入库? 目前不入库（这类主要是function_call的二次调用llm进行总结时的过程消息）
             // 如果本轮对话是function_call或mcp调用(最后一条信息的类型)，把用户的消息类型也修正为同样类型
-            // String lastMessageType = allMessages.get(allMessages.size() - 1).get("messageType").toString();
-            // TODO 需要进一步看看ChatModel在流式响应里是如何判断hasTools的，或者直接基于Flux<ChatResponse>已封装好的对象hasToolCalls判断
+            // String lastMessageType = allMessages.get(allMessages.size() -
+            // 1).get("messageType").toString();
+            // TODO
+            // 需要进一步看看ChatModel在流式响应里是如何判断hasTools的，或者直接基于Flux<ChatResponse>已封装好的对象hasToolCalls判断
             boolean hasToolCalls = toolName != null && !toolName.isEmpty();
-            String messageType = hasToolCalls ? SysMessage.MESSAGE_TYPE_FUNCTION_CALL : SysMessage.MESSAGE_TYPE_NORMAL;//TODO 后续可以根据名称区分function还是mcp，来细分类型
+            String messageType = hasToolCalls ? SysMessage.MESSAGE_TYPE_FUNCTION_CALL : SysMessage.MESSAGE_TYPE_NORMAL;// TODO
+                                                                                                                       // 后续可以根据名称区分function还是mcp，来细分类型
 
             UserMessage userMessage = new UserMessage(message);
 
             // 获取当前对话ID
-            String dialogueId = session.getDialogueId() ;
+            String dialogueId = session.getDialogueId();
 
-            if(!hasToolCalls){//非function消息才加入对话历史，避免调用混乱
+            if (!hasToolCalls) {// 非function消息才加入对话历史，避免调用混乱
                 session.addHistoryMessage(userMessage);
-                if(!fullResponse.isEmpty()) {
+                if (!fullResponse.isEmpty()) {
                     AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());
                     session.addHistoryMessage(assistantMessage);
                 }
             }
-            Thread.startVirtualThread(() -> {//异步持久化
+            Thread.startVirtualThread(() -> {// 异步持久化
                 String userAudioPath = session.getUserAudioPath();
-                addMessage(session.getSysDevice(), userMessage.getText(), userMessage.getMessageType().getValue(), messageType, userAudioPath);
-                if(!fullResponse.isEmpty()) {
+                addMessage(session.getSysDevice(), userMessage.getText(), userMessage.getMessageType().getValue(),
+                        messageType, userAudioPath);
+                if (!fullResponse.isEmpty()) {
                     AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());
                     String assistAudioPath = session.getAssistantAudioPath();
-                    addMessage(session.getSysDevice(), assistantMessage.getText(), assistantMessage.getMessageType().getValue(), messageType, assistAudioPath);
+                    addMessage(session.getSysDevice(), assistantMessage.getText(),
+                            assistantMessage.getMessageType().getValue(), messageType, assistAudioPath);
                 }
             });
         }

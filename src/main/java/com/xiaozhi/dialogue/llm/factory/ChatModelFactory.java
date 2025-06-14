@@ -3,6 +3,7 @@ package com.xiaozhi.dialogue.llm.factory;
 import com.xiaozhi.dialogue.llm.providers.CozeChatModel;
 import com.xiaozhi.dialogue.llm.providers.DifyChatModel;
 import com.xiaozhi.entity.SysConfig;
+import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.service.SysConfigService;
 
 import java.net.http.HttpClient;
@@ -53,11 +54,12 @@ public class ChatModelFactory {
      * @param configId 配置ID，实际是模型ID。
      * @return
      */
-    public ChatModel takeChatModel(Integer configId) {
-        Assert.notNull(configId, "配置ID不能为空");
+    public ChatModel takeChatModel(SysDevice device) {
+        Integer modelId = device.getModelId();
+        Assert.notNull(modelId, "配置ID不能为空");
         // 根据配置ID查询配置
-        SysConfig config = configService.selectConfigById(configId);
-        return createChatModel(config);
+        SysConfig config = configService.selectConfigById(modelId);
+        return createChatModel(config, device);
     }
 
     /**
@@ -66,30 +68,32 @@ public class ChatModelFactory {
      * @param config
      * @return
      */
-    private ChatModel createChatModel(SysConfig config) {
+    private ChatModel createChatModel(SysConfig config, SysDevice device) {
         String provider = config.getProvider().toLowerCase();
         String model = config.getConfigName();
         String endpoint = config.getApiUrl();
         String apiKey = config.getApiKey();
         String appId = config.getAppId();
         String apiSecret = config.getApiSecret();
+        Double temperature = device.getTemperature();
+        Double topP = device.getTopP();
         provider = provider.toLowerCase();
         switch (provider) {
             case "ollama":
-                return newOllamaChatModel(endpoint, appId, apiKey, apiSecret, model);
+                return newOllamaChatModel(endpoint, appId, apiKey, apiSecret, model, temperature, topP);
             case "zhipu":
-                return newZhipuChatModel(endpoint, appId, apiKey, apiSecret, model);
+                return newZhipuChatModel(endpoint, appId, apiKey, apiSecret, model, temperature, topP);
             case "dify":
                 return new DifyChatModel(endpoint, appId, apiKey, apiSecret, model);
             case "coze":
                 return new CozeChatModel(endpoint, appId, apiKey, apiSecret, model);
             // 默认为 openai 协议
             default:
-                return newOpenAiChatModel(endpoint, appId, apiKey, apiSecret, model);
+                return newOpenAiChatModel(endpoint, appId, apiKey, apiSecret, model, temperature, topP);
         }
     }
 
-    private ChatModel newOllamaChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model) {
+    private ChatModel newOllamaChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model, Double temperature, Double topP) {
         var ollamaApi = OllamaApi.builder().baseUrl(endpoint).build();
 
         var chatModel = OllamaChatModel.builder()
@@ -97,13 +101,15 @@ public class ChatModelFactory {
                 .defaultOptions(
                         OllamaOptions.builder()
                                 .model(model)
+                                .temperature(temperature)
+                                .topP(topP)
                                 .build())
                 .build();
         logger.info("Using Ollama model: {}", model);
         return chatModel;
     }
 
-    private ChatModel newOpenAiChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model) {
+    private ChatModel newOpenAiChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model, Double temperature, Double topP) {
         MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
         headers.add("Content-Type", "application/json");
 
@@ -128,6 +134,8 @@ public class ChatModelFactory {
                 .build();
         var openAiChatOptions = OpenAiChatOptions.builder()
                 .model(model)
+                .temperature(temperature)
+                .topP(topP)
                 .build();
 
         var chatModel = OpenAiChatModel.builder()
@@ -139,11 +147,13 @@ public class ChatModelFactory {
         return chatModel;
     }
 
-    private ChatModel newZhipuChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model) {
+    private ChatModel newZhipuChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model, Double temperature, Double topP) {
         var zhiPuAiApi = new ZhiPuAiApi(endpoint, apiKey);
 
         var chatModel = new ZhiPuAiChatModel(zhiPuAiApi, ZhiPuAiChatOptions.builder()
                 .model(model)
+                .temperature(temperature)
+                .topP(topP)
                 .build());
         logger.info("Using zhiPu model: {}", model);
         return chatModel;

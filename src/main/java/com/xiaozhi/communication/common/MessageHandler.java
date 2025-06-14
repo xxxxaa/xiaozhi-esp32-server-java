@@ -93,11 +93,11 @@ public class MessageHandler {
         logger.info("开始查询设备信息 - DeviceId: {}", deviceId);
         final SysDevice device = Optional.ofNullable(deviceService.selectDeviceById(deviceId)).orElse(new SysDevice());
 
+        device.setDeviceId(deviceId);
+        device.setSessionId(sessionId);
+        sessionManager.registerDevice(sessionId, device);
         // 如果已绑定，则初始化其他内容
         if (!ObjectUtils.isEmpty(device)) {
-            device.setDeviceId(deviceId);
-            device.setSessionId(sessionId);
-            sessionManager.registerDevice(sessionId, device);
             //这里需要放在虚拟线程外
             ToolsSessionHolder toolsSessionHolder = new ToolsSessionHolder(chatSession.getSessionId(),
                     device, toolsGlobalRegistry);
@@ -118,7 +118,7 @@ public class MessageHandler {
                         }
                     }
                     if (device.getModelId() != null) {
-                        chatModelFactory.takeChatModel(device.getModelId());// 提前初始化，加速后续使用
+                        chatModelFactory.takeChatModel(device);// 提前初始化，加速后续使用
                         chatService.initializeHistory(chatSession);
                         // 注册全局函数
                         toolsSessionHolder.registerGlobalFunctionTools(chatSession);
@@ -195,6 +195,10 @@ public class MessageHandler {
 
     public void handleUnboundDevice(String sessionId, SysDevice device) {
         String deviceId = device.getDeviceId();
+        if (device == null || deviceId == null) {
+            logger.error("设备或设备ID为空，无法处理未绑定设备");
+            return;
+        }
         ChatSession chatSession = sessionManager.getSession(sessionId);
         if (chatSession == null || !chatSession.isOpen()) {
             return;
@@ -208,7 +212,7 @@ public class MessageHandler {
         Thread.startVirtualThread(() -> {
             try {
                 // 设备已注册但未配置模型
-                if (device.getDeviceName() != null && device.getModelId() == null) {
+                if (device.getDeviceName() != null && device.getRoleId() == null) {
                     String message = "设备未配置对话模型，请到配置页面完成配置后开始对话";
 
                     String audioFilePath = ttsService.getDefaultTtsService().textToSpeech(message);

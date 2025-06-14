@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+
+import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -124,6 +126,9 @@ public class DeviceController extends BaseController {
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            if (e.getMessage() != null && e.getMessage().contains("没有配置角色")) {
+                return AjaxResult.error(e.getMessage());
+            }
             return AjaxResult.error();
         }
     }

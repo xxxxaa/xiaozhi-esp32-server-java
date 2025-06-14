@@ -4,41 +4,24 @@
 
     <sql id="deviceSql">
         sys_device.deviceId, sys_device.deviceName, sys_device.ip, sys_device.wifiName,
-        sys_device.vadSpeechTh, sys_device.vadSilenceTh, sys_device.vadEnergyTh, sys_device.vadSilenceMs,
         sys_device.chipModelName, sys_device.type, sys_device.version, sys_device.state,
         sys_device.userId, sys_device.lastLogin, sys_device.createTime
     </sql>
 
     <sql id="roleSql">
-        sys_role.roleId, sys_role.roleName, sys_role.roleDesc, sys_role.voiceName, sys_role.ttsId
-    </sql>
-
-    <sql id="modelSql">
-        model_config.configId AS modelId
-    </sql>
-
-    <sql id="sttSql">
-        stt_config.configId AS sttId
-    </sql>
-
-    <sql id="ttsSql">
-        tts_config.configId AS ttsId
+        sys_role.roleId, sys_role.roleName, sys_role.roleDesc, sys_role.voiceName,
+        sys_role.modelId, sys_role.sttId, sys_role.ttsId,
+        sys_role.vadSpeechTh, sys_role.vadSilenceTh, sys_role.vadEnergyTh, sys_role.vadSilenceMs
     </sql>
 
     <select id="query" resultType="com.xiaozhi.entity.SysDevice">
         SELECT
         <include refid="deviceSql"></include>,
         <include refid="roleSql"></include>,
-        <include refid="modelSql"></include>,
-        <include refid="sttSql"></include>,
-        <include refid="ttsSql"></include>,
         (SELECT COUNT(*) FROM sys_message WHERE sys_message.deviceId = sys_device.deviceId AND sys_message.state = '1') AS totalMessage
         FROM
             sys_device
             LEFT JOIN sys_role ON sys_device.roleId = sys_role.roleId
-            LEFT JOIN sys_config model_config ON sys_device.modelId = model_config.configId AND model_config.configType = 'llm'
-            LEFT JOIN sys_config stt_config ON sys_device.sttId = stt_config.configId AND stt_config.configType = 'stt'
-            LEFT JOIN sys_config tts_config ON ttsId = tts_config.configId AND tts_config.configType = 'tts'
         WHERE
             1 = 1
             <if test="userId != null and userId != ''">AND sys_device.userId = #{userId}</if>
@@ -51,25 +34,10 @@
         SELECT
             <include refid="deviceSql"></include>,
             <include refid="roleSql"></include>,
-            <if test="!checkConfig">
-                sys_device.modelId, sys_device.sttId, sys_role.ttsId
-            </if>
-            <if test="checkConfig">
-                <include refid="modelSql"></include>,
-                <include refid="sttSql"></include>,
-                <include refid="ttsSql"></include>,
-            </if>
-            <if test="countMessage">
-                (SELECT COUNT(*) FROM sys_message WHERE sys_message.deviceId = sys_device.deviceId AND sys_message.state = '1') AS totalMessage
-            </if>
+            (SELECT COUNT(*) FROM sys_message WHERE sys_message.deviceId = sys_device.deviceId AND sys_message.state = '1') AS totalMessage
         FROM
             sys_device
             LEFT JOIN sys_role ON sys_device.roleId = sys_role.roleId
-            <if test="checkConfig">
-                LEFT JOIN sys_config model_config ON sys_device.modelId = model_config.configId AND model_config.configType = 'llm'
-                LEFT JOIN sys_config stt_config ON sys_device.sttId = stt_config.configId AND stt_config.configType = 'stt'
-            </if>
-            LEFT JOIN sys_config tts_config ON ttsId = tts_config.configId AND tts_config.configType = 'tts'
         WHERE
             deviceId = #{deviceId}
     </select>
@@ -125,17 +93,6 @@
             <if test="version != null and version != ''">version = #{version},</if>
             <if test="ip != null and ip != ''">ip = #{ip},</if>
             <if test="lastLogin != null and lastLogin != ''">lastLogin = NOW(),</if>
-            <if test="modelId != null and modelId != ''">modelId = #{modelId},</if>
-            <if test="sttId != null and sttId != ''">
-                <choose>
-                    <when test="sttId == -1">sttId = null,</when>
-                    <otherwise>sttId = #{sttId},</otherwise>
-                </choose>
-            </if>
-            <if test="vadSpeechTh != null and vadSpeechTh != ''">vadSpeechTh = #{vadSpeechTh},</if>
-            <if test="vadSilenceTh != null and vadSilenceTh != ''">vadSilenceTh = #{vadSilenceTh},</if>
-            <if test="vadEnergyTh != null and vadEnergyTh != ''">vadEnergyTh = #{vadEnergyTh},</if>
-            <if test="vadSilenceMs != null and vadSilenceMs != ''">vadSilenceMs = #{vadSilenceMs},</if>
             <if test="roleId != null and roleId != ''">roleId = #{roleId},</if>
         </set>
         WHERE
@@ -145,16 +102,11 @@
     </update>
 
     <insert id="add" useGeneratedKeys="true" keyProperty="deviceName" parameterType="com.xiaozhi.entity.SysDevice">
-        INSERT INTO sys_device (deviceId, deviceName, type, userId, modelId, sttId, roleId) VALUES (
+        INSERT INTO sys_device (deviceId, deviceName, type, userId, roleId) VALUES (
             #{deviceId},
             #{deviceName},
             #{type},
             #{userId},
-            #{modelId},
-            <choose>
-                <when test="sttId == -1">null</when>
-                <otherwise>#{sttId}</otherwise>
-            </choose>,
             #{roleId}
         )
     </insert>

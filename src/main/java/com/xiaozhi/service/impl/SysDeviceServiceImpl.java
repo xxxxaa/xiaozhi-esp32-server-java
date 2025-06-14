@@ -17,6 +17,8 @@ import com.xiaozhi.service.SysConfigService;
 import com.xiaozhi.service.SysDeviceService;
 
 import jakarta.annotation.Resource;
+
+import org.apache.ibatis.javassist.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -67,69 +69,34 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
      *
      * @param device
      * @return
+     * @throws NotFoundException 如果没有配置角色
      */
     @Override
     @Transactional(transactionManager = "transactionManager")
-    public int add(SysDevice device) {
+    public int add(SysDevice device) throws NotFoundException {
 
-        SysDevice existingDevice = deviceMapper.selectDeviceById(device.getDeviceId(), false, false);
+        SysDevice existingDevice = deviceMapper.selectDeviceById(device.getDeviceId());
         if (existingDevice != null) {
             return 1;
-        }
-
-        // 先查询是否有默认配置
-        SysConfig queryConfig = new SysConfig();
-        queryConfig.setUserId(device.getUserId());
-        queryConfig.setIsDefault("1");
-        // 该配置中不包含 coze 智能体
-        List<SysConfig> configs = configMapper.query(queryConfig);
-        // 单独查询智能体
-        List<SysConfig> cozeAgents = configMapper.query(queryConfig.setProvider("coze").setConfigType("llm"));
-        List<SysConfig> difyAgents = configMapper.query(queryConfig.setProvider("dify").setConfigType("llm"));
-
-        // 合并去重，按照 configId 去重
-        List<SysConfig> mergedConfigs = new ArrayList<>();
-
-        // 使用LinkedHashMap保持插入顺序，以configId为键去重
-        Map<Integer, SysConfig> configMap = new LinkedHashMap<>();
-
-        // 先添加configs中的配置
-        for (SysConfig config : configs) {
-            configMap.put(config.getConfigId(), config);
-        }
-
-        // 添加cozeAgents中的配置
-        for (SysConfig agent : cozeAgents) {
-            configMap.put(agent.getConfigId(), agent);
-        }
-
-        // 添加difyAgents中的配置
-        for (SysConfig agent : difyAgents) {
-            configMap.put(agent.getConfigId(), agent);
-        }
-        // 转换回List
-        mergedConfigs = new ArrayList<>(configMap.values());
-
-        // 遍历查询是否有默认配置
-        for (SysConfig config : mergedConfigs) {
-            if (config.getConfigType().equals("llm")) {
-                device.setModelId(config.getConfigId());
-            } else if (config.getConfigType().equals("stt")) {
-                device.setSttId(config.getConfigId());
-            }
         }
 
         // 查询是否有默认角色
         SysRole queryRole = new SysRole();
         queryRole.setUserId(device.getUserId());
-        queryRole.setIsDefault("1");
         List<SysRole> roles = roleMapper.query(queryRole);
 
         if (roles.size() > 0) {
-            device.setRoleId(roles.get(0).getRoleId());
+            // 优先绑定默认角色，否则随便绑定一个
+            for (SysRole role: roles) {
+                device.setRoleId(role.getRoleId());
+                if (role.getIsDefault() == "1") {
+                    break;
+                }
+            }
+            return deviceMapper.add(device);
+        } else {
+            throw new NotFoundException("没有配置角色");
         }
-        // 添加设备
-        return deviceMapper.add(device);
     }
 
     /**
@@ -170,7 +137,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     @Override
     @Cacheable(value = CACHE_NAME, key = "#deviceId.replace(\":\", \"-\")", unless = "#result == null")
     public SysDevice selectDeviceById(String deviceId) {
-        return deviceMapper.selectDeviceById(deviceId, false, false);
+        return deviceMapper.selectDeviceById(deviceId);
     }
 
     /**
@@ -216,7 +183,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     public SysDevice update(SysDevice device) {
         int count = updateNoRefreshCache(device);
         if (count > 0) {
-            return deviceMapper.selectDeviceById(device.getDeviceId(), false, false);
+            return deviceMapper.selectDeviceById(device.getDeviceId());
         } else {
             return null;
         }
@@ -225,7 +192,6 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     @Override
     @Transactional(transactionManager = "transactionManager")
     public int updateNoRefreshCache(SysDevice device) {
-        ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
         if (!ObjectUtils.isEmpty(device.getRoleId())) {
             SysRole role = roleMapper.selectRoleById(device.getRoleId());
             if (role != null) {
@@ -240,7 +206,10 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
                         // 清空设备聊天记录
                         messageMapper.delete(message);
                         // TODO 后期切换时可以不用删除数据库中的记录，而是采用roleId来获取记忆内容
-                        session.setChatMemory(null);
+                        ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
+                        if (session != null) {
+                            session.setChatMemory(null);
+                        }
                     }
                 }
             }

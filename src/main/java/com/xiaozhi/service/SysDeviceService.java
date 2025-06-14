@@ -2,6 +2,7 @@ package com.xiaozhi.service;
 
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.entity.SysDevice;
+import org.apache.ibatis.javassist.NotFoundException;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public interface SysDeviceService {
    * @param device
    * @return
    */
-  int add(SysDevice device);
+  int add(SysDevice device) throws NotFoundException;
 
   /**
    * 查询设备信息

@@ -38,7 +38,7 @@ export const configTypeMap = {
       ],
       zhipu: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },
-        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: '/chat/completions', defaultUrl: "https://open.bigmodel.cn/api/paas" }
+        { name: 'apiUrl', label: 'API URL', required: true, span: 12, suffix: 'v4/chat/completions', defaultUrl: "https://open.bigmodel.cn/api/paas" }
       ],
       aliyun: [
         { name: 'apiKey', label: 'API Secret', required: true, span: 8 },

@@ -10,23 +10,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * 
  */
 @JsonIgnoreProperties({ "startTime", "endTime", "start", "limit", "userId", "code" })
-public class SysDevice extends Base {
+public class SysDevice extends SysRole {
     public static final String DEVICE_STATE_ONLINE = "1";
     public static final String DEVICE_STATE_OFFLINE = "0";
 
     private String deviceId;
 
     private String sessionId;
-
-    /**
-     * 模型Id
-     */
-    private Integer modelId;
-
-    /*
-     * 语音识别Id
-     */
-    private Integer sttId;
 
     /*
      * 角色Id
@@ -89,37 +79,10 @@ public class SysDevice extends Base {
      */
     private String version;
 
-    private Float vadEnergyTh;
-    private Float vadSpeechTh;
-    private Float vadSilenceTh;
-    private Integer vadSilenceMs;
-
     /**
      * 可用全局function的名称列表(逗号分割)，为空则使用所有全局function
      */
     private String functionNames;
-
-    // 辅助字段，不对应数据库表
-    private Integer ttsId;
-    private String voiceName;
-
-    public Integer getModelId() {
-        return modelId;
-    }
-
-    public SysDevice setModelId(Integer modelId) {
-        this.modelId = modelId;
-        return this;
-    }
-
-    public Integer getSttId() {
-        return sttId;
-    }
-
-    public SysDevice setSttId(Integer sttId) {
-        this.sttId = sttId;
-        return this;
-    }
 
     public Integer getRoleId() {
         return roleId;
@@ -154,42 +117,6 @@ public class SysDevice extends Base {
 
     public SysDevice setDeviceName(String deviceName) {
         this.deviceName = deviceName;
-        return this;
-    }
-
-    public Float getVadEnergyTh() {
-        return vadEnergyTh;
-    }
-
-    public SysDevice setVadEnergyTh(Float vadEnergyTh) {
-        this.vadEnergyTh = vadEnergyTh;
-        return this;
-    }
-
-    public Float getVadSpeechTh() {
-        return vadSpeechTh;
-    }
-
-    public SysDevice setVadSpeechTh(Float vadSpeechTh) {
-        this.vadSpeechTh = vadSpeechTh;
-        return this;
-    }
-
-    public Float getVadSilenceTh() {
-        return vadSilenceTh;
-    }
-
-    public SysDevice setVadSilenceTh(Float vadSilenceTh) {
-        this.vadSilenceTh = vadSilenceTh;
-        return this;
-    }
-
-    public Integer getVadSilenceMs() {
-        return vadSilenceMs;
-    }
-
-    public SysDevice setVadSilenceMs(Integer vadSilenceMs) {
-        this.vadSilenceMs = vadSilenceMs;
         return this;
     }
 
@@ -289,22 +216,6 @@ public class SysDevice extends Base {
 
     public void setFunctionNames(String functionNames) {
         this.functionNames = functionNames;
-    }
-
-    public Integer getTtsId() {
-        return ttsId;
-    }
-
-    public void setTtsId(Integer ttsId) {
-        this.ttsId = ttsId;
-    }
-
-    public String getVoiceName() {
-        return voiceName;
-    }
-
-    public void setVoiceName(String voiceName) {
-        this.voiceName = voiceName;
     }
 
     @Override

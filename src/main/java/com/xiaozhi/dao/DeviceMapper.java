@@ -13,7 +13,7 @@ import java.util.List;
 public interface DeviceMapper {
   List<SysDevice> query(SysDevice device);
 
-  SysDevice selectDeviceById(String deviceId, boolean checkConfig, boolean countMessage);
+  SysDevice selectDeviceById(String deviceId);
 
   int generateCode(SysDevice device);
 
