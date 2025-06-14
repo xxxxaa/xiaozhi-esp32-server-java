@@ -10,12 +10,14 @@ import com.xiaozhi.dialogue.stt.factory.SttServiceFactory;
 import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.entity.SysDevice;
+import com.xiaozhi.event.ChatSessionCloseEvent;
 import com.xiaozhi.utils.AudioUtils;
 import com.xiaozhi.utils.EmojiUtils;
 import com.xiaozhi.utils.EmojiUtils.EmoSentence;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -33,7 +35,7 @@ import java.util.function.Consumer;
  * 负责处理语音识别和对话生成的业务逻辑
  */
 @Service
-public class DialogueService {
+public class DialogueService implements ApplicationListener<ChatSessionCloseEvent> {
     private static final Logger logger = LoggerFactory.getLogger(DialogueService.class);
     private static final DecimalFormat df = new DecimalFormat("0.00");
     private static final long TIMEOUT_MS = 5000;
@@ -83,6 +85,20 @@ public class DialogueService {
     // 新增：并发控制相关
     private final Map<String, Semaphore> sessionSemaphores = new ConcurrentHashMap<>();
     private final Map<String, PriorityBlockingQueue<TtsTask>> sessionTaskQueues = new ConcurrentHashMap<>();
+
+    @Override
+    public void onApplicationEvent(ChatSessionCloseEvent event) {
+        ChatSession chatSession = event.getSession();
+        if(chatSession != null) {
+            // clean up dialogue audio paths and responses
+            if (StringUtils.hasText(chatSession.getDialogueId())) {
+                String dialogueId = chatSession.getDialogueId();
+                dialogueAudioPaths.remove(dialogueId);
+                dialogueResponses.remove(dialogueId);
+            }
+            cleanupSession(chatSession.getSessionId());
+        }
+    }
 
     /**
      * 句子对象，用于跟踪每个句子的处理状态
