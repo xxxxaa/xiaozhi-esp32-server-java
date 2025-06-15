@@ -1,4 +1,26 @@
 # 变更日志
+## [2.8.0] - 2025-06-15
+
+### 新功能
+- feat:增加logback输入 close #37
+- feat:新增橘色设备量展示
+
+### 修复
+- fix(stt.aliyun): do not reuse recognizer
+- fix(stt.aliyun): support long speech recognition
+- fix: memory leak. Should clean up dialogue info after session closed
+
+### 其他变更
+- chore: update version to 2.8.0 [skip ci]
+- update:角色返回增加modelName
+- docs: update changelog for v2.7.68 [skip ci]
+- chore: update version to 2.7.68 [skip ci]
+- docs: update changelog for v2.7.67 [skip ci]
+- chore: update version to 2.7.67 [skip ci]
+- docs: update changelog for v2.7.66 [skip ci]
+- chore: update version to 2.7.66 [skip ci]
+- refactor(stt): simplify SttServiceFactory
+
 ## [2.7.68] - 2025-06-14
 
 ### 修复
