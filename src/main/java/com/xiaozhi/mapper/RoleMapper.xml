@@ -10,7 +10,7 @@
     </sql>
 
     <sql id="modelSql">
-        model_config.configId AS modelId, model_config.provider AS modelProvider
+        model_config.configId AS modelId, model_config.configName AS modelName, model_config.provider AS modelProvider
     </sql>
 
     <sql id="sttSql">

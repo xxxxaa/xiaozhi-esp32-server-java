@@ -24,6 +24,8 @@ public class SysRole extends Base {
 
     private Integer modelId;
 
+    private String modelName;
+
     private Integer sttId;
 
     private Double temperature;
@@ -52,12 +54,21 @@ public class SysRole extends Base {
         return this;
     }
 
-        public Integer getModelId() {
+    public Integer getModelId() {
         return modelId;
     }
 
     public SysRole setModelId(Integer modelId) {
         this.modelId = modelId;
+        return this;
+    }
+
+    public String getModelName() {
+        return modelName;
+    }
+
+    public SysRole setModelName(String modelName) {
+        this.modelName = modelName;
         return this;
     }
 
