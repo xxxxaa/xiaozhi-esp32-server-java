@@ -154,6 +154,11 @@ export default {
           value: "",
           index: "deviceName",
         },
+        {
+          label: "角色",
+          value: "",
+          index: "roleName",
+        },
       ],
       stateItems: [
         { label: "全部", value: "", key: "" },

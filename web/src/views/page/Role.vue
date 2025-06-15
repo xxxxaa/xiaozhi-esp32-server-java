@@ -516,10 +516,17 @@ export default {
           align: 'center',
         },
         {
+          title: '设备数量',
+          dataIndex: 'totalDevice',
+          scopedSlots: { customRender: 'totalDevice' },
+          width: 80,
+          align: 'center',
+        },
+        {
           title: '默认角色',
           dataIndex: 'isDefault',
           scopedSlots: { customRender: 'isDefault' },
-          width: 80,
+          width: 100,
           align: 'center',
         },
         {

@@ -41,6 +41,8 @@ public class SysRole extends Base {
 
     private String isDefault;
 
+    private Integer totalDevice;
+
     public Integer getTtsId() {
         return ttsId;
     }
@@ -189,7 +191,17 @@ public class SysRole extends Base {
         return isDefault;
     }
 
-    public void setIsDefault(String isDefault) {
+    public SysRole setIsDefault(String isDefault) {
         this.isDefault = isDefault;
+        return this;
+    }
+
+    public Integer getTotalDevice() {
+        return totalDevice;
+    }
+
+    public SysRole setTotalDevice(Integer totalDevice) {
+        this.totalDevice = totalDevice;
+        return this;
     }
 }

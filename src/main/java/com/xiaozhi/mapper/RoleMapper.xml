@@ -26,7 +26,8 @@
         <include refid="roleSql"></include>,
         <include refid="modelSql"></include>,
         <include refid="sttSql"></include>,
-        <include refid="ttsSql"></include>
+        <include refid="ttsSql"></include>,
+        (SELECT COUNT(*) FROM sys_device WHERE sys_device.roleId = sys_role.roleId) AS totalDevice
         FROM
             sys_role
             LEFT JOIN sys_config tts_config ON sys_role.ttsId = tts_config.configId AND tts_config.configType = 'tts'
