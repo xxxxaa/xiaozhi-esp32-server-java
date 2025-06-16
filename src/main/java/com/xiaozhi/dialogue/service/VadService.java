@@ -353,10 +353,18 @@ public class VadService {
 
         // 获取设备配置
         SysDevice device = sessionManager.getDeviceConfig(sessionId);
-        float speechThreshold = Optional.ofNullable(device.getVadSpeechTh()).orElse(0.3f);
-        float silenceThreshold = Optional.ofNullable(device.getVadSilenceTh()).orElse(0.2f);
-        float energyThreshold = Optional.ofNullable(device.getVadEnergyTh()).orElse(0.001f);
-        int silenceTimeoutMs = Optional.ofNullable(device.getVadSilenceMs()).orElse(1200);
+        // 添加空值检查，使用默认值
+        float speechThreshold = 0.3f;
+        float silenceThreshold = 0.2f;
+        float energyThreshold = 0.001f;
+        int silenceTimeoutMs = 1200;
+
+        if (device != null) {
+            speechThreshold = Optional.ofNullable(device.getVadSpeechTh()).orElse(speechThreshold);
+            silenceThreshold = Optional.ofNullable(device.getVadSilenceTh()).orElse(silenceThreshold);
+            energyThreshold = Optional.ofNullable(device.getVadEnergyTh()).orElse(energyThreshold);
+            silenceTimeoutMs = Optional.ofNullable(device.getVadSilenceMs()).orElse(silenceTimeoutMs);
+        }
 
         synchronized (lock) {
             try {

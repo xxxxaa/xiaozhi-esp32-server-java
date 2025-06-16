@@ -99,7 +99,6 @@ public class OpusProcessor {
                 byte[] frame = new byte[opusLen];
                 System.arraycopy(opusBuf, 0, frame, 0, opusLen);
                 frames.add(frame);
-                logger.debug("已刷新残留数据: {} 样本", state.leftoverCount);
             }
         } catch (OpusException e) {
             logger.warn("残留数据编码失败: {}", e.getMessage());
@@ -768,7 +767,6 @@ public class OpusProcessor {
                     state.leftoverBuffer = new short[frameSize]; // 确保缓冲区足够大
                 }
                 System.arraycopy(combined, frameCount * frameSize, state.leftoverBuffer, 0, remainingSamples);
-                logger.debug("缓存 {} 个残留样本", remainingSamples);
             } else {
                 Arrays.fill(state.leftoverBuffer, (short) 0); // 清空
             }

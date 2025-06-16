@@ -286,7 +286,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
                 // 检测到语音活动，更新最后活动时间
                 sessionManager.updateLastActivity(sessionId);
-
                 // 根据VAD状态处理
                 switch (vadResult.getStatus()) {
                     case SPEECH_START:
