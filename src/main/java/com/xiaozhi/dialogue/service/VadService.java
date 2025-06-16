@@ -89,6 +89,12 @@ public class VadService {
         // 音频分析
         private float avgEnergy = 0;
         private final List<Float> probs = new ArrayList<>();
+        
+        // 添加原始VAD概率列表
+        private final List<Float> originalProbs = new ArrayList<>();
+        
+        // 帧计数器（用于每10帧输出一次）
+        private int frameCounter = 0;
 
         // 预缓冲
         private final LinkedList<byte[]> preBuffer = new LinkedList<>();
@@ -166,6 +172,21 @@ public class VadService {
                 updateDeviceType();
             }
         }
+        
+        // 添加原始VAD概率
+        public void addOriginalProb(float prob) {
+            originalProbs.add(prob);
+            if (originalProbs.size() > 10) {
+                originalProbs.remove(0);
+            }
+            
+            // 增加帧计数器
+            frameCounter++;
+        }
+        
+        public float getLastOriginalProb() {
+            return originalProbs.isEmpty() ? 0.0f : originalProbs.get(originalProbs.size() - 1);
+        }
 
         public float getLastProb() {
             return probs.isEmpty() ? 0.0f : probs.get(probs.size() - 1);
@@ -173,6 +194,10 @@ public class VadService {
 
         public List<Float> getProbs() {
             return probs;
+        }
+        
+        public int getFrameCounter() {
+            return frameCounter;
         }
 
         public String getDetectedDeviceType() {
@@ -286,6 +311,8 @@ public class VadService {
             silenceTime = 0;
             avgEnergy = 0;
             probs.clear();
+            originalProbs.clear(); // 重置原始概率列表
+            frameCounter = 0;      // 重置帧计数器
             preBuffer.clear();
             preBufferSize = 0;
             pcmData.clear();
@@ -386,17 +413,29 @@ public class VadService {
                     return new VadResult(VadStatus.ERROR, null);
                 }
 
+                // 分析原始音频
+                float[] originalSamples = bytesToFloats(pcmData);
+                float originalEnergy = calcEnergy(originalSamples);
+                
+                // 获取原始VAD概率
+                float originalSpeechProb = detectSpeech(originalSamples);
+                state.addOriginalProb(originalSpeechProb);
+
                 // ========== 应用 AGC ==========
                 String deviceType = state.getDetectedDeviceType();
                 byte[] originalPcm = pcmData.clone(); // 保留原始数据用于对比
-                pcmData = agc.process(sessionId, pcmData, deviceType);
+                
+                // 检查AGC是否可用
+                if (agc != null) {
+                    pcmData = agc.process(sessionId, pcmData, deviceType);
+                }
                 
                 // 获取AGC统计信息
-                AutomaticGainControl.AgcStats agcStats = agc.getStats(sessionId);
+                AutomaticGainControl.AgcStats agcStats = agc != null ? agc.getStats(sessionId) : new AutomaticGainControl.AgcStats();
                 
                 // 根据AGC增益动态调整VAD阈值
-                speechThreshold = adjustVadThreshold(speechThreshold, agcStats);
-                silenceThreshold = adjustVadThreshold(silenceThreshold, agcStats);
+                float adjustedSpeechThreshold = adjustVadThreshold(speechThreshold, agcStats);
+                float adjustedSilenceThreshold = adjustVadThreshold(silenceThreshold, agcStats);
 
                 // 添加到预缓冲区
                 state.addToPreBuffer(pcmData);
@@ -415,21 +454,22 @@ public class VadService {
                     if (pcmData.length == 0) {
                         return new VadResult(VadStatus.NO_SPEECH, null);
                     }
+                    
                 }
 
-                // 分析音频
+                // 分析AGC处理后的音频
                 float[] samples = bytesToFloats(pcmData);
                 float energy = calcEnergy(samples);
                 state.updateEnergy(energy);
 
-                // VAD推断
+                // VAD推断（AGC后）
                 float speechProb = detectSpeech(samples);
                 state.addProb(speechProb);
 
                 // 判断语音状态
                 boolean hasEnergy = energy > state.getAvgEnergy() * 1.5 && energy > energyThreshold;
-                boolean isSpeech = speechProb > speechThreshold && hasEnergy;
-                boolean isSilence = speechProb < silenceThreshold;
+                boolean isSpeech = speechProb > adjustedSpeechThreshold && hasEnergy;
+                boolean isSilence = speechProb < adjustedSilenceThreshold;
                 state.updateSilence(isSilence);
 
                 // 处理状态转换
@@ -443,9 +483,9 @@ public class VadService {
                     agcInfo = String.format(", AGC增益: %.2f, 设备类型: %s", 
                                             agcStats.gain, state.getDetectedDeviceType());
                     
-                    logger.info("检测到语音开始 - SessionId: {}, 概率: {}, 能量: {}, " +
+                    logger.info("检测到语音开始 - SessionId: {}, 概率: {}, 原始概率: {}, 能量: {}, " +
                               "调整后阈值: {}{}", 
-                              sessionId, speechProb, energy, speechThreshold, agcInfo);
+                              sessionId, speechProb, originalSpeechProb, energy, adjustedSpeechThreshold, agcInfo);
 
                     // 获取预缓冲数据
                     byte[] preBufferData = state.drainPreBuffer();
@@ -486,7 +526,7 @@ public class VadService {
                     return new VadResult(VadStatus.NO_SPEECH, null);
                 }
             } catch (Exception e) {
-                logger.error("处理音频失败: {}", sessionId, e);
+                logger.error("处理音频失败: {}, 错误: {}", sessionId, e.getMessage(), e);
                 return new VadResult(VadStatus.ERROR, null);
             }
         }
@@ -632,6 +672,17 @@ public class VadService {
             return state != null ? state.getLastProb() : 0.0f;
         }
     }
+    
+    /**
+     * 获取原始语音概率
+     */
+    public float getOriginalSpeechProbability(String sessionId) {
+        Object lock = getLock(sessionId);
+        synchronized (lock) {
+            VadState state = states.get(sessionId);
+            return state != null ? state.getLastOriginalProb() : 0.0f;
+        }
+    }
 
     /**
      * 获取音频数据
@@ -684,6 +735,17 @@ public class VadService {
                 state.detectedDeviceType = deviceType;
                 logger.info("手动设置设备类型 - SessionId: {}, 类型: {}", sessionId, deviceType);
             }
+        }
+    }
+
+    /**
+     * 获取当前帧计数
+     */
+    public int getFrameCounter(String sessionId) {
+        Object lock = getLock(sessionId);
+        synchronized (lock) {
+            VadState state = states.get(sessionId);
+            return state != null ? state.getFrameCounter() : 0;
         }
     }
 
