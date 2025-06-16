@@ -645,6 +645,7 @@ export default {
   },
   
   mounted() {
+    this.loading = true;
     // 加载基础数据
     Promise.all([
       // 加载智能体数据
