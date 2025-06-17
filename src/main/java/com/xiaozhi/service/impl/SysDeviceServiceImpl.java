@@ -88,7 +88,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
             // 优先绑定默认角色，否则随便绑定一个
             for (SysRole role: roles) {
                 device.setRoleId(role.getRoleId());
-                if (role.getIsDefault() == "1") {
+                if (role.getIsDefault().equals("1")) {
                     break;
                 }
             }

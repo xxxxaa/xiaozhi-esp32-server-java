@@ -97,7 +97,7 @@ public class MessageHandler {
         device.setSessionId(sessionId);
         sessionManager.registerDevice(sessionId, device);
         // 如果已绑定，则初始化其他内容
-        if (!ObjectUtils.isEmpty(device)) {
+        if (!ObjectUtils.isEmpty(device) && device.getRoleId() != null) {
             //这里需要放在虚拟线程外
             ToolsSessionHolder toolsSessionHolder = new ToolsSessionHolder(chatSession.getSessionId(),
                     device, toolsGlobalRegistry);
