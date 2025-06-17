@@ -5,11 +5,11 @@
     <sql id="deviceSql">
         sys_device.deviceId, sys_device.deviceName, sys_device.ip, sys_device.wifiName,
         sys_device.chipModelName, sys_device.type, sys_device.version, sys_device.state,
-        sys_device.userId, sys_device.lastLogin, sys_device.createTime
+        sys_device.roleId, sys_device.userId, sys_device.lastLogin, sys_device.createTime
     </sql>
 
     <sql id="roleSql">
-        sys_role.roleId, sys_role.roleName, sys_role.roleDesc, sys_role.voiceName,
+        sys_role.roleName, sys_role.roleDesc, sys_role.voiceName,
         sys_role.modelId, sys_role.sttId, sys_role.ttsId,
         sys_role.vadSpeechTh, sys_role.vadSilenceTh, sys_role.vadEnergyTh, sys_role.vadSilenceMs
     </sql>
@@ -33,12 +33,9 @@
 
     <select id="selectDeviceById" resultType="com.xiaozhi.entity.SysDevice">
         SELECT
-            <include refid="deviceSql"></include>,
-            <include refid="roleSql"></include>,
-            (SELECT COUNT(*) FROM sys_message WHERE sys_message.deviceId = sys_device.deviceId AND sys_message.state = '1') AS totalMessage
+            <include refid="deviceSql"></include>
         FROM
             sys_device
-            LEFT JOIN sys_role ON sys_device.roleId = sys_role.roleId
         WHERE
             deviceId = #{deviceId}
     </select>

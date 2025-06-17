@@ -38,7 +38,7 @@ public class ToolsGlobalRegistry implements ToolCallbackResolver {
      */
     public ToolCallback registerFunction(String name, ToolCallback functionCallTool) {
         ToolCallback result = allFunction.putIfAbsent(name, functionCallTool);
-        logger.info("[{}] Function:{} registered into global successfully", TAG, name);
+        logger.debug("[{}] Function:{} registered into global successfully", TAG, name);
         return result;
     }
 

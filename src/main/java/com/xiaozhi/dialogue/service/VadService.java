@@ -3,6 +3,8 @@ package com.xiaozhi.dialogue.service;
 import com.xiaozhi.communication.common.SessionManager;
 import com.xiaozhi.dialogue.vad.impl.SileroVadModel;
 import com.xiaozhi.entity.SysDevice;
+import com.xiaozhi.entity.SysRole;
+import com.xiaozhi.service.SysRoleService;
 import com.xiaozhi.utils.AutomaticGainControl;
 import com.xiaozhi.utils.OpusProcessor;
 
@@ -34,6 +36,9 @@ public class VadService {
 
     @Autowired
     private SessionManager sessionManager;
+
+    @Autowired
+    private SysRoleService roleService;
 
     @Autowired
     private AutomaticGainControl agc;
@@ -386,11 +391,12 @@ public class VadService {
         float energyThreshold = 0.001f;
         int silenceTimeoutMs = 1200;
 
-        if (device != null) {
-            speechThreshold = Optional.ofNullable(device.getVadSpeechTh()).orElse(speechThreshold);
-            silenceThreshold = Optional.ofNullable(device.getVadSilenceTh()).orElse(silenceThreshold);
-            energyThreshold = Optional.ofNullable(device.getVadEnergyTh()).orElse(energyThreshold);
-            silenceTimeoutMs = Optional.ofNullable(device.getVadSilenceMs()).orElse(silenceTimeoutMs);
+        if (device != null && device.getRoleId() != null) {
+            SysRole role = roleService.selectRoleById(device.getRoleId());
+            speechThreshold = Optional.ofNullable(role.getVadSpeechTh()).orElse(speechThreshold);
+            silenceThreshold = Optional.ofNullable(role.getVadSilenceTh()).orElse(silenceThreshold);
+            energyThreshold = Optional.ofNullable(role.getVadEnergyTh()).orElse(energyThreshold);
+            silenceTimeoutMs = Optional.ofNullable(role.getVadSilenceMs()).orElse(silenceTimeoutMs);
         }
 
         synchronized (lock) {

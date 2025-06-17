@@ -90,7 +90,7 @@ public class ChatService {
             SysDevice device = session.getSysDevice();
 
             // 获取ChatModel
-            ChatModel chatModel = chatModelFactory.takeChatModel(device);
+            ChatModel chatModel = chatModelFactory.takeChatModel(session);
 
             if (session.getChatMemory() == null) {// 如果记忆没初始化，则初始化一下
                 initializeHistory(session);
@@ -155,7 +155,7 @@ public class ChatService {
     public Flux<ChatResponse> chatStream(ChatSession session, SysDevice device, String message,
             boolean useFunctionCall) {
         // 获取ChatModel
-        ChatModel chatModel = chatModelFactory.takeChatModel(device);
+        ChatModel chatModel = chatModelFactory.takeChatModel(session);
 
         ChatOptions chatOptions = ToolCallingChatOptions.builder()
                 .toolCallbacks(useFunctionCall ? session.getToolCallbacks() : new ArrayList<>())
@@ -184,6 +184,7 @@ public class ChatService {
             TriConsumer<String, Boolean, Boolean> sentenceHandler) {
         try {
             SysDevice device = session.getSysDevice();
+            device.setSessionId(session.getSessionId());
             // 创建流式响应监听器
             StreamResponseListener streamListener = new TokenStreamResponseListener(session, message, sentenceHandler);
             final StringBuilder toolName = new StringBuilder(); // 当前句子的缓冲区

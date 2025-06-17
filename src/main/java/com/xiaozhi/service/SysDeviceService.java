@@ -58,15 +58,7 @@ public interface SysDeviceService {
    * @param device
    * @return
    */
-  SysDevice update(SysDevice device);
-
-  /**
-   * 更新设备信息,但不刷新缓存
-   *
-   * @param device
-   * @return
-   */
-  int updateNoRefreshCache(SysDevice device);
+  int update(SysDevice device);
 
   /**
    * 删除设备
@@ -75,12 +67,6 @@ public interface SysDeviceService {
    * @return
    */
   int delete(SysDevice device);
-
-  /**
-   * 刷新设备配置信息（用于更新已存在的session）
-   * @param device
-   */
-  void refreshSessionConfig(SysDevice device);
 
   /**
    * 生成设备访问平台的token

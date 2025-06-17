@@ -220,7 +220,7 @@ public class SysDevice extends SysRole {
 
     @Override
     public String toString() {
-        return "SysDevice [deviceId=" + deviceId + ", sessionId=" + sessionId + ", deviceName=" + deviceName
+        return "SysDevice [deviceId=" + deviceId + ", sessionId=" + sessionId + ", deviceName=" + deviceName + ", roleId=" + roleId
                 + ", state=" + state + ", totalMessage=" + totalMessage + ", code=" + code + ", audioPath=" + audioPath
                 + ", lastLogin=" + lastLogin + ", wifiName=" + wifiName + ", ip=" + ip + ", chipModelName="
                 + chipModelName + ", type=" + type + ", version=" + version + ", functionNames=" + functionNames;

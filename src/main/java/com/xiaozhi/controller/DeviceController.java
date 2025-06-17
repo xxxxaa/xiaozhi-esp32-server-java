@@ -69,30 +69,6 @@ public class DeviceController extends BaseController {
     }
 
     /**
-     * 设备信息更新
-     * 
-     * @param device
-     * @return
-     */
-    @PostMapping("/update")
-    @ResponseBody
-    public AjaxResult update(SysDevice device) {
-        try {
-            device.setUserId(CmsUtils.getUserId());
-            SysDevice persisteDevice = deviceService.update(device);
-            if (persisteDevice != null) {
-                deviceService.refreshSessionConfig(persisteDevice);
-                return AjaxResult.success();
-            } else {
-                return AjaxResult.error();
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return AjaxResult.error();
-        }
-    }
-
-    /**
      * 添加设备
      * 
      * @param code
@@ -129,6 +105,25 @@ public class DeviceController extends BaseController {
             if (e.getMessage() != null && e.getMessage().contains("没有配置角色")) {
                 return AjaxResult.error(e.getMessage());
             }
+            return AjaxResult.error();
+        }
+    }
+
+    /**
+     * 设备信息更新
+     * 
+     * @param device
+     * @return
+     */
+    @PostMapping("/update")
+    @ResponseBody
+    public AjaxResult update(SysDevice device) {
+        try {
+            device.setUserId(CmsUtils.getUserId());
+            deviceService.update(device);
+            return AjaxResult.success();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             return AjaxResult.error();
         }
     }

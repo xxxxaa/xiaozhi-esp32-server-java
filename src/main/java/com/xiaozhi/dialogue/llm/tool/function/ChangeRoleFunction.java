@@ -53,8 +53,6 @@ public class ChangeRoleFunction implements ToolsGlobalRegistry.GlobalFunction {
                             if(role_id.isPresent()){
                                 sysDevice.setRoleId(role_id.get());//测试，固定角色
                                 sysDeviceService.update(sysDevice);
-                                sysDeviceService.refreshSessionConfig(sysDevice);
-                                chatSession.clearMemory();
                                 return "角色已切换至" + roleName;
                             }else{
                                 return "角色切换失败, 没有对应角色哦";

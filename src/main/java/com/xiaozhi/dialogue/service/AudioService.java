@@ -222,7 +222,7 @@ public class AudioService {
                 @Override
                 public void run() {
                     try {
-                        if (!finalPlayingState.get() || frameIndex[0] >= opusFrames.size()) {
+                        if (!finalPlayingState.get() || frameIndex[0] >= opusFrames.size() || !session.isOpen()) {
                             // 取消调度任务
                             cancelScheduledTask(sessionId);
                             

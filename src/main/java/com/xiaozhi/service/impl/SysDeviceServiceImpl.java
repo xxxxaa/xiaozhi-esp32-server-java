@@ -26,7 +26,6 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
 
 import java.util.*;
 
@@ -137,7 +136,8 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     @Override
     @Cacheable(value = CACHE_NAME, key = "#deviceId.replace(\":\", \"-\")", unless = "#result == null")
     public SysDevice selectDeviceById(String deviceId) {
-        return deviceMapper.selectDeviceById(deviceId);
+        SysDevice device = deviceMapper.selectDeviceById(deviceId);
+        return device;
     }
 
     /**
@@ -179,80 +179,16 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
      */
     @Override
     @Transactional(transactionManager = "transactionManager")
-    @CachePut(value = CACHE_NAME, key = "#device.deviceId.replace(\":\", \"-\")", unless = "#result == null")
-    public SysDevice update(SysDevice device) {
-        int count = updateNoRefreshCache(device);
-        if (count > 0) {
-            return deviceMapper.selectDeviceById(device.getDeviceId());
-        } else {
-            return null;
+    @CacheEvict(value = CACHE_NAME, key = "#device.deviceId.replace(\":\", \"-\")")
+    public int update(SysDevice device) {
+        int rows = deviceMapper.update(device);
+        // 更新设备信息后清空记忆缓存并重新注册设备信息
+        ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
+        if (session != null) {
+            session.setChatMemory(null);
+            session.setSysDevice(device);
         }
-    }
-
-    @Override
-    @Transactional(transactionManager = "transactionManager")
-    public int updateNoRefreshCache(SysDevice device) {
-        if (!ObjectUtils.isEmpty(device.getRoleId())) {
-            SysRole role = roleMapper.selectRoleById(device.getRoleId());
-            if (role != null) {
-                List<SysDevice> currentDevices = deviceMapper.query(device);
-                if (currentDevices != null && !currentDevices.isEmpty()) {
-                    SysDevice currentDevice = currentDevices.get(0);
-                    // 如果当前设备角色和修改的角色不一致，需要清空聊天记录
-                    if (currentDevice.getRoleId() != null && !currentDevice.getRoleId().equals(role.getRoleId())) {
-                        SysMessage message = new SysMessage();
-                        message.setUserId(device.getUserId());
-                        message.setDeviceId(device.getDeviceId());
-                        // 清空设备聊天记录
-                        messageMapper.delete(message);
-                        // TODO 后期切换时可以不用删除数据库中的记录，而是采用roleId来获取记忆内容
-                        ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
-                        if (session != null) {
-                            session.setChatMemory(null);
-                        }
-                    }
-                }
-            }
-        }
-        return deviceMapper.update(device);
-    }
-
-    @Override
-    public void refreshSessionConfig(SysDevice device) {
-        try {
-            String deviceId = device.getDeviceId();
-            ChatSession session = sessionManager.getSessionByDeviceId(deviceId);
-
-            if (session != null) {
-                SysDevice updateDevice = device;
-                updateDevice.setSessionId(session.getSessionId());
-                SysRole roleConfig = new SysRole();
-                // 通过roleId获取ttsId
-                if (device.getRoleId() != null) {
-                    roleConfig = roleMapper.selectRoleById(device.getRoleId());
-                }
-                if (device.getModelId() != null) {
-                    updateDevice.setModelId(device.getModelId());
-                }
-                if (device.getSttId() != null) {
-                    updateDevice.setSttId(device.getSttId());
-                    if (device.getSttId() != -1) {
-                        configManager.getConfig(device.getSttId());
-                    }
-                }
-                if (roleConfig.getTtsId() != null) {
-                    updateDevice.setTtsId(roleConfig.getTtsId());
-                    if (device.getTtsId() != -1) {
-                        configManager.getConfig(roleConfig.getTtsId());
-                        updateDevice.setVoiceName(roleConfig.getVoiceName());
-                    }
-                }
-                // 更新配置信息
-                session.setSysDevice(updateDevice);
-            }
-        } catch (Exception e) {
-            logger.error("刷新设备会话配置时发生错误", e);
-        }
+        return rows;
     }
 
     @Override

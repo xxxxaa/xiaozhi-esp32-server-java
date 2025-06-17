@@ -14,7 +14,7 @@ import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
-
+import org.springframework.web.socket.WebSocketSession;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     private DeviceMcpService deviceMcpService;
 
     @Override
-    public void afterConnectionEstablished(org.springframework.web.socket.WebSocketSession session) {
+    public void afterConnectionEstablished(WebSocketSession session) {
         Map<String, String> headers = getHeadersFromSession(session);
         String deviceIdAuth = headers.get("device-id");
         String token = headers.get("Authorization");
@@ -68,17 +68,17 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
 //            }
 //        }else{
 
-        messageHandler.afterConnection(new WebSocketSession(session), deviceIdAuth);
+        messageHandler.afterConnection(new com.xiaozhi.communication.server.websocket.WebSocketSession(session), deviceIdAuth);
         logger.info("WebSocket连接建立成功 - SessionId: {}, DeviceId: {}", session.getId(), deviceIdAuth);
 
     }
 
     @Override
-    protected void handleTextMessage(org.springframework.web.socket.WebSocketSession session, TextMessage message) {
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         String sessionId = session.getId();
-        SysDevice device = sessionManager.getDeviceConfig(sessionId);
+        String deviceId = sessionManager.getDeviceConfig(sessionId).getDeviceId();
+        SysDevice device = deviceService.selectDeviceById(deviceId);
         String payload = message.getPayload();
-        String deviceId = null;
         if (device == null) {
             deviceId = getHeadersFromSession(session).get("device-id");
             if (deviceId == null) {
@@ -108,7 +108,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     }
 
     @Override
-    protected void handleBinaryMessage(org.springframework.web.socket.WebSocketSession session, BinaryMessage message) {
+    protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
         String sessionId = session.getId();
         SysDevice device = sessionManager.getDeviceConfig(sessionId);
         if (device == null) {
@@ -118,14 +118,14 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionClosed(org.springframework.web.socket.WebSocketSession session, CloseStatus status) {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         String sessionId = session.getId();
         messageHandler.afterConnectionClosed(sessionId);
         logger.info("WebSocket连接关闭 - SessionId: {}, 状态: {}", sessionId, status);
     }
 
     @Override
-    public void handleTransportError(org.springframework.web.socket.WebSocketSession session, Throwable exception) {
+    public void handleTransportError(WebSocketSession session, Throwable exception) {
         String sessionId = session.getId();
         // 检查是否是客户端正常关闭连接导致的异常
         if (isClientCloseRequest(exception)) {
@@ -157,7 +157,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         return false;
     }
 
-    private void handleHelloMessage(org.springframework.web.socket.WebSocketSession session, HelloMessage message) {
+    private void handleHelloMessage(WebSocketSession session, HelloMessage message) {
         var sessionId = session.getId();
         logger.info("收到hello消息 - SessionId: {}, JsonNode: {}", sessionId, message);
 
@@ -189,7 +189,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         }
     }
 
-    private Map<String, String> getHeadersFromSession(org.springframework.web.socket.WebSocketSession session) {
+    private Map<String, String> getHeadersFromSession(WebSocketSession session) {
         // 尝试从请求头获取设备ID
         String[] deviceKeys = { "device-id", "mac_address", "uuid", "Authorization" };
 

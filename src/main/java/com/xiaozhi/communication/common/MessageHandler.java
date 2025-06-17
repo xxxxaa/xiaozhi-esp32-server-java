@@ -13,6 +13,7 @@ import com.xiaozhi.dialogue.stt.factory.SttServiceFactory;
 import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.entity.SysDevice;
+import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.enums.ListenState;
 import com.xiaozhi.service.SysDeviceService;
 import com.xiaozhi.service.SysRoleService;
@@ -73,7 +74,7 @@ public class MessageHandler {
     private ToolsGlobalRegistry toolsGlobalRegistry;
 
     @Resource
-    private SysRoleService sysRoleService;
+    private SysRoleService roleService;
 
     // 用于存储设备ID和验证码生成状态的映射
     private final Map<String, Boolean> captchaGenerationInProgress = new ConcurrentHashMap<>();
@@ -85,14 +86,13 @@ public class MessageHandler {
      * @param deviceIdAuth
      */
     public void afterConnection(ChatSession chatSession, String deviceIdAuth) {
-        final String deviceId = deviceIdAuth;
-        final String sessionId = chatSession.getSessionId();
+        String deviceId = deviceIdAuth;
+        String sessionId = chatSession.getSessionId();
         // 注册会话
         sessionManager.registerSession(sessionId, chatSession);
 
         logger.info("开始查询设备信息 - DeviceId: {}", deviceId);
-        final SysDevice device = Optional.ofNullable(deviceService.selectDeviceById(deviceId)).orElse(new SysDevice());
-
+        SysDevice device = Optional.ofNullable(deviceService.selectDeviceById(deviceId)).orElse(new SysDevice());
         device.setDeviceId(deviceId);
         device.setSessionId(sessionId);
         sessionManager.registerDevice(sessionId, device);
@@ -105,27 +105,29 @@ public class MessageHandler {
             //以上同步处理结束后，再启动虚拟线程进行设备初始化，确保chatSession中已设置的sysDevice信息
             Thread.startVirtualThread(() -> {
                 try {
-                    if (device.getSttId() != null) {
-                        SysConfig sttConfig = configManager.getConfig(device.getSttId());
+                    SysRole role = roleService.selectRoleById(device.getRoleId());
+
+                    if (role.getSttId() != null) {
+                        SysConfig sttConfig = configManager.getConfig(role.getSttId());
                         if (sttConfig != null) {
                             sttFactory.getSttService(sttConfig);// 提前初始化，加速后续使用
                         }
                     }
-                    if (device.getTtsId() != null) {
-                        SysConfig ttsConfig = configManager.getConfig(device.getTtsId());
-                        if (ttsConfig != null) {// 设备查询从join config表修改为只查设备表，所以这里可能会有空值
-                            ttsFactory.getTtsService(ttsConfig, device.getVoiceName());// 提前初始化，加速后续使用
+                    if (role.getTtsId() != null) {
+                        SysConfig ttsConfig = configManager.getConfig(role.getTtsId());
+                        if (ttsConfig != null) {
+                            ttsFactory.getTtsService(ttsConfig, role.getVoiceName());// 提前初始化，加速后续使用
                         }
                     }
-                    if (device.getModelId() != null) {
-                        chatModelFactory.takeChatModel(device);// 提前初始化，加速后续使用
+                    if (role.getModelId() != null) {
+                        chatModelFactory.takeChatModel(chatSession);// 提前初始化，加速后续使用
                         chatService.initializeHistory(chatSession);
                         // 注册全局函数
                         toolsSessionHolder.registerGlobalFunctionTools(chatSession);
                     }
 
                     // 更新设备状态
-                    deviceService.updateNoRefreshCache(new SysDevice()
+                    deviceService.update(new SysDevice()
                             .setDeviceId(device.getDeviceId())
                             .setState(SysDevice.DEVICE_STATE_ONLINE)
                             .setLastLogin(new Date().toString()));
@@ -157,7 +159,7 @@ public class MessageHandler {
         if (device != null) {
             Thread.startVirtualThread(() -> {
                 try {
-                    deviceService.updateNoRefreshCache(new SysDevice()
+                    deviceService.update(new SysDevice()
                             .setDeviceId(device.getDeviceId())
                             .setState(SysDevice.DEVICE_STATE_OFFLINE)
                             .setLastLogin(new Date().toString()));
@@ -213,7 +215,7 @@ public class MessageHandler {
             try {
                 // 设备已注册但未配置模型
                 if (device.getDeviceName() != null && device.getRoleId() == null) {
-                    String message = "设备未配置对话模型，请到配置页面完成配置后开始对话";
+                    String message = "设备未配置角色，请到角色配置页面完成配置后开始对话";
 
                     String audioFilePath = ttsService.getDefaultTtsService().textToSpeech(message);
                     audioService.sendAudioMessage(chatSession, new DialogueService.Sentence(message, audioFilePath), true,

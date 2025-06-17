@@ -558,7 +558,7 @@ export default {
       volcengineVoices: [],
       xfyunVoices: [],
       minimaxVoices: [],
-      testText: '你好，我是小智语音助手',
+      testText: '你好，我是小智，很高兴为您服务',
       audioUrl: '',
       audioTesting: false,
       

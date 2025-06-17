@@ -3,6 +3,8 @@ package com.xiaozhi.service.impl;
 import com.github.pagehelper.PageHelper;
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.dao.ConfigMapper;
+import com.xiaozhi.dialogue.stt.factory.SttServiceFactory;
+import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.service.SysConfigService;
 import jakarta.annotation.Resource;
@@ -29,6 +31,12 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
 
     @Resource
     private ConfigMapper configMapper;
+
+    @Resource
+    private SttServiceFactory sttServiceFactory;
+
+    @Resource
+    private TtsServiceFactory ttsServiceFactory;
 
     /**
      * 添加配置
@@ -60,7 +68,12 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
         if (config.getIsDefault() != null && config.getIsDefault().equals("1")) {
             resetDefaultConfig(config);
         }
-        return configMapper.update(config);
+        int rows = configMapper.update(config);
+        if (rows > 0) {
+            sttServiceFactory.removeCache(config);
+            ttsServiceFactory.removeCache(config);
+        }
+        return rows;
     }
 
     /**

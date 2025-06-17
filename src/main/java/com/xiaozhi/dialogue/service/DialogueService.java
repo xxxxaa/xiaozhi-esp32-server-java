@@ -10,7 +10,9 @@ import com.xiaozhi.dialogue.stt.factory.SttServiceFactory;
 import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.entity.SysDevice;
+import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.event.ChatSessionCloseEvent;
+import com.xiaozhi.service.SysRoleService;
 import com.xiaozhi.utils.AudioUtils;
 import com.xiaozhi.utils.EmojiUtils;
 import com.xiaozhi.utils.EmojiUtils.EmoSentence;
@@ -69,6 +71,10 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
     @Resource
     private ConfigManager configManager;
+    
+    @Resource
+    private SysRoleService roleService;
+
     // 会话状态管理
     private final Map<String, AtomicInteger> seqCounters = new ConcurrentHashMap<>();
     private final Map<String, Long> sttStartTimes = new ConcurrentHashMap<>();
@@ -266,15 +272,14 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         Thread.startVirtualThread(() -> {
             try {
                 String sessionId = session.getSessionId();
-                SysDevice device = sessionManager.getDeviceConfig(sessionId);
-
+                SysDevice device = session.getSysDevice();
                 // 如果设备未注册或未绑定，忽略音频数据
-                if (device == null || ObjectUtils.isEmpty(device.getModelId())) {
+                if (device == null || ObjectUtils.isEmpty(device.getRoleId())) {
                     return;
                 }
-
+                SysRole role = roleService.selectRoleById(device.getRoleId());
                 // 获取STT和TTS配置
-                SysConfig sttConfig = device.getSttId() != null ? configManager.getConfig(device.getSttId())
+                SysConfig sttConfig = role.getSttId() != null ? configManager.getConfig(role.getSttId())
                         : null;
 
                 // 处理VAD
@@ -344,6 +349,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 sessionManager.setStreamingState(sessionId, true);
 
                 // 获取STT服务
+                // TODO 需要检查并发下，是否会同一个实例并发发送音频，导致识别错误
+                // TODO 是否要增加deviceId来针对每个设备做一个实例缓存
                 SttService sttService = sttFactory.getSttService(sttConfig);
                 if (sttService == null) {
                     logger.error("无法获取STT服务 - Provider: {}", sttConfig != null ? sttConfig.getProvider() : "null");
@@ -475,19 +482,20 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             responseTime = 0.0;
         }
 
-        SysDevice device = sessionManager.getDeviceConfig(sessionId);
-        if (device == null) {
+        SysDevice device = session.getSysDevice();
+        SysRole role = roleService.selectRoleById(device.getRoleId());
+        if (device == null || role == null) {
             return;
         }
 
         // 新增加的设备很有可能没有配置TTS，采用默认Edge需要传递null
         final SysConfig ttsConfig;
-        if (device.getTtsId() != null) {
-            ttsConfig = configManager.getConfig(device.getTtsId());
+        if (role.getTtsId() != null) {
+            ttsConfig = configManager.getConfig(role.getTtsId());
         } else {
             ttsConfig = null;
         }
-        String voiceName = device.getVoiceName();
+        String voiceName = role.getVoiceName();
 
         // 创建句子对象
         Sentence sentence = new Sentence(seq, text, isFirst, isLast);
