@@ -411,17 +411,17 @@
                       <a-icon type="snippets" /> 模板管理
                     </a-button>
                   </div>
-
-                  <!-- 提示词编辑区域 -->
-                  <a-form-item>
-                    <a-textarea v-decorator="[
-                      'roleDesc',
-                      {
-                        rules: [],
-                      },
-                    ]" :rows="10" placeholder="请输入角色提示词，描述角色的特点、知识背景和行为方式等" />
-                  </a-form-item>
                 </template>
+
+                <!-- 提示词编辑区域 -->
+                <a-form-item>
+                  <a-textarea v-decorator="[
+                    'roleDesc',
+                    {
+                      rules: [],
+                    },
+                  ]" :disabled="selectedModelType === 'agent'" :rows="10" placeholder="请输入角色提示词，描述角色的特点、知识背景和行为方式等" />
+                </a-form-item>
                 <!-- 表单操作按钮 -->
                 <a-form-item>
                   <a-button type="primary" html-type="submit" :loading="submitLoading">
@@ -470,6 +470,7 @@ export default {
       submitLoading: false,
       activeTabKey: '1',
       editingRoleId: null,
+      editingRoleDesc: '',
       
       // 查询相关
       query: {},
@@ -1272,7 +1273,7 @@ export default {
     // 编辑角色
     edit(record) {
       this.editingRoleId = record.roleId;
-
+      this.editingRoleDesc = record.roleDesc;
       // 切换到创建角色标签页
       this.activeTabKey = '2';
 
@@ -1602,7 +1603,8 @@ export default {
       this.$nextTick(() => {
         this.roleForm.setFieldsValue({
           modelProvider: undefined,
-          modelId: undefined
+          modelId: undefined,
+          roleDesc: this.selectedModelType === MODEL_TYPE.LLM ? this.editingRoleDesc : '' // 如果切换回 LLM 恢复原始 roleDesc
         });
       });
     },
@@ -1625,13 +1627,17 @@ export default {
       if (this.selectedModelType === MODEL_TYPE.LLM) {
         const model = this.modelItems.find(m => m.configId === value);
         if (model) {
-          // 可以在这里设置与模型相关的其他字段
+          this.roleForm.setFieldsValue({
+            roleDesc: this.editingRoleDesc
+          });
         }
       } else if (this.selectedModelType === MODEL_TYPE.AGENT) {
         const agentList = this.selectedModelProvider === PROVIDER.COZE ? this.cozeAgents : this.difyAgents;
         const agent = agentList.find(a => a.configId === value);
         if (agent) {
-          // 可以在这里设置与智能体相关的其他字段
+          this.roleForm.setFieldsValue({
+            roleDesc: agent.agentDesc || ''
+          });
         }
       }
     },
