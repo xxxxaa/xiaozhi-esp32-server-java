@@ -349,8 +349,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 sessionManager.setStreamingState(sessionId, true);
 
                 // 获取STT服务
-                // TODO 需要检查并发下，是否会同一个实例并发发送音频，导致识别错误
-                // TODO 是否要增加deviceId来针对每个设备做一个实例缓存
                 SttService sttService = sttFactory.getSttService(sttConfig);
                 if (sttService == null) {
                     logger.error("无法获取STT服务 - Provider: {}", sttConfig != null ? sttConfig.getProvider() : "null");
