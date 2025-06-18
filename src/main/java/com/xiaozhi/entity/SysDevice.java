@@ -18,11 +18,6 @@ public class SysDevice extends SysRole {
 
     private String sessionId;
 
-    /*
-     * 角色Id
-     */
-    private Integer roleId;
-
     /**
      * 设备名称
      */
@@ -83,15 +78,6 @@ public class SysDevice extends SysRole {
      * 可用全局function的名称列表(逗号分割)，为空则使用所有全局function
      */
     private String functionNames;
-
-    public Integer getRoleId() {
-        return roleId;
-    }
-
-    public SysDevice setRoleId(Integer roleId) {
-        this.roleId = roleId;
-        return this;
-    }
 
     public String getDeviceId() {
         return deviceId;
@@ -220,7 +206,7 @@ public class SysDevice extends SysRole {
 
     @Override
     public String toString() {
-        return "SysDevice [deviceId=" + deviceId + ", sessionId=" + sessionId + ", deviceName=" + deviceName + ", roleId=" + roleId
+        return "SysDevice [deviceId=" + deviceId + ", sessionId=" + sessionId + ", deviceName=" + deviceName + ", roleId=" + getRoleId()
                 + ", state=" + state + ", totalMessage=" + totalMessage + ", code=" + code + ", audioPath=" + audioPath
                 + ", lastLogin=" + lastLogin + ", wifiName=" + wifiName + ", ip=" + ip + ", chipModelName="
                 + chipModelName + ", type=" + type + ", version=" + version + ", functionNames=" + functionNames;

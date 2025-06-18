@@ -97,8 +97,6 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
                 if (device.getRoleId() == null) {
                     // 设备未绑定，处理未绑定设备的消息
                     messageHandler.handleUnboundDevice(sessionId, device);
-                } else {
-                    sessionManager.registerDevice(sessionId, device);
                 }
                 messageHandler.handleMessage(msg, sessionId);
             }

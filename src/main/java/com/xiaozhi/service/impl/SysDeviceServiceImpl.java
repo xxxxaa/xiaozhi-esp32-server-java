@@ -9,25 +9,22 @@ import com.xiaozhi.dao.ConfigMapper;
 import com.xiaozhi.dao.DeviceMapper;
 import com.xiaozhi.dao.MessageMapper;
 import com.xiaozhi.dao.RoleMapper;
-import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.service.SysConfigService;
 import com.xiaozhi.service.SysDeviceService;
-
 import jakarta.annotation.Resource;
-
 import org.apache.ibatis.javassist.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * 设备操作
@@ -137,7 +134,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     @Cacheable(value = CACHE_NAME, key = "#deviceId.replace(\":\", \"-\")", unless = "#result == null")
     public SysDevice selectDeviceById(String deviceId) {
         SysDevice device = deviceMapper.selectDeviceById(deviceId);
-        return device;
+        return device;  
     }
 
     /**
@@ -183,6 +180,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     public int update(SysDevice device) {
         int rows = deviceMapper.update(device);
         // 更新设备信息后清空记忆缓存并重新注册设备信息
+        device = deviceMapper.selectDeviceById(device.getDeviceId());
         ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
         if (session != null) {
             session.setChatMemory(null);
