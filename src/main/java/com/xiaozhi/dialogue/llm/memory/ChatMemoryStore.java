@@ -7,7 +7,7 @@ import java.util.List;
  * 聊天记忆接口
  * 负责管理聊天历史记录
  */
-public interface ChatMemory {
+public interface ChatMemoryStore {
     
     /**
      * 添加消息到历史记录

@@ -3,7 +3,7 @@ package com.xiaozhi.dialogue.llm;
 import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.dialogue.llm.api.StreamResponseListener;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
-import com.xiaozhi.dialogue.llm.memory.ChatMemory;
+import com.xiaozhi.dialogue.llm.memory.ChatMemoryStore;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
 import com.xiaozhi.utils.EmojiUtils;
@@ -71,7 +71,7 @@ public class ChatService {
     private static final int DEFAULT_HISTORY_LIMIT = 10;
 
     @Resource
-    private ChatMemory chatMemoryRepository;
+    private ChatMemoryStore chatMemoryStore;
 
     // TODO 移到构建者模式，由连接通过认证，可正常对话时，创建实例，构建好一个完整的Role.
     @Resource
@@ -234,9 +234,9 @@ public class ChatService {
         // 同一个设备重新连接至服务器，会被标识为不同的sessionId。
         // 可以将这理解为spring-ai的conversation会话,将sessionId作为conversationId
         // 从数据库加载历史记录
-        List<SysMessage> history = chatMemoryRepository.getMessages(device.getDeviceId(),
+        List<SysMessage> history = chatMemoryStore.getMessages(device.getDeviceId(),
                 SysMessage.MESSAGE_TYPE_NORMAL, DEFAULT_HISTORY_LIMIT);
-        String systemMessage = chatMemoryRepository.getSystemMessage(device.getDeviceId(), device.getRoleId());
+        String systemMessage = chatMemoryStore.getSystemMessage(device.getDeviceId(), device.getRoleId());
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .maxMessages(DEFAULT_HISTORY_LIMIT)
                 .build();// 创建一个新的MessageWindowChatMemory实例，限制为10条消息滚动
@@ -252,7 +252,7 @@ public class ChatService {
      * @param deviceId 设备ID
      */
     public void clearMessageCache(String deviceId) {
-        chatMemoryRepository.clearMessages(deviceId);
+        chatMemoryStore.clearMessages(deviceId);
     }
 
     /**
@@ -262,7 +262,7 @@ public class ChatService {
      */
     public void addUserMessage(SysDevice device, String message, String messageType) {
         // 更新缓存
-        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), "user", message,
+        chatMemoryStore.addMessage(device.getDeviceId(), device.getSessionId(), "user", message,
                 device.getRoleId(), messageType, null);
     }
 
@@ -272,7 +272,7 @@ public class ChatService {
      * @param message AI消息
      */
     public void addAssistantMessage(SysDevice device, String message, String messageType) {
-        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), "assistant", message,
+        chatMemoryStore.addMessage(device.getDeviceId(), device.getSessionId(), "assistant", message,
                 device.getRoleId(), messageType, null);
     }
 
@@ -284,7 +284,7 @@ public class ChatService {
      * @param messageType 消息类型
      */
     public void addMessage(SysDevice device, String message, String role, String messageType, String audioPath) {
-        chatMemoryRepository.addMessage(device.getDeviceId(), device.getSessionId(), role, message, device.getRoleId(),
+        chatMemoryStore.addMessage(device.getDeviceId(), device.getSessionId(), role, message, device.getRoleId(),
                 messageType, audioPath);
     }
 

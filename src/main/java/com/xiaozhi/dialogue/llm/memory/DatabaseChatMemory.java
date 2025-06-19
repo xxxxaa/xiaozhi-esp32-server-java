@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 基于数据库的聊天记忆实现
  */
 @Service
-public class DatabaseChatMemory implements ChatMemory {
+public class DatabaseChatMemory implements ChatMemoryStore {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseChatMemory.class);
 
     @Autowired
