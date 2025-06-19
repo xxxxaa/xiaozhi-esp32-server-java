@@ -10,6 +10,7 @@ import com.qcloud.cos.region.Region;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -17,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.UUID;
+import org.apache.commons.io.IOUtils;
 
 /**
  * 文件上传工具类
@@ -51,17 +53,28 @@ public class FileUploadUtils {
         assertAllowed(file);
 
         // 创建目录
-        String fullPath = baseDir + File.separator + relativePath;
-        Path uploadPath = Paths.get(fullPath);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        String fullPath = baseDir;
+        if (!relativePath.isEmpty()) {
+            fullPath = fullPath + File.separator + relativePath;
+        }
+        
+        // 确保目录存在
+        File directory = new File(fullPath);
+        if (!directory.exists()) {
+            boolean created = directory.mkdirs();
+            if (!created) {
+                throw new IOException("无法创建目录: " + fullPath);
+            }
         }
 
         // 保存文件
-        Path filePath = uploadPath.resolve(fileName);
-        file.transferTo(filePath.toFile());
+        File destFile = new File(directory, fileName);
+        try (FileOutputStream fos = new FileOutputStream(destFile);
+             InputStream inputStream = file.getInputStream()) {
+            IOUtils.copy(inputStream, fos);
+        }
 
-        return filePath.toString();
+        return destFile.getAbsolutePath();
     }
 
     /**
@@ -90,7 +103,7 @@ public class FileUploadUtils {
         // 检查配置文件中是否有腾讯云COS的配置
         Properties properties = new Properties();
         try (InputStream inputStream = FileUploadUtils.class.getClassLoader()
-                .getResourceAsStream("application.properties")) {
+                .getResourceAsStream("application-prod.properties")) {
             if (inputStream != null) {
                 properties.load(inputStream);
 
@@ -160,6 +173,8 @@ public class FileUploadUtils {
                 return "audio/mpeg";
             case "mp4":
                 return "video/mp4";
+            case "wav":
+                return "audio/wav";
             default:
                 return "application/octet-stream";
         }
