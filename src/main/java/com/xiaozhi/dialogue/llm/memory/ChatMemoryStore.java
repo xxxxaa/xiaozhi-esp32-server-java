@@ -1,5 +1,6 @@
 package com.xiaozhi.dialogue.llm.memory;
 
+import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
 import java.util.List;
 
@@ -20,7 +21,13 @@ public interface ChatMemoryStore {
      * @param messageType 消息类型
      */
     void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, String audioPath);
-    
+
+    // TODO 最终要去掉
+    void addUserMessage(SysDevice device, String message, String messageType);
+
+    void addAssistantMessage(SysDevice device, String message, String messageType);
+
+
     /**
      * 获取历史消息
      *

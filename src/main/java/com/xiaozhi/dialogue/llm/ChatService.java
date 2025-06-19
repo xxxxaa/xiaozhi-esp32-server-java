@@ -70,7 +70,7 @@ public class ChatService {
     // 历史记录默认限制数量
     private static final int DEFAULT_HISTORY_LIMIT = 10;
 
-    @Resource
+    @Resource(name = "messageWindowChatMemory")
     private ChatMemoryStore chatMemoryStore;
 
     // TODO 移到构建者模式，由连接通过认证，可正常对话时，创建实例，构建好一个完整的Role.
@@ -131,10 +131,10 @@ public class ChatService {
             final String finalMessageType = messageType;
             Thread.startVirtualThread(() -> {// 异步持久化
                 // 保存用户消息，会被持久化至数据库。
-                this.addUserMessage(device, message, finalMessageType);
+                chatMemoryStore.addUserMessage(device, message, finalMessageType);
                 if (response != null && !response.isEmpty()) {
                     // 保存AI消息，会被持久化至数据库。
-                    this.addAssistantMessage(device, response, finalMessageType);
+                    chatMemoryStore.addAssistantMessage(device, response, finalMessageType);
                 }
             });
             return response;
@@ -255,26 +255,6 @@ public class ChatService {
         chatMemoryStore.clearMessages(deviceId);
     }
 
-    /**
-     * 添加用户消息
-     *
-     * @param message 用户消息
-     */
-    public void addUserMessage(SysDevice device, String message, String messageType) {
-        // 更新缓存
-        chatMemoryStore.addMessage(device.getDeviceId(), device.getSessionId(), "user", message,
-                device.getRoleId(), messageType, null);
-    }
-
-    /**
-     * 添加AI消息
-     *
-     * @param message AI消息
-     */
-    public void addAssistantMessage(SysDevice device, String message, String messageType) {
-        chatMemoryStore.addMessage(device.getDeviceId(), device.getSessionId(), "assistant", message,
-                device.getRoleId(), messageType, null);
-    }
 
     /**
      * 通用添加消息

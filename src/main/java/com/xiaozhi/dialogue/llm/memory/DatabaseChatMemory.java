@@ -23,22 +23,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * 基于数据库的聊天记忆实现
  */
 @Service
-public class DatabaseChatMemory implements ChatMemoryStore {
+public class DatabaseChatMemory  {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseChatMemory.class);
 
     @Autowired
     private SysMessageService messageService;
 
     @Autowired
-    private SysRoleService roleService;
-
-    @Autowired
     private TtsServiceFactory ttsService;
 
-    // 缓存系统消息，避免频繁查询数据库
-    private Map<String, String> systemMessageCache = new ConcurrentHashMap<>();
-
-    @Override
     public void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, String audioPath) {
         try {
             SysMessage message = new SysMessage();
@@ -61,7 +54,7 @@ public class DatabaseChatMemory implements ChatMemoryStore {
         }
     }
 
-    @Override
+
     public List<SysMessage> getMessages(String deviceId, String messageType, Integer limit) {
         try {
             SysMessage queryMessage = new SysMessage();
@@ -79,56 +72,16 @@ public class DatabaseChatMemory implements ChatMemoryStore {
         }
     }
 
-    @Override
+
     public void clearMessages(String deviceId) {
         try {
             // 清除设备的历史消息
             SysMessage deleteMessage = new SysMessage();
             deleteMessage.setDeviceId(deviceId);
             // messageService.update(deleteMessage);
-
-            // 清除缓存
-            systemMessageCache.keySet().removeIf(key -> key.startsWith(deviceId + ":"));
         } catch (Exception e) {
             logger.error("清除设备历史记录时出错: {}", e.getMessage(), e);
         }
     }
 
-    @Override
-    public String getSystemMessage(String deviceId, Integer roleId) {
-
-        if (roleId == null) {
-            return "";
-        }
-        String cacheKey = deviceId + ":" + roleId;
-
-        // 先从缓存获取
-        if (systemMessageCache.containsKey(cacheKey)) {
-            return systemMessageCache.get(cacheKey);
-        }
-
-        try {
-            // 从数据库获取角色描述
-            SysRole role = roleService.selectRoleById(roleId);
-            if (role != null && role.getRoleDesc() != null) {
-                String systemMessage = role.getRoleDesc();
-                // 存入缓存
-                systemMessageCache.put(cacheKey, systemMessage);
-                return systemMessage;
-            }
-        } catch (Exception e) {
-            logger.error("获取系统消息时出错: {}", e.getMessage(), e);
-        }
-
-        return "";
-    }
-
-    @Override
-    public void setSystemMessage(String deviceId, Integer roleId, String systemMessage) {
-        String cacheKey = deviceId + ":" + roleId;
-
-        // 更新缓存
-        systemMessageCache.put(cacheKey, systemMessage);
-
-    }
 }
