@@ -177,6 +177,8 @@ public class MessageHandler {
         audioService.cleanupSession(sessionId);
         // 清理对话
         dialogueService.cleanupSession(sessionId);
+        // 清理ChatService缓存的对话历史。
+        chatService.clearMessageCache(device.getDeviceId());
     }
 
     /**

@@ -2,6 +2,10 @@ package com.xiaozhi.dialogue.llm.memory;
 
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+
 import java.util.List;
 
 /**
@@ -9,34 +13,22 @@ import java.util.List;
  * 负责管理聊天历史记录
  */
 public interface ChatMemoryStore {
-    
-    /**
-     * 添加消息到历史记录
-     * 
-     * @param deviceId 设备ID
-     * @param sessionId 会话ID
-     * @param sender 发送者
-     * @param content 内容
-     * @param roleId 角色ID
-     * @param messageType 消息类型
-     */
-    void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, String audioPath);
+    // 历史记录默认限制数量
+    int DEFAULT_HISTORY_LIMIT = 10;
 
-    // TODO 最终要去掉
-    void addUserMessage(SysDevice device, String message, String messageType);
+    void addMessage(SysDevice device, UserMessage message, String audioPath);
 
-    void addAssistantMessage(SysDevice device, String message, String messageType);
+    void addMessage(SysDevice device, AssistantMessage message, String audioPath);
 
+    List<Message> prompt(SysDevice device,UserMessage userMessage);
 
     /**
-     * 获取历史消息
+     * 初始化历史消息
      *
-     * @param deviceId 设备ID
-     * @param messageType 指定查询的消息类型 - 传null查所有消息
-     * @param limit 消息数量限制
+     * @param deviceId 设备标识
      * @return 历史消息列表
      */
-    List<SysMessage> getMessages(String deviceId, String messageType, Integer limit);
+    List<Message> initHistory(String deviceId);
 
     /**
      * 清除设备的历史记录

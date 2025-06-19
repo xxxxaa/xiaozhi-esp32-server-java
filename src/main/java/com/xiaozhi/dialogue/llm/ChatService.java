@@ -67,8 +67,7 @@ public class ChatService {
     // 新句子判断的字符阈值
     private static final int NEW_SENTENCE_TOKEN_THRESHOLD = 8;
 
-    // 历史记录默认限制数量
-    private static final int DEFAULT_HISTORY_LIMIT = 10;
+
 
     @Resource(name = "messageWindowChatMemory")
     private ChatMemoryStore chatMemoryStore;
@@ -92,52 +91,27 @@ public class ChatService {
             // 获取ChatModel
             ChatModel chatModel = chatModelFactory.takeChatModel(session);
 
-            if (session.getChatMemory() == null) {// 如果记忆没初始化，则初始化一下
-                initializeHistory(session);
-            }
-
-            // 获取格式化的历史记录（包含当前用户消息）
-            List<Message> historyMessages = session.getHistoryMessages();
-
             ChatOptions chatOptions = ToolCallingChatOptions.builder()
                     .toolCallbacks(useFunctionCall ? session.getToolCallbacks() : new ArrayList<>())
                     .toolContext(TOOL_CONTEXT_SESSION_KEY, session)
                     .build();
-            UserMessage userMessage = new UserMessage(message);
-            Prompt prompt = Prompt.builder().messages(historyMessages).messages(userMessage).chatOptions(chatOptions)
-                    .build();
+
+            UserMessage userMessage = new UserMessage( message);
+            Prompt prompt = new Prompt(chatMemoryStore.prompt(device, userMessage),chatOptions);
 
             ChatResponse chatResponse = chatModel.call(prompt);
             if (chatResponse == null || chatResponse.getResult().getOutput().getText() == null) {
                 logger.warn("模型响应为空或无生成内容");
                 return "抱歉，我在处理您的请求时遇到了问题。请稍后再试。";
             }
-            String response = chatResponse.getResult().getOutput().getText();
-            boolean hasToolCalls = chatResponse.hasToolCalls();
-            String messageType = SysMessage.MESSAGE_TYPE_NORMAL;// 默认消息类型为普通消息
-            if (!hasToolCalls) {// 非function消息才加入对话历史，避免调用混乱
-                // 更新历史消息缓存
-                session.addHistoryMessage(userMessage);
-                if (response != null && !response.isEmpty()) {
-                    session.addHistoryMessage(new AssistantMessage(response));
-                }
-            } else {
-                // TODO 后续还需要根据元数据判断是function_call还是mcp调用
-                // 检查元数据中是否包含工具调用标识
-                // 发生了工具调用，获取函数调用的名称，通过名称反查类型
-                // String functionName = chatResponse.getMetadata().get("function_name");
-                messageType = SysMessage.MESSAGE_TYPE_FUNCTION_CALL;// function消息类型
-            }
-            final String finalMessageType = messageType;
+            AssistantMessage assistantMessage =chatResponse.getResult().getOutput();
+
             Thread.startVirtualThread(() -> {// 异步持久化
-                // 保存用户消息，会被持久化至数据库。
-                chatMemoryStore.addUserMessage(device, message, finalMessageType);
-                if (response != null && !response.isEmpty()) {
-                    // 保存AI消息，会被持久化至数据库。
-                    chatMemoryStore.addAssistantMessage(device, response, finalMessageType);
-                }
+
+                // 保存AI消息，会被持久化至数据库。
+                chatMemoryStore.addMessage(device, assistantMessage,null);
             });
-            return response;
+            return assistantMessage.getText();
 
         } catch (Exception e) {
             logger.error("处理查询时出错: {}", e.getMessage(), e);
@@ -162,21 +136,10 @@ public class ChatService {
                 .toolContext(TOOL_CONTEXT_SESSION_KEY, session)
                 .build();
 
-        if (session.getChatMemory() == null) {// 如果记忆没初始化，则初始化一下
-            initializeHistory(session);
-        }
-        // 获取格式化的历史记录（包含当前用户消息）
-        List<Message> historyMessages = session.getHistoryMessages();
-
         UserMessage userMessage = new UserMessage(message);
-        historyMessages.add(userMessage);
-        Prompt prompt = Prompt.builder().messages(historyMessages).chatOptions(chatOptions).build();
+        Prompt prompt = new Prompt(chatMemoryStore.prompt(device, userMessage),chatOptions);
 
         // 调用实际的流式聊天方法
-        // return chatModel.stream(prompt).map(response -> (response.getResult() == null
-        // || response.getResult().getOutput() == null
-        // || response.getResult().getOutput().getText() == null) ? ""
-        // : response.getResult().getOutput().getText());
         return chatModel.stream(prompt);
     }
 
@@ -230,19 +193,9 @@ public class ChatService {
             return;
         }
         SysDevice device = chatSession.getSysDevice();
-        // 如果缓存中不存在该设备的历史记录，则初始化缓存。默认情况下，只缓存当前会话的聊天记录。
-        // 同一个设备重新连接至服务器，会被标识为不同的sessionId。
-        // 可以将这理解为spring-ai的conversation会话,将sessionId作为conversationId
-        // 从数据库加载历史记录
-        List<SysMessage> history = chatMemoryStore.getMessages(device.getDeviceId(),
-                SysMessage.MESSAGE_TYPE_NORMAL, DEFAULT_HISTORY_LIMIT);
-        String systemMessage = chatMemoryStore.getSystemMessage(device.getDeviceId(), device.getRoleId());
-        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .maxMessages(DEFAULT_HISTORY_LIMIT)
-                .build();// 创建一个新的MessageWindowChatMemory实例，限制为10条消息滚动
-        chatMemory.add(device.getSessionId(), new SystemMessage(systemMessage));
-        chatMemory.add(device.getSessionId(), convert(history));
-        chatSession.setChatMemory(chatMemory);
+
+        // 从数据库加载历史记录，初始化缓存。
+        List<Message> history = chatMemoryStore.initHistory(device.getDeviceId());
         logger.info("已初始化设备 {} 的历史记录缓存，共 {} 条消息", device.getDeviceId(), history.size());
     }
 
@@ -253,46 +206,6 @@ public class ChatService {
      */
     public void clearMessageCache(String deviceId) {
         chatMemoryStore.clearMessages(deviceId);
-    }
-
-
-    /**
-     * 通用添加消息
-     *
-     * @param message     消息内容
-     * @param role        角色名称
-     * @param messageType 消息类型
-     */
-    public void addMessage(SysDevice device, String message, String role, String messageType, String audioPath) {
-        chatMemoryStore.addMessage(device.getDeviceId(), device.getSessionId(), role, message, device.getRoleId(),
-                messageType, audioPath);
-    }
-
-    /**
-     * 将数据库记录的SysMessag转换为spring-ai的Message。
-     * 加载的历史都是普通消息(SysMessage.MESSAGE_TYPE_NORMAL)
-     * 
-     * @param messages
-     * @return
-     */
-    private List<Message> convert(List<SysMessage> messages) {
-        if (messages == null || messages.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return messages.stream()
-                .filter(message -> MessageType.ASSISTANT.getValue().equals(message.getSender())
-                        || MessageType.USER.getValue().equals(message.getSender()))
-                .map(message -> {
-                    String role = message.getSender();
-                    // 一般消息("messageType", "NORMAL");//默认为普通消息
-                    Map<String, Object> metadata = Map.of("messageId", message.getMessageId(), "messageType",
-                            message.getMessageType());
-                    return switch (role) {
-                        case "assistant" -> new AssistantMessage(message.getMessage(), metadata);
-                        case "user" -> UserMessage.builder().text(message.getMessage()).metadata(metadata).build();
-                        default -> throw new IllegalArgumentException("Invalid role: " + role);
-                    };
-                }).collect(Collectors.toList());
     }
 
     /**
@@ -458,30 +371,21 @@ public class ChatService {
             // TODO
             // 需要进一步看看ChatModel在流式响应里是如何判断hasTools的，或者直接基于Flux<ChatResponse>已封装好的对象hasToolCalls判断
             boolean hasToolCalls = toolName != null && !toolName.isEmpty();
-            String messageType = hasToolCalls ? SysMessage.MESSAGE_TYPE_FUNCTION_CALL : SysMessage.MESSAGE_TYPE_NORMAL;// TODO
-                                                                                                                       // 后续可以根据名称区分function还是mcp，来细分类型
+            String messageType = hasToolCalls ? SysMessage.MESSAGE_TYPE_FUNCTION_CALL : SysMessage.MESSAGE_TYPE_NORMAL;
+            // TODO
+            // 后续可以根据名称区分function还是mcp，来细分类型
 
             UserMessage userMessage = new UserMessage(message);
 
-            // 获取当前对话ID
-            String dialogueId = session.getDialogueId();
-
-            if (!hasToolCalls) {// 非function消息才加入对话历史，避免调用混乱
-                session.addHistoryMessage(userMessage);
-                if (!fullResponse.isEmpty()) {
-                    AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());
-                    session.addHistoryMessage(assistantMessage);
-                }
-            }
             Thread.startVirtualThread(() -> {// 异步持久化
                 String userAudioPath = session.getUserAudioPath();
-                addMessage(session.getSysDevice(), userMessage.getText(), userMessage.getMessageType().getValue(),
-                        messageType, userAudioPath);
+                chatMemoryStore.addMessage(session.getSysDevice(), userMessage,  userAudioPath);
+
                 if (!fullResponse.isEmpty()) {
                     AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());
                     String assistAudioPath = session.getAssistantAudioPath();
-                    addMessage(session.getSysDevice(), assistantMessage.getText(),
-                            assistantMessage.getMessageType().getValue(), messageType, assistAudioPath);
+
+                    chatMemoryStore.addMessage(session.getSysDevice(), assistantMessage, assistAudioPath);
                 }
             });
         }

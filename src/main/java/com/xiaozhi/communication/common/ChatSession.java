@@ -7,8 +7,6 @@ import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.enums.ListenMode;
 import lombok.Data;
-import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.tool.ToolCallback;
 import reactor.core.publisher.Sinks;
 
@@ -69,10 +67,7 @@ public abstract class ChatSession {
      * 会话的最后有效活动时间
      */
     protected Instant lastActivityTime;
-    /**
-     * spring ai 聊天记忆
-     */
-    protected ChatMemory chatMemory;
+
     /**
      * 会话属性存储
      */
@@ -129,17 +124,8 @@ public abstract class ChatSession {
         return toolsSessionHolder.getAllFunction();
     }
 
-    public void clearMemory() {
-        chatMemory.clear(sessionId);
-    }
 
-    public List<Message> getHistoryMessages() {
-        return chatMemory.get(sessionId);
-    }
 
-    public void addHistoryMessage(Message message){
-        chatMemory.add(sessionId, message);
-    }
     /**
      * 会话连接是否打开中
      * @return
