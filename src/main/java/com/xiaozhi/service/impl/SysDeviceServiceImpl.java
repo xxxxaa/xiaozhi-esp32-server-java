@@ -183,7 +183,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
         device = deviceMapper.selectDeviceById(device.getDeviceId());
         ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
         if (session != null) {
-            session.setChatMemory(null);
+            session.setConversation(null);
             session.setSysDevice(device);
         }
         return rows;

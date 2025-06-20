@@ -1,6 +1,7 @@
 package com.xiaozhi.communication.common;
 
 import com.xiaozhi.communication.domain.iot.IotDescriptor;
+import com.xiaozhi.dialogue.llm.memory.Conversation;
 import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
 import com.xiaozhi.dialogue.llm.tool.mcp.device.DeviceMcpHolder;
 import com.xiaozhi.entity.SysDevice;
@@ -30,6 +31,11 @@ public abstract class ChatSession {
      * 设备可用角色列表
      */
     protected List<SysRole> sysRoleList;
+    /**
+     * 一个Session在某个时刻，只有一个活跃的Conversation。
+     * 当切换角色时，Conversation应该释放新建。切换角色一般是不频繁的。
+     */
+    protected Conversation conversation;
     /**
      * 设备iot信息
      */
@@ -142,4 +148,21 @@ public abstract class ChatSession {
     public abstract void sendTextMessage(String message);
 
     public abstract void sendBinaryMessage(byte[] message);
+
+    /**
+     * 设置 Conversation，需要与当前活跃角色一致。
+     * 当切换角色时，会释放当前 Conversation，并新建一个对应于新角色的Conversation。
+     * @param conversation
+     */
+    public void setConversation( Conversation conversation) {
+        this.conversation = conversation;
+    }
+
+    /**
+     * 获取与当前活跃角色一致的 Conversation。
+     * @return
+     */
+    public Conversation getConversation() {
+        return conversation;
+    }
 }

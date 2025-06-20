@@ -1,8 +1,9 @@
 package com.xiaozhi.communication.common;
 
 import com.xiaozhi.communication.domain.*;
-import com.xiaozhi.dialogue.llm.ChatService;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
+import com.xiaozhi.dialogue.llm.memory.ChatMemory;
+import com.xiaozhi.dialogue.llm.memory.Conversation;
 import com.xiaozhi.dialogue.llm.tool.ToolsGlobalRegistry;
 import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
 import com.xiaozhi.dialogue.service.AudioService;
@@ -65,7 +66,7 @@ public class MessageHandler {
     private SttServiceFactory sttFactory;
 
     @Resource
-    private ChatService chatService;
+    private ChatMemory chatMemory;
 
     @Resource
     private ChatModelFactory chatModelFactory;
@@ -105,6 +106,7 @@ public class MessageHandler {
             //以上同步处理结束后，再启动虚拟线程进行设备初始化，确保chatSession中已设置的sysDevice信息
             Thread.startVirtualThread(() -> {
                 try {
+                    // 从数据库获取角色描述。device.getRoleId()表示当前设备的当前活跃角色，或者上次退出时的活跃角色。
                     SysRole role = roleService.selectRoleById(device.getRoleId());
 
                     if (role.getSttId() != null) {
@@ -121,7 +123,8 @@ public class MessageHandler {
                     }
                     if (role.getModelId() != null) {
                         chatModelFactory.takeChatModel(chatSession);// 提前初始化，加速后续使用
-                        chatService.initializeHistory(chatSession);
+                        Conversation conversation = chatMemory.initConversation(device, role, sessionId);
+                        chatSession.setConversation( conversation);
                         // 注册全局函数
                         toolsSessionHolder.registerGlobalFunctionTools(chatSession);
                     }
@@ -178,7 +181,7 @@ public class MessageHandler {
         // 清理对话
         dialogueService.cleanupSession(sessionId);
         // 清理ChatService缓存的对话历史。
-        chatService.clearMessageCache(device.getDeviceId());
+        chatMemory.clearMessages(device.getDeviceId());
     }
 
     /**

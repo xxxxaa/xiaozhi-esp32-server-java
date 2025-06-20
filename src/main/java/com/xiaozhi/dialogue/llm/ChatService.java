@@ -3,14 +3,17 @@ package com.xiaozhi.dialogue.llm;
 import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.dialogue.llm.api.StreamResponseListener;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
-import com.xiaozhi.dialogue.llm.memory.ChatMemoryStore;
+import com.xiaozhi.dialogue.llm.memory.Conversation;
+import com.xiaozhi.dialogue.llm.memory.DatabaseChatMemory;
+import com.xiaozhi.dialogue.llm.memory.MessageWindowConversation;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
+import com.xiaozhi.entity.SysRole;
+import com.xiaozhi.service.SysRoleService;
 import com.xiaozhi.utils.EmojiUtils;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.messages.*;
 import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 import org.springframework.ai.chat.model.ChatModel;
@@ -23,14 +26,13 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
+import static com.xiaozhi.dialogue.llm.memory.MessageWindowConversation.DEFAULT_HISTORY_LIMIT;
 
 /**
  *
@@ -67,15 +69,15 @@ public class ChatService {
     // 新句子判断的字符阈值
     private static final int NEW_SENTENCE_TOKEN_THRESHOLD = 8;
 
-
-
-    @Resource(name = "messageWindowChatMemory")
-    private ChatMemoryStore chatMemoryStore;
+    @Resource
+    private DatabaseChatMemory chatMemoryStore;
 
     // TODO 移到构建者模式，由连接通过认证，可正常对话时，创建实例，构建好一个完整的Role.
     @Resource
     private ChatModelFactory chatModelFactory;
 
+    @Resource
+    private SysRoleService roleService;
     /**
      * 处理用户查询（同步方式）
      * 
@@ -97,7 +99,8 @@ public class ChatService {
                     .build();
 
             UserMessage userMessage = new UserMessage( message);
-            Prompt prompt = new Prompt(chatMemoryStore.prompt(device, userMessage),chatOptions);
+            List<Message> messages = session.getConversation().prompt( userMessage);
+            Prompt prompt = new Prompt(messages,chatOptions);
 
             ChatResponse chatResponse = chatModel.call(prompt);
             if (chatResponse == null || chatResponse.getResult().getOutput().getText() == null) {
@@ -109,7 +112,7 @@ public class ChatService {
             Thread.startVirtualThread(() -> {// 异步持久化
 
                 // 保存AI消息，会被持久化至数据库。
-                chatMemoryStore.addMessage(device, assistantMessage,null);
+                session.getConversation().addMessage( assistantMessage,null);
             });
             return assistantMessage.getText();
 
@@ -137,7 +140,8 @@ public class ChatService {
                 .build();
 
         UserMessage userMessage = new UserMessage(message);
-        Prompt prompt = new Prompt(chatMemoryStore.prompt(device, userMessage),chatOptions);
+        List<Message> messages = session.getConversation().prompt( userMessage);
+        Prompt prompt = new Prompt(messages,chatOptions);
 
         // 调用实际的流式聊天方法
         return chatModel.stream(prompt);
@@ -184,20 +188,6 @@ public class ChatService {
         }
     }
 
-    /**
-     * 初始化设备的历史记录缓存
-     *
-     */
-    public void initializeHistory(ChatSession chatSession) {
-        if (chatSession.getSysDevice() == null) {
-            return;
-        }
-        SysDevice device = chatSession.getSysDevice();
-
-        // 从数据库加载历史记录，初始化缓存。
-        List<Message> history = chatMemoryStore.initHistory(device.getDeviceId());
-        logger.info("已初始化设备 {} 的历史记录缓存，共 {} 条消息", device.getDeviceId(), history.size());
-    }
 
     /**
      * 清除设备缓存
@@ -379,13 +369,13 @@ public class ChatService {
 
             Thread.startVirtualThread(() -> {// 异步持久化
                 String userAudioPath = session.getUserAudioPath();
-                chatMemoryStore.addMessage(session.getSysDevice(), userMessage,  userAudioPath);
+                session.getConversation().addMessage( userMessage,  userAudioPath);
 
                 if (!fullResponse.isEmpty()) {
                     AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());
                     String assistAudioPath = session.getAssistantAudioPath();
 
-                    chatMemoryStore.addMessage(session.getSysDevice(), assistantMessage, assistAudioPath);
+                    session.getConversation().addMessage(assistantMessage, assistAudioPath);
                 }
             });
         }

@@ -3,10 +3,10 @@ package com.xiaozhi.dialogue.llm.memory;
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
 import com.xiaozhi.entity.Base;
+import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.service.SysMessageService;
-import com.xiaozhi.service.SysRoleService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,14 +16,15 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
+import static com.xiaozhi.dialogue.llm.memory.MessageWindowConversation.DEFAULT_HISTORY_LIMIT;
 
 /**
  * 基于数据库的聊天记忆实现
+ * 全局单例类，负责Conversatin的初始化、保存、清理。
  */
 @Service
-public class DatabaseChatMemory  {
+public class DatabaseChatMemory  implements ChatMemory {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseChatMemory.class);
 
     @Autowired
@@ -32,6 +33,18 @@ public class DatabaseChatMemory  {
     @Autowired
     private TtsServiceFactory ttsService;
 
+    @Override
+    public Conversation initConversation(SysDevice device, SysRole role, String sessionId) {
+        Conversation conversation = MessageWindowConversation.builder().chatMemory(this)
+                .maxMessages(DEFAULT_HISTORY_LIMIT)
+                .role( role)
+                .device(device)
+                .sessionId(sessionId)
+                .build();
+        return conversation;
+    }
+
+    @Override
     public void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, String audioPath) {
         // 异步虚拟线程处理持久化。
         Thread.startVirtualThread(() -> {
@@ -57,7 +70,7 @@ public class DatabaseChatMemory  {
         });
     }
 
-
+    @Override
     public List<SysMessage> getMessages(String deviceId, String messageType, Integer limit) {
         try {
             SysMessage queryMessage = new SysMessage();
@@ -75,7 +88,7 @@ public class DatabaseChatMemory  {
         }
     }
 
-
+    @Override
     public void clearMessages(String deviceId) {
         try {
             // 清除设备的历史消息
