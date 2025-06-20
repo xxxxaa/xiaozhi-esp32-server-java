@@ -1,4 +1,11 @@
 # 变更日志
+## [2.8.7] - 2025-06-20
+
+### 其他变更
+- chore: update version to 2.8.7 [skip ci]
+- docs: update changelog for v2.8.6 [skip ci]
+- chore: update version to 2.8.6 [skip ci]
+
 ## [2.8.6] - 2025-06-19
 
 ### 其他变更
