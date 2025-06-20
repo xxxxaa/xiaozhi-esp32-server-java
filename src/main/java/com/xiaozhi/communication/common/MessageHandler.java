@@ -21,6 +21,7 @@ import com.xiaozhi.service.SysRoleService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -65,7 +66,7 @@ public class MessageHandler {
     @Resource
     private SttServiceFactory sttFactory;
 
-    @Resource
+    @Autowired
     private ChatMemory chatMemory;
 
     @Resource

@@ -3,6 +3,7 @@ package com.xiaozhi.dialogue.llm;
 import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.dialogue.llm.api.StreamResponseListener;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
+import com.xiaozhi.dialogue.llm.memory.ChatMemory;
 import com.xiaozhi.dialogue.llm.memory.Conversation;
 import com.xiaozhi.dialogue.llm.memory.DatabaseChatMemory;
 import com.xiaozhi.dialogue.llm.memory.MessageWindowConversation;
@@ -70,7 +71,7 @@ public class ChatService {
     private static final int NEW_SENTENCE_TOKEN_THRESHOLD = 8;
 
     @Resource
-    private DatabaseChatMemory chatMemoryStore;
+    private ChatMemory chatMemoryStore;
 
     // TODO 移到构建者模式，由连接通过认证，可正常对话时，创建实例，构建好一个完整的Role.
     @Resource

@@ -60,12 +60,5 @@ public class XiaozhiApplication {
             logger.info("==========================================================");
         };
     }
-    @Bean
-    public ChatMemory chatMemory(){
-        // 历史记录默认限制数量
-        final int DEFAULT_HISTORY_LIMIT = 10;
-        // TODO 后续指定ChatMemoryRepository，从数据库中加载历史记录。也就是基于spring-ai 将ChatMemory与ChatMemoryRepository直接关联。
-        return MessageWindowChatMemory.builder().maxMessages(DEFAULT_HISTORY_LIMIT).build();
 
-    }
 }
