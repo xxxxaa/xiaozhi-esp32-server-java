@@ -10,6 +10,7 @@ import java.util.List;
 
 /**
  * 聊天记忆接口
+ * TODO 需要进一步抽象出一个Conversation的接口
  * 负责管理聊天历史记录
  */
 public interface ChatMemoryStore {

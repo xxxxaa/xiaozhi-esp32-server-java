@@ -50,41 +50,6 @@ public class MessageWindowChatMemory implements ChatMemoryStore{
         systemMessageCache.keySet().removeIf(key -> key.startsWith(deviceId + ":"));
     }
 
-    // todo 在get时处理缩容。
-    private List<Message> process(List<Message> memoryMessages, List<Message> newMessages) {
-        List<Message> processedMessages = new ArrayList<>();
-
-        Set<Message> memoryMessagesSet = new HashSet<>(memoryMessages);
-        boolean hasNewSystemMessage = newMessages.stream()
-                .filter(SystemMessage.class::isInstance)
-                .anyMatch(message -> !memoryMessagesSet.contains(message));
-
-        memoryMessages.stream()
-                .filter(message -> !(hasNewSystemMessage && message instanceof SystemMessage))
-                .forEach(processedMessages::add);
-
-        processedMessages.addAll(newMessages);
-
-        if (processedMessages.size() <= this.maxMessages) {
-            return processedMessages;
-        }
-
-        int messagesToRemove = processedMessages.size() - this.maxMessages;
-
-        List<Message> trimmedMessages = new ArrayList<>();
-        int removed = 0;
-        for (Message message : processedMessages) {
-            if (message instanceof SystemMessage || removed >= messagesToRemove) {
-                trimmedMessages.add(message);
-            }
-            else {
-                removed++;
-            }
-        }
-
-        return trimmedMessages;
-    }
-
     @Override
     public String getSystemMessage(String deviceId, Integer roleId) {
 
