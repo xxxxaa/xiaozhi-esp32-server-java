@@ -2,6 +2,8 @@ package com.xiaozhi.dialogue.llm.tool.function;
 
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.communication.common.ChatSession;
+import com.xiaozhi.dialogue.llm.memory.ChatMemory;
+import com.xiaozhi.dialogue.llm.memory.Conversation;
 import com.xiaozhi.dialogue.llm.tool.ToolCallStringResultConverter;
 import com.xiaozhi.dialogue.llm.tool.ToolsGlobalRegistry;
 import com.xiaozhi.entity.SysDevice;
@@ -32,6 +34,8 @@ public class ChangeRoleFunction implements ToolsGlobalRegistry.GlobalFunction {
     private SysRoleService sysRoleService;
     @Resource
     private SysDeviceService sysDeviceService;
+    @Resource
+    ChatMemory chatMemory;
 
     @Override
     public ToolCallback getFunctionCallTool(ChatSession chatSession) {
@@ -46,13 +50,18 @@ public class ChangeRoleFunction implements ToolsGlobalRegistry.GlobalFunction {
                         String roleName = params.get("roleName");
                         try{
                             // 获取参数
-                            Optional<Integer> role_id = roleList.stream()
+                            Optional<SysRole> changedRole = roleList.stream()
                                     .filter(role -> role.getRoleName().equals(roleName))
-                                    .findFirst().map(SysRole::getRoleId);
+                                    .findFirst();
 
-                            if(role_id.isPresent()){
-                                sysDevice.setRoleId(role_id.get());//测试，固定角色
+
+                            if(changedRole.isPresent()){
+                                SysRole role = changedRole.get();
+                                sysDevice.setRoleId(role.getRoleId());//测试，固定角色
                                 sysDeviceService.update(sysDevice);
+                                // TODO 切换了角色，需要更换Conversation
+                                Conversation conversation = chatMemory.initConversation(sysDevice, role, chatSession.getSessionId());
+                                chatSession.setConversation( conversation);
                                 return "角色已切换至" + roleName;
                             }else{
                                 return "角色切换失败, 没有对应角色哦";
