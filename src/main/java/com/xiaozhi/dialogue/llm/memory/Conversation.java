@@ -6,6 +6,7 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,7 +29,7 @@ public abstract class Conversation {
         this.device = device;
         this.role = role;
         this.sessionId = sessionId;
-        this.messages = messages;
+        this.messages = new ArrayList<>(messages);
     }
 
     public SysDevice device() {
