@@ -152,8 +152,8 @@ public class MessageWindowConversation extends Conversation {
         messages.addAll(historyMessages);
         messages.add(userMessage);
 
-        // 保存用户消息，会被持久化至数据库。
-        this.addMessage(userMessage,null);
+        // 保存用户消息，会被持久化至数据库。TODO 需要检查ChatService 是否已经异步添加消息了。
+        //this.addMessage(userMessage,null);
 
         return messages;
     }
