@@ -36,7 +36,7 @@ public class SysMessage extends Base {
 
     /**
      * 语音文件路径
-     * TODO 改为路径约定，而非实际存储音频文件的路径字符串。
+     * @deprecated 改为路径约定，而非实际存储音频文件的路径字符串。后续版本不再支持此字段。
      */
     @Deprecated
     private String audioPath;
