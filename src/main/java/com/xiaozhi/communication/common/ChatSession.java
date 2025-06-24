@@ -128,7 +128,7 @@ public abstract class ChatSession {
         // 判断设备ID是否有不适合路径的特殊字符，它很可能是mac地址需要转换。
         String deviceId = device.getDeviceId().replace(":","-");
         String roleId = device.getRoleId().toString();
-        String filename = "{datetime}-{who}.wav".formatted(datetime,who);
+        String filename = "%s-%s.wav".formatted(datetime,who);
         Path path = Path.of(AudioUtils.AUDIO_PATH,deviceId,roleId,filename);
         return path;
     }
