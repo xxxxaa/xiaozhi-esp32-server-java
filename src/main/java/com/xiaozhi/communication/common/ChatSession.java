@@ -123,10 +123,10 @@ public abstract class ChatSession {
         Long dialogueId = this.getDialogueId();
         Instant instant = Instant.ofEpochMilli(dialogueId);
         LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-        String datetime = localDateTime.format(DateTimeFormatter.ISO_DATE_TIME);
+        String datetime = localDateTime.format(DateTimeFormatter.ISO_DATE_TIME).replace(":","");
         SysDevice device = this.getSysDevice();
-        // TODO 判断设备ID是否有不适合路径的特殊字符，它很可能是mac地址需要转换。
-        String deviceId = device.getDeviceId();
+        // 判断设备ID是否有不适合路径的特殊字符，它很可能是mac地址需要转换。
+        String deviceId = device.getDeviceId().replace(":","-");
         String roleId = device.getRoleId().toString();
         String filename = "{datetime}-{who}.wav".formatted(datetime,who);
         Path path = Path.of(AudioUtils.AUDIO_PATH,deviceId,roleId,filename);
