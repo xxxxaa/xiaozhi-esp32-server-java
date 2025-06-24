@@ -864,7 +864,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
      * @param textConsumer 具体处理输入文本，传入 dialogId
      */
     public void handleText(ChatSession session, String inputText, Consumer<String> textConsumer) {
-
         // 初始化对话状态
         String sessionId = session.getSessionId();
         initChat(sessionId);

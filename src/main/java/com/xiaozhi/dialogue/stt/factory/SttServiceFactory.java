@@ -56,12 +56,17 @@ public class SttServiceFactory {
         try {
             var voskService = new VoskSttService();
             voskService.initialize();
+            
+            // 检查模型是否真正加载成功
+            if (voskService instanceof VoskSttService && !((VoskSttService)voskService).isModelLoaded()) {
+                throw new Exception("Vosk model was not properly loaded");
+            }
+            
             serviceCache.put(DEFAULT_PROVIDER, voskService);
             voskInitialized = true;
             logger.info("Vosk STT服务初始化成功");
             return voskService;
         } catch (Exception e) {
-            logger.error("Vosk STT服务初始化失败", e);
             voskInitialized = false;
         }
         return null;

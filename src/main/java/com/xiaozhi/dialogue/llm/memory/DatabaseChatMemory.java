@@ -37,7 +37,7 @@ public class DatabaseChatMemory  implements ChatMemory {
     public Conversation initConversation(SysDevice device, SysRole role, String sessionId) {
         Conversation conversation = MessageWindowConversation.builder().chatMemory(this)
                 .maxMessages(DEFAULT_HISTORY_LIMIT)
-                .role( role)
+                .role(role)
                 .device(device)
                 .sessionId(sessionId)
                 .build();

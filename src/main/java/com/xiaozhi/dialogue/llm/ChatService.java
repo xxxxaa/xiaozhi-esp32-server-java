@@ -4,13 +4,7 @@ import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.dialogue.llm.api.StreamResponseListener;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
 import com.xiaozhi.dialogue.llm.memory.ChatMemory;
-import com.xiaozhi.dialogue.llm.memory.Conversation;
-import com.xiaozhi.dialogue.llm.memory.DatabaseChatMemory;
-import com.xiaozhi.dialogue.llm.memory.MessageWindowConversation;
-import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
-import com.xiaozhi.entity.SysRole;
-import com.xiaozhi.service.SysRoleService;
 import com.xiaozhi.utils.EmojiUtils;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
@@ -77,8 +71,6 @@ public class ChatService {
     @Resource
     private ChatModelFactory chatModelFactory;
 
-    @Resource
-    private SysRoleService roleService;
     /**
      * 处理用户查询（同步方式）
      * 
@@ -89,7 +81,6 @@ public class ChatService {
      */
     public String chat(ChatSession session, String message, boolean useFunctionCall) {
         try {
-            SysDevice device = session.getSysDevice();
 
             // 获取ChatModel
             ChatModel chatModel = chatModelFactory.takeChatModel(session);
@@ -99,8 +90,8 @@ public class ChatService {
                     .toolContext(TOOL_CONTEXT_SESSION_KEY, session)
                     .build();
 
-            UserMessage userMessage = new UserMessage( message);
-            List<Message> messages = session.getConversation().prompt( userMessage);
+            UserMessage userMessage = new UserMessage(message);
+            List<Message> messages = session.getConversation().prompt(userMessage);
             Prompt prompt = new Prompt(messages,chatOptions);
 
             ChatResponse chatResponse = chatModel.call(prompt);
@@ -111,9 +102,8 @@ public class ChatService {
             AssistantMessage assistantMessage =chatResponse.getResult().getOutput();
 
             Thread.startVirtualThread(() -> {// 异步持久化
-
                 // 保存AI消息，会被持久化至数据库。
-                session.getConversation().addMessage( assistantMessage,null);
+                session.getConversation().addMessage(assistantMessage,null);
             });
             return assistantMessage.getText();
 
@@ -126,11 +116,10 @@ public class ChatService {
     /**
      * 处理用户查询（流式方式）
      *
-     * @param device          设备信息
      * @param message         用户消息
      * @param useFunctionCall 是否使用函数调用
      */
-    public Flux<ChatResponse> chatStream(ChatSession session, SysDevice device, String message,
+    public Flux<ChatResponse> chatStream(ChatSession session, String message,
             boolean useFunctionCall) {
         // 获取ChatModel
         ChatModel chatModel = chatModelFactory.takeChatModel(session);
@@ -141,8 +130,8 @@ public class ChatService {
                 .build();
 
         UserMessage userMessage = new UserMessage(message);
-        List<Message> messages = session.getConversation().prompt( userMessage);
-        Prompt prompt = new Prompt(messages,chatOptions);
+        List<Message> messages = session.getConversation().prompt(userMessage);
+        Prompt prompt = new Prompt(messages, chatOptions);
 
         // 调用实际的流式聊天方法
         return chatModel.stream(prompt);
@@ -151,13 +140,11 @@ public class ChatService {
     public void chatStreamBySentence(ChatSession session, String message, boolean useFunctionCall,
             TriConsumer<String, Boolean, Boolean> sentenceHandler) {
         try {
-            SysDevice device = session.getSysDevice();
-            device.setSessionId(session.getSessionId());
             // 创建流式响应监听器
             StreamResponseListener streamListener = new TokenStreamResponseListener(session, message, sentenceHandler);
             final StringBuilder toolName = new StringBuilder(); // 当前句子的缓冲区
             // 调用现有的流式方法
-            chatStream(session, device, message, useFunctionCall)
+            chatStream(session, message, useFunctionCall)
                     .subscribe(
                             chatResponse -> {
                                 String token = chatResponse.getResult() == null
@@ -370,7 +357,7 @@ public class ChatService {
 
             Thread.startVirtualThread(() -> {// 异步持久化
                 String userAudioPath = session.getUserAudioPath();
-                session.getConversation().addMessage( userMessage,  userAudioPath);
+                session.getConversation().addMessage(userMessage,  userAudioPath);
 
                 if (!fullResponse.isEmpty()) {
                     AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());

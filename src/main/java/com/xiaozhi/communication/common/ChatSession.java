@@ -110,7 +110,7 @@ public abstract class ChatSession {
     }
 
     public void setAssistantAudioPath(String assistantAudioPath) {
-        setAttribute( "assistantAudioPath_" + getDialogueId(), assistantAudioPath);
+        setAttribute("assistantAudioPath_" + getDialogueId(), assistantAudioPath);
     }
     public String getAssistantAudioPath() {
         String dialogueId = getDialogueId();
@@ -154,7 +154,7 @@ public abstract class ChatSession {
      * 当切换角色时，会释放当前 Conversation，并新建一个对应于新角色的Conversation。
      * @param conversation
      */
-    public void setConversation( Conversation conversation) {
+    public void setConversation(Conversation conversation) {
         this.conversation = conversation;
     }
 

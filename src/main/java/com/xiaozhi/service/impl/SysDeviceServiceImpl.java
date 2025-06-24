@@ -133,8 +133,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     @Override
     @Cacheable(value = CACHE_NAME, key = "#deviceId.replace(\":\", \"-\")", unless = "#result == null")
     public SysDevice selectDeviceById(String deviceId) {
-        SysDevice device = deviceMapper.selectDeviceById(deviceId);
-        return device;  
+        return deviceMapper.selectDeviceById(deviceId);
     }
 
     /**

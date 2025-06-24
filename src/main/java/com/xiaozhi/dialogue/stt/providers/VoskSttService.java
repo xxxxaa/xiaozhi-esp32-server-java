@@ -37,9 +37,11 @@ public class VoskSttService implements SttService {
     // Vosk模型相关对象
     private Model model;
     private String voskModelPath;
+    private boolean modelLoaded = false;
 
     /**
      * 初始化Vosk模型
+     * @throws Exception 如果模型加载失败
      */
     @PostConstruct
     public void initialize() throws Exception {
@@ -61,12 +63,22 @@ public class VoskSttService implements SttService {
 
             // 加载模型，路径为配置的模型目录
             voskModelPath = System.getProperty("user.dir") + "/models/vosk-model";
-            logger.debug(voskModelPath);
             model = new Model(voskModelPath);
+            modelLoaded = true;
             logger.info("Vosk 模型加载成功！路径: {}", voskModelPath);
         } catch (Exception e) {
+            modelLoaded = false;
             logger.warn("Vosk 模型加载失败！将使用其他STT服务: {}", e.getMessage());
+            throw new Exception("Vosk model loading failed: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 检查模型是否成功加载
+     * @return 如果模型加载成功返回true，否则返回false
+     */
+    public boolean isModelLoaded() {
+        return modelLoaded && model != null;
     }
 
     @Override
@@ -76,6 +88,11 @@ public class VoskSttService implements SttService {
 
     @Override
     public String recognition(byte[] audioData) {
+        if (!isModelLoaded()) {
+            logger.error("Vosk模型未加载，无法进行识别！");
+            return null;
+        }
+
         if (audioData == null || audioData.length == 0) {
             logger.warn("音频数据为空！");
             return null;
@@ -112,11 +129,16 @@ public class VoskSttService implements SttService {
 
     @Override
     public boolean supportsStreaming() {
-        return true;
+        return isModelLoaded();
     }
 
     @Override
     public String streamRecognition(Sinks.Many<byte[]> audioSink) {
+        if (!isModelLoaded()) {
+            logger.error("Vosk模型未加载，无法进行流式识别！");
+            return null;
+        }
+        
         // 使用阻塞队列存储音频数据
         BlockingQueue<byte[]> audioQueue = new LinkedBlockingQueue<>();
         AtomicBoolean isCompleted = new AtomicBoolean(false);

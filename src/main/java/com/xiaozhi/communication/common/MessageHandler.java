@@ -125,7 +125,7 @@ public class MessageHandler {
                     if (role.getModelId() != null) {
                         chatModelFactory.takeChatModel(chatSession);// 提前初始化，加速后续使用
                         Conversation conversation = chatMemory.initConversation(device, role, sessionId);
-                        chatSession.setConversation( conversation);
+                        chatSession.setConversation(conversation);
                         // 注册全局函数
                         toolsSessionHolder.registerGlobalFunctionTools(chatSession);
                     }

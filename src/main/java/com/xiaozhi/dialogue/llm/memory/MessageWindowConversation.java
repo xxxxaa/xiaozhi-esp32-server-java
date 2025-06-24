@@ -70,7 +70,7 @@ public class MessageWindowConversation extends Conversation {
             Assert.notNull(sessionId, "sessionId must not be null");
             logger.info("获取设备{}的历史消息",deviceId);
             List<SysMessage> history = chatMemory.getMessages(deviceId, SysMessage.MESSAGE_TYPE_NORMAL, maxMessages);
-            List<Message> messages =convert( history);
+            List<Message> messages =convert(history);
 
             return new MessageWindowConversation(chatMemory,device,role,maxMessages,messages);
         }
@@ -94,7 +94,7 @@ public class MessageWindowConversation extends Conversation {
     @Override
     public void addMessage(UserMessage message, String audioPath) {
         // 更新缓存
-        messages().add( message);
+        messages().add(message);
         String deviceId = device().getDeviceId();
         int roleId = role().getRoleId();
         String sender =  message.getMessageType().getValue();
@@ -110,7 +110,7 @@ public class MessageWindowConversation extends Conversation {
      * @param message AI消息
      */
     @Override
-    public void addMessage( AssistantMessage message, String audioPath) {
+    public void addMessage(AssistantMessage message, String audioPath) {
 
         boolean hasToolCalls = message.hasToolCalls();
         // 判断消息类型（不是spring-ai的消息类型）
@@ -119,7 +119,7 @@ public class MessageWindowConversation extends Conversation {
         // 非function消息才加入对话历史，避免调用混乱
         if(!hasToolCalls){
             // 更新缓存
-            messages().add( message);
+            messages().add(message);
         }
 
         // TODO 后续还需要根据元数据判断是function_call还是mcp调用
@@ -130,7 +130,7 @@ public class MessageWindowConversation extends Conversation {
         String deviceId = device().getDeviceId();
         int roleId = role().getRoleId();
         String sender =  message.getMessageType().getValue();
-        if (StringUtils.hasText( response)) {
+        if (StringUtils.hasText(response)) {
             chatMemory.addMessage(deviceId, sessionId(), sender, response,
                     roleId, messageType, audioPath);
 
@@ -152,7 +152,7 @@ public class MessageWindowConversation extends Conversation {
         messages.add(userMessage);
 
         // 保存用户消息，会被持久化至数据库。
-        this.addMessage( userMessage,null);
+        this.addMessage(userMessage,null);
 
         return messages;
     }
