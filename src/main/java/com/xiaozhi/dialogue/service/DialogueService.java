@@ -518,6 +518,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
             // 尝试处理队列
             processQueue(session, sessionId);
+            // debug: 在handleTtsSuccess方法里没有检测到isLast标记
+            logger.info("句子处理完成: text为空字符串且 isLast");
+            saveAssistantResponse(session);
             return;
         }
 
@@ -658,7 +661,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             dialogueAudioPaths.computeIfAbsent(task.dialogueId, k -> new ConcurrentHashMap<>())
                     .put(task.sentence.getSeq(), audioPath);
         }
-
+        logger.info("是否最后一个句子{}, 对话ID: {}",task.isLast, task.dialogueId);
         // 如果是最后一个句子，合并并存储助手的完整音频
         if (task.isLast && task.dialogueId != null) {
             saveAssistantResponse(task.session);
