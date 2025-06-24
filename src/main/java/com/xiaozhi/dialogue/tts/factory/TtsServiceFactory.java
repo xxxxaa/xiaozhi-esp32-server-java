@@ -63,7 +63,7 @@ public class TtsServiceFactory {
             return serviceCache.get(cacheKey);
         }
 
-        var service = createApiService(config, voiceName, OUTPUT_PATH);
+        var service = createApiService(config, voiceName);
         serviceCache.put(cacheKey, service);
         return service;
     }
@@ -71,8 +71,9 @@ public class TtsServiceFactory {
     /**
      * 根据配置创建API类型的TTS服务
      */
-    private TtsService createApiService(SysConfig config, String voiceName, String outputPath) {
+    private TtsService createApiService(SysConfig config, String voiceName) {
         // Make sure output dir exists
+        String outputPath = OUTPUT_PATH;
         ensureOutputPath(outputPath);
 
         return switch (config.getProvider()) {
