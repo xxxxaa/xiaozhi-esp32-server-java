@@ -45,8 +45,8 @@
     </select>
 
     <insert id="add" parameterType="com.xiaozhi.entity.SysMessage">
-        INSERT INTO sys_message ( deviceId, sessionId, sender, roleId, message, audioPath, messageType )
-        SELECT #{deviceId}, #{sessionId}, #{sender}, #{roleId}, #{message}, #{audioPath}, #{messageType}
+        INSERT INTO sys_message ( deviceId, sessionId, sender, roleId, message, audioPath, messageType ,createTime)
+        SELECT #{deviceId}, #{sessionId}, #{sender}, #{roleId}, #{message}, #{audioPath}, #{messageType},#{createTime,jdbcType=TIMESTAMP}
     </insert>
 
     <update id="delete" parameterType="com.xiaozhi.entity.SysMessage">

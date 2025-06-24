@@ -49,9 +49,9 @@ public abstract class Conversation {
 
     abstract public void clear();
 
-    abstract public void addMessage(UserMessage message, String audioPath);
+    abstract public void addMessage(UserMessage message, Long dialogueId);
 
-    abstract public void addMessage(AssistantMessage message, String audioPath);
+    abstract public void addMessage(AssistantMessage message, Long dialogueId);
 
     abstract public List<Message> prompt(UserMessage userMessage);
 }

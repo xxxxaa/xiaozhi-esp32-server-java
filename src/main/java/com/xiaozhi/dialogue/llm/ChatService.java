@@ -356,14 +356,13 @@ public class ChatService {
             UserMessage userMessage = new UserMessage(message);
 
             Thread.startVirtualThread(() -> {// 异步持久化
-                String userAudioPath = session.getUserAudioPath();
-                session.getConversation().addMessage(userMessage,  userAudioPath);
+                Long dialogueId = session.getDialogueId();
+                session.getConversation().addMessage(userMessage,  dialogueId);
 
                 if (!fullResponse.isEmpty()) {
                     AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());
-                    String assistAudioPath = session.getAssistantAudioPath();
 
-                    session.getConversation().addMessage(assistantMessage, assistAudioPath);
+                    session.getConversation().addMessage(assistantMessage, dialogueId);
                 }
             });
         }

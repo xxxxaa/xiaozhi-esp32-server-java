@@ -93,7 +93,7 @@ public class MessageWindowConversation extends Conversation {
      * @param message 用户消息
      */
     @Override
-    public void addMessage(UserMessage message, String audioPath) {
+    public void addMessage(UserMessage message,  Long dialogueId) {
         // 更新缓存
         messages().add(message);
         String deviceId = device().getDeviceId();
@@ -101,7 +101,7 @@ public class MessageWindowConversation extends Conversation {
         String sender =  message.getMessageType().getValue();
         // 用户消息一定是 MESSAGE_TYPE_NORMAL
         chatMemory.addMessage(deviceId, sessionId(),sender, message.getText(),
-                roleId, SysMessage.MESSAGE_TYPE_NORMAL, audioPath);
+                roleId, SysMessage.MESSAGE_TYPE_NORMAL, dialogueId);
 
     }
 
@@ -111,7 +111,7 @@ public class MessageWindowConversation extends Conversation {
      * @param message AI消息
      */
     @Override
-    public void addMessage(AssistantMessage message, String audioPath) {
+    public void addMessage(AssistantMessage message, Long dialogueId) {
 
         boolean hasToolCalls = message.hasToolCalls();
         // 判断消息类型（不是spring-ai的消息类型）
@@ -133,7 +133,7 @@ public class MessageWindowConversation extends Conversation {
         String sender =  message.getMessageType().getValue();
         if (StringUtils.hasText(response)) {
             chatMemory.addMessage(deviceId, sessionId(), sender, response,
-                    roleId, messageType, audioPath);
+                    roleId, messageType, dialogueId);
 
         }
     }

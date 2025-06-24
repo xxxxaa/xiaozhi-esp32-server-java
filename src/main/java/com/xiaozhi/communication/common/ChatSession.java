@@ -7,11 +7,16 @@ import com.xiaozhi.dialogue.llm.tool.mcp.device.DeviceMcpHolder;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.enums.ListenMode;
+import com.xiaozhi.utils.AudioUtils;
 import lombok.Data;
 import org.springframework.ai.tool.ToolCallback;
 import reactor.core.publisher.Sinks;
 
+import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,23 +103,39 @@ public abstract class ChatSession {
     public void setDialogueId(Long dialogueId){
         setAttribute("currentDialogueId", dialogueId);
     }
-    public String getDialogueId(){
-        return (String) getAttribute("currentDialogueId");
+    public Long getDialogueId(){
+        return (Long) getAttribute("currentDialogueId");
     }
 
-    public void setUserAudioPath(String userAudioPath){
-        setAttribute("userAudioPath_" + getDialogueId(), userAudioPath);
-    }
-    public String getUserAudioPath(){
-        return getDialogueId() == null?"":(String) getAttribute("userAudioPath_" + getDialogueId());
+
+    public Path getUserAudioPath(){
+        return getAudioPath("user");
     }
 
-    public void setAssistantAudioPath(String assistantAudioPath) {
-        setAttribute("assistantAudioPath_" + getDialogueId(), assistantAudioPath);
+    /**
+     * 音频文件约定路径为：audio/{device-id}/{role-id}/{timestamp}-user.wav
+     * {device-id}/{role-id}/{timestamp}-user 能确定唯一性，不会有并发的麻烦。
+     * 除非多设备在嵌入式软件里强行修改mac地址（deviceId目前是基于mac地址的)
+     * @param who
+     * @return
+     */
+    private Path getAudioPath(String who){
+        Long dialogueId = this.getDialogueId();
+        Instant instant = Instant.ofEpochMilli(dialogueId);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        String datetime = localDateTime.format(DateTimeFormatter.ISO_DATE_TIME);
+        SysDevice device = this.getSysDevice();
+        // TODO 判断设备ID是否有不适合路径的特殊字符，它很可能是mac地址需要转换。
+        String deviceId = device.getDeviceId();
+        String roleId = device.getRoleId().toString();
+        String filename = "{datetime}-{who}.wav".formatted(datetime,who);
+        Path path = Path.of(AudioUtils.AUDIO_PATH,deviceId,roleId,filename);
+        return path;
     }
-    public String getAssistantAudioPath() {
-        String dialogueId = getDialogueId();
-        return dialogueId == null ? "": (String) getAttribute("assistantAudioPath_" + dialogueId);
+
+
+    public Path getAssistantAudioPath() {
+        return getAudioPath("assistant");
     }
 
 

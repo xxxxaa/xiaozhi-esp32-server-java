@@ -26,7 +26,7 @@ public interface ChatMemory {
      */
     Conversation initConversation(SysDevice device, SysRole role, String sessionId);
     // TODO 考虑将参数以Message对象传递，而不是多个参数。在再下一层Service层转换sparing ai的Message为Mapper需要的SysMessage对象
-    void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, String audioPath);
+    void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType,  Long dialogueId);
 
     List<SysMessage> getMessages(String deviceId, String messageType, Integer limit);
 

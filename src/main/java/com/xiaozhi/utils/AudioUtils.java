@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,24 +104,29 @@ public class AudioUtils {
         }
     }
 
+    public static String saveAsWav(byte[] audio) {
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        String fileName = uuid + ".wav";
+        Path path = Path.of(AUDIO_PATH , fileName);
+        saveAsWav(path, audio);
+        return fileName;
+    }
     /**
      * 将原始音频数据保存为WAV文件
      *
      * @param audioData 音频数据
      * @return 文件名
      */
-    public static String saveAsWav(byte[] audioData) {
-        String uuid = UUID.randomUUID().toString().replace("-", "");
-        String fileName = uuid + ".wav";
-        String filePath = AUDIO_PATH + fileName;
+    public static void saveAsWav(Path path, byte[] audioData) {
+
         // WAV文件参数
         int bitsPerSample = 16; // 16位采样
 
         try {
             // 确保音频目录存在
-            Files.createDirectories(Paths.get(AUDIO_PATH));
+            Files.createDirectories(path.getParent());
 
-            try (FileOutputStream fos = new FileOutputStream(filePath);
+            try (FileOutputStream fos = new FileOutputStream(path.toFile());
                  DataOutputStream dos = new DataOutputStream(fos)) {
 
                 // 写入WAV文件头
@@ -145,14 +151,12 @@ public class AudioUtils {
 
                 // 写入音频数据
                 dos.write(audioData);
-                return fileName;
             }
         } catch (FrameRecorder.Exception e) {
             logger.error("编码MP3时发生错误", e);
         } catch (IOException e) {
             logger.error("写入WAV文件时发生错误", e);
         }
-        return null;
     }
 
     /**
@@ -162,13 +166,14 @@ public class AudioUtils {
      * @param audioPaths 要合并的音频文件路径列表
      * @return 合并后的WAV文件名
      */
-    public static String mergeAudioFiles(List<String> audioPaths) {
+    public static void mergeAudioFiles(Path path, List<String> audioPaths) {
         if (audioPaths.size() == 1) {
-            return Paths.get(audioPaths.getFirst()).getFileName().toString();
+            // TODO 考虑改为文件迁移mv 或rename
+//            return Paths.get(audioPaths.getFirst()).getFileName().toString();
         }
-        var uuid = UUID.randomUUID().toString().replace("-", "");
-        var outputFileName = uuid + ".wav";
-        var outputPath = Paths.get(AUDIO_PATH, outputFileName).toString();
+//        var uuid = UUID.randomUUID().toString().replace("-", "");
+//        var outputFileName = uuid + ".wav";
+//        var outputPath = Paths.get(AUDIO_PATH, outputFileName).toString();
 
         try {
             // 计算所有PCM数据的总大小
@@ -182,7 +187,7 @@ public class AudioUtils {
             }
 
             // 创建输出WAV文件
-            try (FileOutputStream fos = new FileOutputStream(outputPath);
+            try (FileOutputStream fos = new FileOutputStream(path.toFile());
                  DataOutputStream dos = new DataOutputStream(fos)) {
 
                 // 写入WAV文件头
@@ -213,10 +218,10 @@ public class AudioUtils {
                 }
             }
 
-            return outputFileName;
+//            return outputFileName;
         } catch (Exception e) {
             logger.error("合并音频文件时发生错误", e);
-            return null;
+
         }
     }
 

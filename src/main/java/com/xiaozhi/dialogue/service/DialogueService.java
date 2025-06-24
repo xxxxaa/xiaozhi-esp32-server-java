@@ -25,6 +25,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -98,8 +99,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         ChatSession chatSession = event.getSession();
         if(chatSession != null) {
             // clean up dialogue audio paths and responses
-            if (StringUtils.hasText(chatSession.getDialogueId())) {
-                String dialogueId = chatSession.getDialogueId();
+            Long dialogueId = chatSession.getDialogueId();
+            if (dialogueId!=null && dialogueId>0) {
                 dialogueAudioPaths.remove(dialogueId);
                 dialogueResponses.remove(dialogueId);
             }
@@ -426,9 +427,10 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 }
 
                 // 保存为WAV文件
-                String userAudioPath = AudioUtils.AUDIO_PATH + AudioUtils.saveAsWav(fullPcmData);
-                session.setUserAudioPath(userAudioPath);
-                logger.debug("用户音频已保存: {}", userAudioPath);
+                Path path = session.getUserAudioPath();
+                AudioUtils.saveAsWav(path,fullPcmData);
+
+                logger.debug("用户音频已保存: {}", path.toString());
             }
         } catch (Exception e) {
             logger.error("保存用户音频失败: {}", e.getMessage(), e);
@@ -712,7 +714,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
      * 保存助手的完整响应（文本和合并音频）
      */
     private void saveAssistantResponse(ChatSession session) {
-        String dialogueId = session.getDialogueId();
+        Long dialogueId = session.getDialogueId();
         try {
             // 获取该对话的所有音频路径
             Map<Integer, String> audioPaths = dialogueAudioPaths.get(dialogueId);
@@ -736,11 +738,10 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
             // 合并音频文件
             if (!audioFilesToMerge.isEmpty()) {
-                String mergedAudioPath = AudioUtils.AUDIO_PATH + AudioUtils.mergeAudioFiles(audioFilesToMerge);
-
+                Path path = session.getAssistantAudioPath();
+                AudioUtils.mergeAudioFiles(path,audioFilesToMerge);
                 // 保存合并后的音频路径
-                session.setAssistantAudioPath(mergedAudioPath);
-                logger.info("对话 {} 的音频已合并: {}", dialogueId, mergedAudioPath);
+                logger.info("对话 {} 的音频已合并: {}", dialogueId, path);
             }
         } catch (Exception e) {
             logger.error("保存助手响应失败 - 对话ID: {}, 错误: {}", dialogueId, e.getMessage(), e);
