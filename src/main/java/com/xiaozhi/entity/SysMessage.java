@@ -36,7 +36,9 @@ public class SysMessage extends Base {
 
     /**
      * 语音文件路径
+     * TODO 改为路径约定，而非实际存储音频文件的路径字符串。
      */
+    @Deprecated
     private String audioPath;
 
     /**
@@ -51,10 +53,10 @@ public class SysMessage extends Base {
      */
     private String messageType = "NORMAL";
 
-
-    //辅助字段，不对应数据库表
     private String sessionId;
     private Integer roleId;
+
+    //辅助字段，不对应数据库表
     private String roleName;
     private String deviceName;
 

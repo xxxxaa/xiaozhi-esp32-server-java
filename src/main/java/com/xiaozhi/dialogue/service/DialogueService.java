@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -84,9 +85,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
     private final Map<String, ReentrantLock> locks = new ConcurrentHashMap<>();
 
     // 存储每个对话ID的所有模型回复音频路径
-    private final Map<String, Map<Integer, String>> dialogueAudioPaths = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Integer, String>> dialogueAudioPaths = new ConcurrentHashMap<>();
     // 存储每个对话ID的完整文本回复
-    private final Map<String, StringBuilder> dialogueResponses = new ConcurrentHashMap<>();
+    private final Map<Long, StringBuilder> dialogueResponses = new ConcurrentHashMap<>();
 
     // 新增：并发控制相关
     private final Map<String, Semaphore> sessionSemaphores = new ConcurrentHashMap<>();
@@ -119,7 +120,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         private long timestamp = System.currentTimeMillis();
         private double modelResponseTime = 0.0; // 模型响应时间（秒）
         private double ttsGenerationTime = 0.0; // TTS生成时间（秒）
-        private String dialogueId = null; // 对话ID
+        private Long dialogueId = null; // 对话ID
         private List<String> moods;
 
         public Sentence(String text) {
@@ -187,11 +188,11 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             return ttsGenerationTime;
         }
 
-        public void setDialogueId(String dialogueId) {
+        public void setDialogueId(Long dialogueId) {
             this.dialogueId = dialogueId;
         }
 
-        public String getDialogueId() {
+        public Long getDialogueId() {
             return dialogueId;
         }
 
@@ -215,7 +216,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         private final boolean isLast;
         private final SysConfig ttsConfig;
         private final String voiceName;
-        private final String dialogueId;
+        private final Long dialogueId;
         private final ChatSession session;
         private final long createTime;
         private int retryCount = 0;
@@ -223,7 +224,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
         public TtsTask(ChatSession session, String sessionId, Sentence sentence,
                 EmoSentence emoSentence, boolean isFirst, boolean isLast,
-                SysConfig ttsConfig, String voiceName, String dialogueId) {
+                SysConfig ttsConfig, String voiceName, Long dialogueId) {
             this.session = session;
             this.sessionId = sessionId;
             this.sentence = sentence;
@@ -360,8 +361,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                     sessionManager.sendAudioData(sessionId, initialAudio);
                 }
 
-                // 为当前对话生成唯一ID
-                final String dialogueId = sessionId + "_" + System.currentTimeMillis();
+                // 为当前对话生成唯一ID，实际是系统时间戳
+                final Long dialogueId =  System.currentTimeMillis();
                 session.setDialogueId(dialogueId);
                 final String finalText;
 
@@ -389,7 +390,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                                     (sentence, isFirst, isLast) -> {
                                         handleSentence(
                                                 session,
-                                                sessionId,
                                                 sentence,
                                                 isFirst,
                                                 isLast,
@@ -452,12 +452,12 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
      */
     private void handleSentence(
             ChatSession session,
-            String sessionId,
             String text,
             boolean isFirst,
             boolean isLast,
-            String dialogueId) {
-
+            Long dialogueId) {
+        Assert.notNull(session, "session cannot be null");
+        String sessionId = session.getSessionId();
         seqCounters.putIfAbsent(sessionId, new AtomicInteger(0));
         // 获取句子序列号
         int seq = seqCounters.get(sessionId).incrementAndGet();
@@ -540,7 +540,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             boolean isLast,
             SysConfig ttsConfig,
             String voiceName,
-            String dialogueId) {
+            Long dialogueId) {
 
         // 创建TTS任务
         TtsTask task = new TtsTask(session, sessionId, sentence, emoSentence,
@@ -843,7 +843,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                         (sentence, isFirst, isLast) -> {
                             handleSentence(
                                     session,
-                                    sessionId,
                                     sentence,
                                     isFirst,
                                     isLast,
@@ -863,7 +862,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
      * @param inputText    输入文本
      * @param textConsumer 具体处理输入文本，传入 dialogId
      */
-    public void handleText(ChatSession session, String inputText, Consumer<String> textConsumer) {
+    public void handleText(ChatSession session, String inputText, Consumer<Long> textConsumer) {
         // 初始化对话状态
         String sessionId = session.getSessionId();
         initChat(sessionId);
@@ -875,8 +874,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 }
                 sessionManager.updateLastActivity(sessionId);
 
-                // 为当前对话生成唯一ID
-                final String dialogueId = sessionId + "_" + System.currentTimeMillis();
+                // 为当前对话生成唯一ID，实际是系统时间戳
+                final Long dialogueId = System.currentTimeMillis();
                 session.setDialogueId(dialogueId);
 
                 // 发送识别结果
@@ -893,7 +892,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                             (sentence, isFirst, isLast) -> {
                                 handleSentence(
                                         session,
-                                        sessionId,
                                         sentence,
                                         isFirst,
                                         isLast,

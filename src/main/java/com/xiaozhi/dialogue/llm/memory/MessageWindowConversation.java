@@ -82,6 +82,7 @@ public class MessageWindowConversation extends Conversation {
 
     @Override
     public void clear() {
+        messages().clear();
         chatMemory.clearMessages(device().getDeviceId());
     }
 

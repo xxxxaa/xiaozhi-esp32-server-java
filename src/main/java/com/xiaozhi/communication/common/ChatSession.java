@@ -95,7 +95,7 @@ public abstract class ChatSession {
         return attributes.get(key);
     }
 
-    public void setDialogueId(String dialogueId){
+    public void setDialogueId(Long dialogueId){
         setAttribute("currentDialogueId", dialogueId);
     }
     public String getDialogueId(){
