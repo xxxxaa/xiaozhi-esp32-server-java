@@ -314,8 +314,10 @@ public class ChatService {
         public void onComplete(String toolName) {
             // 检查该会话是否已完成处理
             // 处理当前缓冲区剩余的内容（如果有）
+            logger.info("onComplete:currentSentence.length {}, text:{}", currentSentence.length(), currentSentence.toString());
             if (currentSentence.length() > 0 && containsSubstantialContent(currentSentence.toString())
                     && !finalSentenceSent.get()) {
+                logger.info("进了第一层，句子数：{}", sentenceCount.get());
                 String sentence = currentSentence.toString().trim();
                 boolean isFirst = sentenceCount.get() == 0;
                 boolean isLast = true; // 这是最后一个句子
@@ -324,6 +326,7 @@ public class ChatService {
                 sentenceCount.incrementAndGet();
                 finalSentenceSent.set(true);
             } else if (!finalSentenceSent.get()) {
+                logger.info("进了第二层，句子数：{}", sentenceCount.get());
                 // 如果没有剩余内容但也没有发送过最后一个句子，发送一个空的最后句子标记
                 // 这确保即使没有剩余内容，也会发送最后一个句子标记
                 boolean isFirst = sentenceCount.get() == 0;
@@ -350,7 +353,7 @@ public class ChatService {
             // 需要进一步看看ChatModel在流式响应里是如何判断hasTools的，或者直接基于Flux<ChatResponse>已封装好的对象hasToolCalls判断
             boolean hasToolCalls = toolName != null && !toolName.isEmpty();
             String messageType = hasToolCalls ? SysMessage.MESSAGE_TYPE_FUNCTION_CALL : SysMessage.MESSAGE_TYPE_NORMAL;
-            // TODO
+            // TODO 将addMessage改成列表， messageType需要同步修改UserMessage并且入库。
             // 后续可以根据名称区分function还是mcp，来细分类型
 
             UserMessage userMessage = new UserMessage(message);
