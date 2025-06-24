@@ -444,7 +444,7 @@ public class VadService {
                 float adjustedSilenceThreshold = adjustVadThreshold(silenceThreshold, agcStats);
 
                 // 添加到预缓冲区
-                state.addToPreBuffer(pcmData);
+                // state.addToPreBuffer(pcmData);
 
                 // 处理短帧数据
                 if (pcmData.length < MIN_PCM_LENGTH && !state.isSpeaking()) {
