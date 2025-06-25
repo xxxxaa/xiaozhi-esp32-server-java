@@ -363,10 +363,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 // 设置用户收到音频的时间戳作为用户消息的创建时间戳，也用于约定保存音频文件的路径。一定要在STT前获得时间戳。
                 final Long userTimeMillis =  System.currentTimeMillis();
                 session.setUserTimeMillis(userTimeMillis);
-                // 新的一轮对话，设置新的时间戳。避免意外残留的影响
-                session.setAssistantTimeMillis(null);
-                final String finalText;
 
+                final String finalText;
                 if (sessionManager.getAudioStream(sessionId) != null) {
                     finalText = sttService.streamRecognition(sessionManager.getAudioStream(sessionId));
                     if (!StringUtils.hasText(finalText)) {
