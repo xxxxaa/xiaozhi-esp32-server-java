@@ -33,7 +33,7 @@ public class DifyChatModel implements ChatModel {
      * @param apiSecret
      * @param model     模型名称
      */
-    public DifyChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model) {
+    public DifyChatModel(String endpoint, String apiKey) {
         chatClient = DifyClientFactory.createChatClient(endpoint, apiKey);
     }
 

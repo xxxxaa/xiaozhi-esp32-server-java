@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.xiaozhi.dialogue.token.TokenService;
 import com.xiaozhi.dialogue.token.providers.AliyunTokenService;
+import com.xiaozhi.dialogue.token.providers.CozeTokenService;
 import com.xiaozhi.entity.SysConfig;
 
 import jakarta.annotation.PostConstruct;
@@ -86,7 +87,7 @@ public class TokenServiceFactory {
     private TokenService createTokenService(SysConfig config) {
         return switch (config.getProvider()) {
             case "aliyun" -> new AliyunTokenService(config);
-            default -> new AliyunTokenService(config);
+            default -> new CozeTokenService(config);
         };
     }
 

@@ -171,10 +171,4 @@ public class AliyunTokenService implements TokenService {
         return tokenCache != null && tokenCache.needsCacheCleanup();
     }
 
-    /**
-     * 获取配置ID
-     */
-    public Integer getConfigId() {
-        return configId;
-    }
 }

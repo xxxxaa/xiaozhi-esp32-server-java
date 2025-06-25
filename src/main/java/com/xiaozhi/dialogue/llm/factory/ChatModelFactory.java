@@ -3,6 +3,7 @@ package com.xiaozhi.dialogue.llm.factory;
 import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.dialogue.llm.providers.CozeChatModel;
 import com.xiaozhi.dialogue.llm.providers.DifyChatModel;
+import com.xiaozhi.dialogue.token.factory.TokenServiceFactory;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
@@ -50,6 +51,8 @@ public class ChatModelFactory {
     private SysRoleService roleService;
     @Autowired
     private ToolCallingManager toolCallingManager;
+    @Autowired
+    private TokenServiceFactory tokenService;
     private final Logger logger = LoggerFactory.getLogger(ChatModelFactory.class);
 
     /**
@@ -85,15 +88,21 @@ public class ChatModelFactory {
         Double temperature = role.getTemperature();
         Double topP = role.getTopP();
         provider = provider.toLowerCase();
+        // Coze和Dify 拥有全局唯一配置，所以需要查询唯一配置信息来作为模型的 Token 获取
+        SysConfig agentConfig = new SysConfig().setConfigType("agent").setUserId(config.getUserId());
+        SysConfig queryConfig;
         switch (provider) {
             case "ollama":
                 return newOllamaChatModel(endpoint, appId, apiKey, apiSecret, model, temperature, topP);
             case "zhipu":
                 return newZhipuChatModel(endpoint, appId, apiKey, apiSecret, model, temperature, topP);
             case "dify":
-                return new DifyChatModel(endpoint, appId, apiKey, apiSecret, model);
+                queryConfig = configService.query(agentConfig.setProvider("dify"), null).get(0);
+                return new DifyChatModel(endpoint, queryConfig.getApiKey());
             case "coze":
-                return new CozeChatModel(endpoint, appId, apiKey, apiSecret, model);
+                queryConfig = configService.query(agentConfig.setProvider("coze"), null).get(0);
+                String token = tokenService.getTokenService(queryConfig).getToken();
+                return new CozeChatModel(token, model);
             // 默认为 openai 协议
             default:
                 return newOpenAiChatModel(endpoint, appId, apiKey, apiSecret, model, temperature, topP);

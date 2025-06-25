@@ -17,9 +17,6 @@ public class SysAgent extends SysConfig {
     /** 智能体名称 */
     private String agentName;
 
-    /** 平台智能体空间ID */
-    private String spaceId;
-
     /** 平台智能体ID */
     private String botId;
 
@@ -48,15 +45,6 @@ public class SysAgent extends SysConfig {
 
     public SysAgent setAgentName(String agentName) {
         this.agentName = agentName;
-        return this;
-    }
-
-    public String getSpaceId() {
-        return spaceId;
-    }
-
-    public SysAgent setSpaceId(String spaceId) {
-        this.spaceId = spaceId;
         return this;
     }
 

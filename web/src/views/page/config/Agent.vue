@@ -27,8 +27,8 @@
         <!-- 表格数据 -->
         <a-card title="智能体管理" :bodyStyle="{ padding: 0 }" :bordered="false">
           <template slot="extra">
-            <a-button type="primary" @click="handleAddPlatform" style="margin-right: 8px">
-              <a-icon type="plus" />添加平台配置
+            <a-button type="primary" @click="handleConfigPlatform" style="margin-right: 8px">
+              <a-icon type="setting" />平台配置
             </a-button>
           </template>
           <a-table rowKey="configId" :columns="getTableColumns" :data-source="agentList" :loading="loading"
@@ -76,29 +76,18 @@
     </a-layout-content>
     <a-back-top />
 
-    <!-- 添加平台配置对话框 -->
-    <a-modal title="添加平台配置" :visible="platformModalVisible" :confirm-loading="platformModalLoading"
+    <!-- 平台配置对话框 -->
+    <a-modal :title="'平台配置 - ' + (query.provider === 'coze' ? 'Coze' : query.provider === 'dify' ? 'Dify' : query.provider)" 
+      :visible="platformModalVisible" :confirm-loading="platformModalLoading"
       @ok="handlePlatformModalOk" @cancel="handlePlatformModalCancel">
       <a-form-model ref="platformForm" :model="platformForm" :rules="platformRules" :label-col="{ span: 6 }"
         :wrapper-col="{ span: 16 }">
-        <a-form-model-item v-for="item in formItems" :key="item.field" :label="item.label" :prop="item.field"
-          v-if="!item.condition || (item.condition && platformForm[item.condition.field] === item.condition.value)">
-          <a-select v-if="item.type === 'select'" v-model="platformForm[item.field]" :placeholder="item.placeholder">
-            <a-select-option v-for="option in item.options" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </a-select-option>
-          </a-select>
-          <a-input v-else v-model="platformForm[item.field]" :placeholder="item.placeholder" >
+        <a-form-model-item v-for="item in getFormItems" :key="item.field" :label="item.label" :prop="item.field">
+          <a-input v-model="platformForm[item.field]" :placeholder="item.placeholder">
             <template v-if="item.suffix" slot="suffix">
               <span style="color: #999">{{ item.suffix }}</span>
             </template>
           </a-input>
-        </a-form-model-item>
-        
-        <!-- 添加设为默认选项 -->
-        <a-form-model-item label="设为默认">
-          <a-switch v-model="platformForm.isDefault" />
-          <span style="margin-left: 8px; color: #999;">设为默认后将优先使用此配置</span>
         </a-form-model-item>
       </a-form-model>
     </a-modal>
@@ -141,6 +130,10 @@ export default {
       // 平台配置模态框
       platformModalVisible: false,
       platformModalLoading: false,
+      // 是否为编辑模式
+      isEdit: false,
+      // 当前编辑的配置ID
+      currentConfigId: null,
 
       // 平台表单对象
       platformForm: {
@@ -150,57 +143,58 @@ export default {
         configDesc: '',
         appId: '',
         apiKey: '',
-        apiSecret: '',
-        isDefault: false
+        apiUrl: '',
+        ak: '',
+        sk: ''
       },
 
       // 表单项配置
-      formItems: [
-        {
-          field: 'provider',
-          label: '平台类型',
-          type: 'select',
-          placeholder: '请选择平台类型',
-          options: [
-            { label: 'Coze', value: 'coze' },
-            { label: 'Dify', value: 'dify' }
-          ]
-        },
-        {
-          field: 'appId',
-          label: 'Space ID',
-          placeholder: '请输入Coze Space ID',
-          condition: { field: 'provider', value: 'coze' }
-        },
-        {
-          field: 'apiSecret',
-          label: 'Secret token',
-          placeholder: '请输入Secret token',
-          condition: { field: 'provider', value: 'coze' }
-        },
-        {
-          field: 'apiUrl',
-          label: 'apiUrl',
-          placeholder: '请输入apiUrl',
-          condition: { field: 'provider', value: 'dify' },
-          suffix: '/chat_message'
-        },
-        {
-           field: 'apiKey',
-           label: 'apiKey',
-           placeholder: '请输入apiKey',
-           condition: { field: 'provider', value: 'dify' }
-        },
-      ],
+      formItems: {
+        coze: [
+          {
+            field: 'appId',
+            label: 'App ID',
+            placeholder: '请输入Coze App ID'
+          },
+          {
+            field: 'apiSecret',
+            label: 'Space ID',
+            placeholder: '请输入Coze Space ID'
+          },
+          {
+            field: 'ak',
+            label: '公钥',
+            placeholder: '请输入公钥'
+          },
+          {
+            field: 'sk',
+            label: '私钥',
+            placeholder: '请输入私钥'
+          }
+        ],
+        dify: [
+          {
+            field: 'apiUrl',
+            label: 'API URL',
+            placeholder: '请输入API URL',
+            suffix: '/chat_message'
+          },
+          {
+            field: 'apiKey',
+            label: 'API Key',
+            placeholder: '请输入API Key'
+          }
+        ]
+      },
 
       // 平台表单验证规则
       platformRules: {
-        provider: [{ required: true, message: '请选择平台类型', trigger: 'change' }],
-        configName: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
-        appId: [{ required: true, message: '请输入Space ID', trigger: 'blur' }],
-        apiSecret: [{ required: true, message: '请输入Secret token', trigger: 'blur' }],
-        apiUrl: [{ required: true, message: '请输入URL', trigger: 'blur' }],
-        apiKey: [{ required: true, message: '请输入apiKey', trigger: 'blur' }]
+        appId: [{ required: true, message: '请输入App ID', trigger: 'blur' }],
+        apiKey: [{ required: true, message: '请输入API Key', trigger: 'blur' }],
+        apiSecret: [{ required: true, message: '请输入Space Id', trigger: 'blur' }],
+        ak: [{ required: true, message: '请输入公钥', trigger: 'blur' }],
+        sk: [{ required: true, message: '请输入私钥', trigger: 'blur' }],
+        apiUrl: [{ required: true, message: '请输入URL', trigger: 'blur' }]
       }
     }
   },
@@ -224,19 +218,15 @@ export default {
       }
       
       return columns;
+    },
+    
+    // 根据当前选择的平台获取对应的表单项
+    getFormItems() {
+      return this.formItems[this.query.provider] || [];
     }
   },
   created() {
     this.getData()
-  },
-  watch: {
-    // 监听平台类型变化，根据不同平台设置不同的默认值
-    'platformForm.provider': function(newVal) {
-      if (newVal === 'dify') {
-        // 如果切换到Dify平台，设置默认的apiUrl
-        this.platformForm.apiUrl = 'https://api.dify.ai/v1';
-      }
-    }
   },
   methods: {
     // 获取智能体列表
@@ -249,6 +239,7 @@ export default {
         data: {
           provider: this.query.provider,
           agentName: this.query.agentName,
+          configType: 'agent',
           start: this.pagination.page,
           limit: this.pagination.pageSize
         }
@@ -270,19 +261,78 @@ export default {
         });
     },
 
-    // 添加平台配置按钮点击
-    handleAddPlatform() {
-      // 重置表单
-      this.platformForm = {
-        configType: 'agent',
-        provider: 'coze',
-        appId: '',
-        apiSecret: '',
-        apiKey: '',
-        isDefault: false
-      };
-
-      this.platformModalVisible = true;
+    // 平台配置按钮点击
+    handleConfigPlatform() {
+      // 查询当前平台的配置
+      this.platformModalLoading = true;
+      
+      axios.get({
+        url: api.config.query,
+        data: {
+          configType: 'agent',
+          provider: this.query.provider
+        }
+      })
+        .then(res => {
+          if (res.code === 200) {
+            const configs = res.data.list || [];
+            
+            // 重置表单
+            this.platformForm = {
+              configType: 'agent',
+              provider: this.query.provider,
+              configName: '',
+              configDesc: '',
+              appId: '',
+              apiKey: '',
+              apiSecret: '',
+              apiUrl: '',
+              ak: '',
+              sk: ''
+            };
+            
+            // 如果存在配置，则填充表单
+            if (configs.length > 0) {
+              const config = configs[0];
+              this.isEdit = true;
+              this.currentConfigId = config.configId;
+              
+              // 填充表单数据
+              this.platformForm = {
+                configType: config.configType || 'agent',
+                provider: config.provider,
+                configName: config.configName || '',
+                configDesc: config.configDesc || '',
+                appId: config.appId || '',
+                apiSecret: config.apiSecret || '',
+                apiKey: config.apiKey || '',
+                apiUrl: config.apiUrl || '',
+                ak: config.ak || '',
+                sk: config.sk || ''
+              };
+            } else {
+              // 不存在配置，则为添加模式
+              this.isEdit = false;
+              this.currentConfigId = null;
+              
+              // 如果是Dify平台，设置默认的apiUrl
+              if (this.query.provider === 'dify') {
+                this.platformForm.apiUrl = 'https://api.dify.ai/v1';
+              }
+            }
+            
+            this.platformModalVisible = true;
+          } else {
+            this.$message.error(res.msg || '获取平台配置失败');
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching platform config:', error);
+          this.$message.error('获取平台配置失败');
+        })
+        .finally(() => {
+          this.platformModalLoading = false;
+        });
     },
 
     // 平台配置模态框确认
@@ -301,29 +351,33 @@ export default {
             this.platformForm.apiUrl = baseUrl;
           }
 
-          // 调用后端API添加配置
+          // 根据是否为编辑模式选择不同的API
+          const apiEndpoint = this.isEdit ? api.config.update : api.config.add;
+          
+          // 如果是编辑模式，添加configId
+          if (this.isEdit) {
+            this.platformForm.configId = this.currentConfigId;
+          }
+
+          // 调用后端API添加或更新配置
           axios.post({
-            url: api.config.add,
-            data: {
-              ...this.platformForm,
-              isDefault: this.platformForm.isDefault ? 1 : 0 // 转换为数字
-            }
+            url: apiEndpoint,
+            data: {...this.platformForm}
           })
             .then(res => {
               if (res.code === 200) {
-                this.$message.success('添加平台配置成功');
+                this.$message.success(this.isEdit ? '更新平台配置成功' : '添加平台配置成功');
                 this.platformModalVisible = false;
-
-                // 切换到新添加的平台并刷新列表
-                this.query.provider = this.platformForm.provider;
+                
+                // 刷新智能体列表
                 this.getData();
               } else {
-                this.$message.error(res.msg || '添加平台配置失败');
+                this.$message.error(res.msg || (this.isEdit ? '更新平台配置失败' : '添加平台配置失败'));
               }
             })
             .catch(error => {
-              console.error('Error adding platform config:', error);
-              this.$message.error('添加平台配置失败');
+              console.error('Error with platform config:', error);
+              this.$message.error(this.isEdit ? '更新平台配置失败' : '添加平台配置失败');
             })
             .finally(() => {
               this.platformModalLoading = false;
