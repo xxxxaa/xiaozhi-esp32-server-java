@@ -3,6 +3,7 @@ package com.xiaozhi.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaozhi.dao.ConfigMapper;
+import com.xiaozhi.dialogue.token.factory.TokenServiceFactory;
 import com.xiaozhi.entity.SysAgent;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.entity.SysDevice;
@@ -25,7 +26,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 智能体服务实现 - 同步实现版本
+ * 智能体服务实现
  * 
  * @author Joey
  */
@@ -36,6 +37,9 @@ public class SysAgentServiceImpl implements SysAgentService {
 
     @Resource
     private ConfigMapper configMapper;
+
+    @Resource
+    private TokenServiceFactory tokenService;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -263,26 +267,27 @@ public class SysAgentServiceImpl implements SysAgentService {
      */
     private List<SysAgent> getCozeAgents(SysAgent agent) {
         List<SysAgent> agentList = new ArrayList<>();
-        
+
         // 获取当前用户的Coze配置
         List<SysConfig> configs = configMapper.query(agent);
         if (ObjectUtils.isEmpty(configs)) {
             return agentList;
         }
-        
+
         SysConfig config = configs.get(0);
-        
-        // 获取API密钥和空间ID
-        String apiSecret = config.getApiSecret();
-        String spaceId = config.getAppId();
+
+        String spaceId = config.getApiSecret();
+
         // 普通用户应该只能查询使用管理员配置的内容
         Integer userId = config.getUserId();
+
+        String token = tokenService.getTokenService(config).getToken();
 
         try {
             // 调用Coze API获取智能体列表
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://api.coze.cn/v1/space/published_bots_list?space_id=" + spaceId))
-                    .header("Authorization", "Bearer " + apiSecret)
+                    .header("Authorization", "Bearer " + token)
                     .header("Content-Type", "application/json")
                     .GET()
                     .build();
@@ -304,11 +309,11 @@ public class SysAgentServiceImpl implements SysAgentService {
                     // 创建一个Map来存储现有的配置，以botId为键
                     Map<String, SysConfig> existingConfigMap = new HashMap<>();
                     for (SysConfig existingConfig : existingConfigs) {
-                        if (existingConfig.getAppId() != null) {
-                            existingConfigMap.put(existingConfig.getAppId(), existingConfig);
+                        if (existingConfig.getConfigName() != null) {
+                            existingConfigMap.put(existingConfig.getConfigName(), existingConfig);
                         }
                     }
-                    
+
                     // 记录API返回的所有botId，用于后续比对删除
                     List<String> apiBotIds = new ArrayList<>();
 
@@ -345,7 +350,6 @@ public class SysAgentServiceImpl implements SysAgentService {
                             // 更新配置
                             try {
                                 configMapper.update(existingConfig);
-                                logger.debug("更新智能体配置成功: {}", botId);
                             } catch (Exception e) {
                                 logger.error("更新智能体配置失败: {}", e.getMessage());
                             }
@@ -355,20 +359,12 @@ public class SysAgentServiceImpl implements SysAgentService {
                             newConfig.setUserId(userId);
                             newConfig.setConfigType("llm");
                             newConfig.setProvider("coze");
-                            newConfig.setAppId(botId);
                             newConfig.setConfigName(botId);
                             newConfig.setConfigDesc(description);
-                            newConfig.setApiSecret(apiSecret);  // 使用主配置的apiSecret
                             newConfig.setState(SysDevice.DEVICE_STATE_ONLINE);  // 默认启用
-
-                            try {
-                                configMapper.add(newConfig);
-                                logger.debug("添加智能体配置成功: {}", botId);
-                            } catch (Exception e) {
-                                logger.error("添加智能体配置失败: {}", e.getMessage());
-                            }
+                            configMapper.add(newConfig);
                         }
-                        
+
                         // 如果前端传入了智能体名称过滤条件，则进行过滤
                         if (StringUtils.hasText(agent.getAgentName())) {
                             if (botAgent.getAgentName().toLowerCase()

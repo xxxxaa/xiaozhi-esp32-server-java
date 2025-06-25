@@ -7,7 +7,9 @@ import com.coze.openapi.client.connversations.message.model.Message;
 import com.coze.openapi.client.connversations.message.model.MessageType;
 import com.coze.openapi.service.auth.TokenAuth;
 import com.coze.openapi.service.service.CozeAPI;
+
 import io.reactivex.Flowable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -32,29 +34,16 @@ public class CozeChatModel implements ChatModel {
     private final CozeAPI coze;
     private final String botId;
 
-    private final String endpoint;
-    private final String apiKey;
-    private final String model;
-    private final String appId;
-    private final String apiSecret;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     public static final String PROVIDER_NAME = "coze";
+
 
     /**
      * 构造函数
      *
-     * @param endpoint  API端点
-     * @param appId     应用ID (在Coze中对应botId)
-     * @param apiKey    API密钥 (在Coze中不使用)
-     * @param apiSecret API密钥 (在Coze中对应access_token)
      * @param model     模型名称 (在Coze中不使用)
      */
-    public CozeChatModel(String endpoint, String appId, String apiKey, String apiSecret, String model) {
-        this.endpoint = endpoint;
-        this.appId = appId;
-        this.apiSecret = apiSecret;
-        this.apiKey = apiKey;
-        this.model = model;
+    public CozeChatModel(String apiSecret, String model) {
 
         // 使用apiSecret作为access_token
         this.authCli = new TokenAuth(apiSecret);
