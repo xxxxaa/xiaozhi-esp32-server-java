@@ -22,6 +22,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -101,7 +102,7 @@ public class ChatService {
 
             Thread.startVirtualThread(() -> {// 异步持久化
                 // 保存AI消息，会被持久化至数据库。
-                session.getConversation().addMessage(assistantMessage,null);
+                session.getConversation().addMessage(userMessage,session.getUserTimeMillis(),assistantMessage,session.getAssistantTimeMillis());
             });
             return assistantMessage.getText();
 
@@ -341,31 +342,16 @@ public class ChatService {
         /**
          * 保存消息,只保存用户输入与输出。
          * Message在没有持久化前，是不会有messageId的。
+         * 是否需要把content为空和角色为tool的入库?
+         * 目前不入库（这类主要是function_call的二次调用llm进行总结时的过程消息）
+         * 具体的细节逻辑，由Conversation处理，ChatService不再负责消息持久化的职能。
          */
         void persistMessages(String toolName) {
-            // TODO 是否需要把content为空和角色为tool的入库? 目前不入库（这类主要是function_call的二次调用llm进行总结时的过程消息）
-            // 如果本轮对话是function_call或mcp调用(最后一条信息的类型)，把用户的消息类型也修正为同样类型
-            // String lastMessageType = allMessages.get(allMessages.size() -
-            // 1).get("messageType").toString();
-            // TODO
-            // 需要进一步看看ChatModel在流式响应里是如何判断hasTools的，或者直接基于Flux<ChatResponse>已封装好的对象hasToolCalls判断
-            boolean hasToolCalls = toolName != null && !toolName.isEmpty();
-            String messageType = hasToolCalls ? SysMessage.MESSAGE_TYPE_FUNCTION_CALL : SysMessage.MESSAGE_TYPE_NORMAL;
-            // TODO 将addMessage改成列表， messageType需要同步修改UserMessage并且入库。
-            // 后续可以根据名称区分function还是mcp，来细分类型
-
             UserMessage userMessage = new UserMessage(message);
-
-            Thread.startVirtualThread(() -> {// 异步持久化
-                Long userTimeMillis = session.getUserTimeMillis();
-                session.getConversation().addMessage(userMessage,  userTimeMillis);
-
-                if (!fullResponse.isEmpty()) {
-                    AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());
-                    Long assistantTimeMillis = session.getAssistantTimeMillis();
-                    session.getConversation().addMessage(assistantMessage, assistantTimeMillis);
-                }
-            });
+            Long userTimeMillis = session.getUserTimeMillis();
+            AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString(), Map.of("toolName", toolName));
+            Long assistantTimeMillis = session.getAssistantTimeMillis();
+            session.getConversation().addMessage(userMessage, userTimeMillis, assistantMessage, assistantTimeMillis);
         }
 
         @Override

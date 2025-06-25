@@ -88,53 +88,47 @@ public class MessageWindowConversation extends Conversation {
 
 
     /**
-     * 添加用户消息
-     *
-     * @param message 用户消息
+     * 添加消息
+     * 后续考虑：继承封装UserMessage和AssistantMessage,UserMessageWithTime,AssistantMessageWithTime
+     * 后续考虑：将function 或者 mcp 的相关信息封装在AssistantMessageWithTime，来精细处理。或者根据元数据判断是function_call还是mcp调用
+     * @param userMessage
+     * @param userTimeMillis
+     * @param assistantMessage
+     * @param assistantTimeMillis
      */
     @Override
-    public void addMessage(UserMessage message,  Long userTimeMillis) {
-        // 更新缓存
-        messages().add(message);
-        String deviceId = device().getDeviceId();
-        int roleId = role().getRoleId();
-        String sender =  message.getMessageType().getValue();
-        // 用户消息一定是 MESSAGE_TYPE_NORMAL
-        chatMemory.addMessage(deviceId, sessionId(),sender, message.getText(),
-                roleId, SysMessage.MESSAGE_TYPE_NORMAL, userTimeMillis);
+    public void addMessage(UserMessage userMessage,  Long userTimeMillis, AssistantMessage assistantMessage, Long assistantTimeMillis) {
 
-    }
-
-    /**
-     * 添加AI消息
-     *
-     * @param message AI消息
-     */
-    @Override
-    public void addMessage(AssistantMessage message, Long assistantTimeMillis) {
-
-        boolean hasToolCalls = message.hasToolCalls();
-        // 判断消息类型（不是spring-ai的消息类型）
-        String messageType = hasToolCalls ? SysMessage.MESSAGE_TYPE_FUNCTION_CALL : SysMessage.MESSAGE_TYPE_NORMAL;
-
-        // 非function消息才加入对话历史，避免调用混乱
-        if(!hasToolCalls){
-            // 更新缓存
-            messages().add(message);
-        }
-
-        // TODO 后续还需要根据元数据判断是function_call还是mcp调用
+        //boolean hasToolCalls = assistantMessage.hasToolCalls();
         // 检查元数据中是否包含工具调用标识
+        String toolName = (String) assistantMessage.getMetadata().get("toolName");
+
         // 发生了工具调用，获取函数调用的名称，通过名称反查类型
         // String functionName = chatResponse.getMetadata().get("function_name");
-        String response = message.getText();
+
+        boolean hasToolCalls = StringUtils.hasText(toolName);
+
+        // 非function消息才加入对话历史，避免调用混乱。
+        // 这个逻辑面对更多的工具调用时，可能是值得商榷的。有些工具调用的结果直接作为AssistantMessage加入对话历史并不会影响对话效果。
+        // 后续考虑：在XiaozhiToolCallingManager实现类里，包装出的AssistantMessage由工具来添加标识是否影响对话效果。
+        if(!hasToolCalls){
+            // 更新缓存
+            messages().add(userMessage);
+            messages().add(assistantMessage);
+        }
+
+        // 判断消息类型（不是spring-ai的消息类型），同一轮对话里UserMessage和AssistantMessage的messageType相同
+        String messageType = hasToolCalls ? SysMessage.MESSAGE_TYPE_FUNCTION_CALL : SysMessage.MESSAGE_TYPE_NORMAL;
         String deviceId = device().getDeviceId();
         int roleId = role().getRoleId();
-        String sender =  message.getMessageType().getValue();
-        if (StringUtils.hasText(response)) {
-            chatMemory.addMessage(deviceId, sessionId(), sender, response,
-                    roleId, messageType, assistantTimeMillis);
+        // 如果本轮对话是function_call或mcp调用(最后一条信息的类型)，把用户的消息类型也修正为同样类型
+        chatMemory.addMessage(deviceId, sessionId(), userMessage.getMessageType().getValue(), userMessage.getText(),
+                roleId, messageType, userTimeMillis);
 
+        String response = assistantMessage.getText();
+        if (StringUtils.hasText(response)) {
+            chatMemory.addMessage(deviceId, sessionId(), assistantMessage.getMessageType().getValue(), response,
+                    roleId, messageType, assistantTimeMillis);
         }
     }
 
@@ -151,9 +145,6 @@ public class MessageWindowConversation extends Conversation {
         messages.add(systemMessage);
         messages.addAll(historyMessages);
         messages.add(userMessage);
-
-        // 保存用户消息，会被持久化至数据库。TODO 需要检查ChatService 是否已经异步添加消息了。
-        //this.addMessage(userMessage,null);
 
         return messages;
     }

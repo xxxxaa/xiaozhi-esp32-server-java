@@ -49,9 +49,13 @@ public abstract class Conversation {
 
     abstract public void clear();
 
-    abstract public void addMessage(UserMessage message, Long userTimeMillis);
+    abstract public void addMessage(UserMessage userMessage, Long userTimeMillis,AssistantMessage assistantMessage, Long assistantTimeMillis);
 
-    abstract public void addMessage(AssistantMessage message, Long assistantTimeMillis);
-
+    /**
+     * 获取适用于放入prompt提示词的多轮消息列表。
+     * userMessage 不会因调用此方法而入库（或进入记忆）
+     * @param userMessage 必须且不为空。
+     * @return
+     */
     abstract public List<Message> prompt(UserMessage userMessage);
 }
