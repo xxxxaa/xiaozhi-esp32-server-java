@@ -49,9 +49,9 @@ public abstract class Conversation {
 
     abstract public void clear();
 
-    abstract public void addMessage(UserMessage message, Long dialogueId);
+    abstract public void addMessage(UserMessage message, Long userTimeMillis);
 
-    abstract public void addMessage(AssistantMessage message, Long dialogueId);
+    abstract public void addMessage(AssistantMessage message, Long assistantTimeMillis);
 
     abstract public List<Message> prompt(UserMessage userMessage);
 }

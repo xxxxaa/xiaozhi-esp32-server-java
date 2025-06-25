@@ -100,16 +100,20 @@ public abstract class ChatSession {
         return attributes.get(key);
     }
 
-    public void setDialogueId(Long dialogueId){
-        setAttribute("currentDialogueId", dialogueId);
-    }
-    public Long getDialogueId(){
-        return (Long) getAttribute("currentDialogueId");
+    public void setAssistantTimeMillis(Long assistantTimeMillis){
+        setAttribute("assistantTimeMillis", assistantTimeMillis);
     }
 
+    public Long getAssistantTimeMillis(){
+        return (Long) getAttribute("assistantTimeMillis");
+    }
 
-    public Path getUserAudioPath(){
-        return getAudioPath("user");
+    public void setUserTimeMillis(Long userTimeMillis){
+        setAttribute("userTimeMillis", userTimeMillis);
+    }
+
+    public Long getUserTimeMillis(){
+        return (Long) getAttribute("userTimeMillis");
     }
 
     /**
@@ -119,9 +123,9 @@ public abstract class ChatSession {
      * @param who
      * @return
      */
-    private Path getAudioPath(String who){
-        Long dialogueId = this.getDialogueId();
-        Instant instant = Instant.ofEpochMilli(dialogueId);
+    private Path getAudioPath(String who, Long timeMillis ){
+
+        Instant instant = Instant.ofEpochMilli(timeMillis);
         LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
         String datetime = localDateTime.format(DateTimeFormatter.ISO_DATE_TIME).replace(":","");
         SysDevice device = this.getSysDevice();
@@ -133,11 +137,13 @@ public abstract class ChatSession {
         return path;
     }
 
-
-    public Path getAssistantAudioPath() {
-        return getAudioPath("assistant");
+    public Path getUserAudioPath(){
+        return getAudioPath("user",this.getUserTimeMillis());
     }
 
+    public Path getAssistantAudioPath() {
+        return getAudioPath("assistant",getAssistantTimeMillis());
+    }
 
     public ToolsSessionHolder getFunctionSessionHolder() {
         return toolsSessionHolder;

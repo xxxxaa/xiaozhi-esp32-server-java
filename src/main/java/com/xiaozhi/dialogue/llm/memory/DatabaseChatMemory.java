@@ -43,7 +43,7 @@ public class DatabaseChatMemory  implements ChatMemory {
     }
 
     @Override
-    public void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, Long dialogueId) {
+    public void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, Long timeMillis) {
         // 异步虚拟线程处理持久化。
         Thread.startVirtualThread(() -> {
             try {
@@ -54,7 +54,7 @@ public class DatabaseChatMemory  implements ChatMemory {
                 message.setMessage(content);
                 message.setRoleId(roleId);
                 message.setMessageType(messageType);
-                message.setCreateTime(new Date(dialogueId));
+                message.setCreateTime(new Date(timeMillis));
                 messageService.add(message);
             } catch (Exception e) {
                 logger.error("保存消息时出错: {}", e.getMessage(), e);

@@ -27,8 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.xiaozhi.dialogue.llm.memory.MessageWindowConversation.DEFAULT_HISTORY_LIMIT;
-
 /**
  *
  * 负责管理和协调LLM相关功能
@@ -359,13 +357,13 @@ public class ChatService {
             UserMessage userMessage = new UserMessage(message);
 
             Thread.startVirtualThread(() -> {// 异步持久化
-                Long dialogueId = session.getDialogueId();
-                session.getConversation().addMessage(userMessage,  dialogueId);
+                Long userTimeMillis = session.getUserTimeMillis();
+                session.getConversation().addMessage(userMessage,  userTimeMillis);
 
                 if (!fullResponse.isEmpty()) {
                     AssistantMessage assistantMessage = new AssistantMessage(fullResponse.toString());
-
-                    session.getConversation().addMessage(assistantMessage, dialogueId);
+                    Long assistantTimeMillis = session.getAssistantTimeMillis();
+                    session.getConversation().addMessage(assistantMessage, assistantTimeMillis);
                 }
             });
         }
