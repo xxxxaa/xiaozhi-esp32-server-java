@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +85,7 @@ public abstract class ChatSession {
      */
     protected final ConcurrentHashMap<String, Object> attributes = new ConcurrentHashMap<>();
 
-    //--------------------设备mcp-------------------------
+    // --------------------设备mcp-------------------------
     private DeviceMcpHolder deviceMcpHolder = new DeviceMcpHolder();
 
     public ChatSession(String sessionId) {
@@ -100,19 +101,19 @@ public abstract class ChatSession {
         return attributes.get(key);
     }
 
-    public void setAssistantTimeMillis(Long assistantTimeMillis){
+    public void setAssistantTimeMillis(Long assistantTimeMillis) {
         setAttribute("assistantTimeMillis", assistantTimeMillis);
     }
 
-    public Long getAssistantTimeMillis(){
+    public Long getAssistantTimeMillis() {
         return (Long) getAttribute("assistantTimeMillis");
     }
 
-    public void setUserTimeMillis(Long userTimeMillis){
+    public void setUserTimeMillis(Long userTimeMillis) {
         setAttribute("userTimeMillis", userTimeMillis);
     }
 
-    public Long getUserTimeMillis(){
+    public Long getUserTimeMillis() {
         return (Long) getAttribute("userTimeMillis");
     }
 
@@ -120,29 +121,31 @@ public abstract class ChatSession {
      * 音频文件约定路径为：audio/{device-id}/{role-id}/{timestamp}-user.wav
      * {device-id}/{role-id}/{timestamp}-user 能确定唯一性，不会有并发的麻烦。
      * 除非多设备在嵌入式软件里强行修改mac地址（deviceId目前是基于mac地址的)
+     * 
      * @param who
      * @return
      */
-    private Path getAudioPath(String who, Long timeMillis ){
+    private Path getAudioPath(String who, Long timeMillis) {
 
-        Instant instant = Instant.ofEpochMilli(timeMillis);
+        Instant instant = Instant.ofEpochMilli(timeMillis).truncatedTo(ChronoUnit.SECONDS);
+
         LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-        String datetime = localDateTime.format(DateTimeFormatter.ISO_DATE_TIME).replace(":","");
+        String datetime = localDateTime.format(DateTimeFormatter.ISO_DATE_TIME).replace(":", "");
         SysDevice device = this.getSysDevice();
         // 判断设备ID是否有不适合路径的特殊字符，它很可能是mac地址需要转换。
-        String deviceId = device.getDeviceId().replace(":","-");
+        String deviceId = device.getDeviceId().replace(":", "-");
         String roleId = device.getRoleId().toString();
-        String filename = "%s-%s.wav".formatted(datetime,who);
-        Path path = Path.of(AudioUtils.AUDIO_PATH,deviceId,roleId,filename);
+        String filename = "%s-%s.wav".formatted(datetime, who);
+        Path path = Path.of(AudioUtils.AUDIO_PATH, deviceId, roleId, filename);
         return path;
     }
 
-    public Path getUserAudioPath(){
-        return getAudioPath("user",this.getUserTimeMillis());
+    public Path getUserAudioPath() {
+        return getAudioPath("user", this.getUserTimeMillis());
     }
 
     public Path getAssistantAudioPath() {
-        return getAudioPath("assistant",getAssistantTimeMillis());
+        return getAudioPath("assistant", getAssistantTimeMillis());
     }
 
     public ToolsSessionHolder getFunctionSessionHolder() {
@@ -157,15 +160,16 @@ public abstract class ChatSession {
         return toolsSessionHolder.getAllFunction();
     }
 
-
-
     /**
      * 会话连接是否打开中
+     * 
      * @return
      */
     public abstract boolean isOpen();
+
     /**
      * 音频通道是否打开可用
+     * 
      * @return
      */
     public abstract boolean isAudioChannelOpen();
@@ -179,6 +183,7 @@ public abstract class ChatSession {
     /**
      * 设置 Conversation，需要与当前活跃角色一致。
      * 当切换角色时，会释放当前 Conversation，并新建一个对应于新角色的Conversation。
+     * 
      * @param conversation
      */
     public void setConversation(Conversation conversation) {
@@ -187,6 +192,7 @@ public abstract class ChatSession {
 
     /**
      * 获取与当前活跃角色一致的 Conversation。
+     * 
      * @return
      */
     public Conversation getConversation() {

@@ -502,6 +502,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
         // 添加到句子队列
         CopyOnWriteArrayList<Sentence> queue = sentenceQueue.get(sessionId);
+        if (queue == null) {return;}
         queue.add(sentence);
 
         // 如果句子为空且是结束状态，直接标记为准备好（不需要生成音频）

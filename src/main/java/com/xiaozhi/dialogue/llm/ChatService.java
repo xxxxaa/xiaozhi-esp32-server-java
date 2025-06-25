@@ -313,10 +313,8 @@ public class ChatService {
         public void onComplete(String toolName) {
             // 检查该会话是否已完成处理
             // 处理当前缓冲区剩余的内容（如果有）
-            logger.info("onComplete:currentSentence.length {}, text:{}", currentSentence.length(), currentSentence.toString());
             if (currentSentence.length() > 0 && containsSubstantialContent(currentSentence.toString())
                     && !finalSentenceSent.get()) {
-                logger.info("进了第一层，句子数：{}", sentenceCount.get());
                 String sentence = currentSentence.toString().trim();
                 boolean isFirst = sentenceCount.get() == 0;
                 boolean isLast = true; // 这是最后一个句子
@@ -325,7 +323,6 @@ public class ChatService {
                 sentenceCount.incrementAndGet();
                 finalSentenceSent.set(true);
             } else if (!finalSentenceSent.get()) {
-                logger.info("进了第二层，句子数：{}", sentenceCount.get());
                 // 如果没有剩余内容但也没有发送过最后一个句子，发送一个空的最后句子标记
                 // 这确保即使没有剩余内容，也会发送最后一个句子标记
                 boolean isFirst = sentenceCount.get() == 0;

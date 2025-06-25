@@ -180,9 +180,11 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
         int rows = deviceMapper.update(device);
         // 更新设备信息后清空记忆缓存并重新注册设备信息
         device = deviceMapper.selectDeviceById(device.getDeviceId());
-        ChatSession session = sessionManager.getSessionByDeviceId(device.getDeviceId());
+        ChatSession session = null;
+        if (device != null) {
+            session = sessionManager.getSessionByDeviceId(device.getDeviceId());
+        }
         if (session != null) {
-
             session.setSysDevice(device);
         }
         return rows;

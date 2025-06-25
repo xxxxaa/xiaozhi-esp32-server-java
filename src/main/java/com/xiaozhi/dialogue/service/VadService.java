@@ -44,7 +44,7 @@ public class VadService {
     private AutomaticGainControl agc;
 
     // 语音检测前缓冲时长(毫秒)
-    private int preBufferMs = 500;
+    private int preBufferMs = 300;
 
     // 会话状态和锁
     private final ConcurrentHashMap<String, VadState> states = new ConcurrentHashMap<>();
@@ -444,7 +444,7 @@ public class VadService {
                 float adjustedSilenceThreshold = adjustVadThreshold(silenceThreshold, agcStats);
 
                 // 添加到预缓冲区
-                // state.addToPreBuffer(pcmData);
+                state.addToPreBuffer(pcmData);
 
                 // 处理短帧数据
                 if (pcmData.length < MIN_PCM_LENGTH && !state.isSpeaking()) {

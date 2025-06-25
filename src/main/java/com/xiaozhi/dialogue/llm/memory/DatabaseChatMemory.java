@@ -1,7 +1,6 @@
 package com.xiaozhi.dialogue.llm.memory;
 
 import com.xiaozhi.common.web.PageFilter;
-import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
 import com.xiaozhi.entity.Base;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
@@ -13,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -54,7 +55,8 @@ public class DatabaseChatMemory  implements ChatMemory {
                 message.setMessage(content);
                 message.setRoleId(roleId);
                 message.setMessageType(messageType);
-                message.setCreateTime(new Date(timeMillis));
+                Instant instant = Instant.ofEpochMilli(timeMillis).truncatedTo(ChronoUnit.SECONDS);
+                message.setCreateTime(Date.from(instant));
                 messageService.add(message);
             } catch (Exception e) {
                 logger.error("保存消息时出错: {}", e.getMessage(), e);

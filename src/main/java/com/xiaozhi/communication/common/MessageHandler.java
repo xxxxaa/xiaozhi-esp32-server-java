@@ -290,6 +290,7 @@ public class MessageHandler {
                 logger.info("停止监听");
 
                 // 关闭音频流
+                sessionManager.completeAudioStream(sessionId);
                 sessionManager.closeAudioStream(sessionId);
                 sessionManager.setStreamingState(sessionId, false);
                 // 重置VAD会话

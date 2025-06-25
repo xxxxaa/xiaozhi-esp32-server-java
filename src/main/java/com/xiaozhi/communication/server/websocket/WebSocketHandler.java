@@ -76,25 +76,15 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         String sessionId = session.getId();
-        String deviceId = sessionManager.getDeviceConfig(sessionId).getDeviceId();
-        SysDevice device = deviceService.selectDeviceById(deviceId);
+        SysDevice device = sessionManager.getDeviceConfig(sessionId);
         String payload = message.getPayload();
-        if (device == null) {
-            deviceId = getHeadersFromSession(session).get("device-id");
-            if (deviceId == null) {
-                logger.error("无法确定设备ID");
-                return;
-            } else {
-                device = deviceService.selectDeviceById(deviceId);
-            }
-        }
 
         try {
             var msg = JsonUtil.fromJson(payload, Message.class);
             if (Objects.requireNonNull(msg) instanceof HelloMessage m) {
                 handleHelloMessage(session, m);
             } else {
-                if (device.getRoleId() == null) {
+                if (device == null || device.getRoleId() == null) {
                     // 设备未绑定，处理未绑定设备的消息
                     messageHandler.handleUnboundDevice(sessionId, device);
                 }
@@ -179,7 +169,10 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
                 //如果客户端开启mcp协议，异步初始化MCP工具
                 ChatSession chatSession = sessionManager.getSession(sessionId);
                 Thread.startVirtualThread(() -> {
-                    deviceMcpService.initialize(chatSession);
+                    SysDevice device = sessionManager.getDeviceConfig(sessionId);
+                    if (device.getRoleId() != null) {
+                        deviceMcpService.initialize(chatSession);
+                    }
                 });
             }
         } catch (Exception e) {
