@@ -23,24 +23,17 @@ import static com.xiaozhi.dialogue.llm.memory.MessageWindowConversation.DEFAULT_
 
 /**
  * 基于数据库的聊天记忆实现
- * 全局单例类，负责Conversatin的初始化、保存、清理。
+ * 全局单例类，负责Conversatin里消息的获取、保存、清理。
  */
 @Service
 public class DatabaseChatMemory  implements ChatMemory {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseChatMemory.class);
 
-    @Autowired
-    private SysMessageService messageService;
+    private final SysMessageService messageService;
 
-    @Override
-    public Conversation initConversation(SysDevice device, SysRole role, String sessionId) {
-        Conversation conversation = MessageWindowConversation.builder().chatMemory(this)
-                .maxMessages(DEFAULT_HISTORY_LIMIT)
-                .role(role)
-                .device(device)
-                .sessionId(sessionId)
-                .build();
-        return conversation;
+    @Autowired
+    public DatabaseChatMemory(SysMessageService messageService) {
+        this.messageService = messageService;
     }
 
     @Override

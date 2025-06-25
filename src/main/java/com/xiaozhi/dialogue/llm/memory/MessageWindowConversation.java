@@ -19,15 +19,18 @@ import java.util.stream.Collectors;
 public class MessageWindowConversation extends Conversation {
     // 历史记录默认限制数量
     public static final int DEFAULT_HISTORY_LIMIT = 10;
-    private final DatabaseChatMemory chatMemory;
+    private final ChatMemory chatMemory;
     private final int maxMessages;
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(MessageWindowConversation.class);
 
 
-    public MessageWindowConversation(DatabaseChatMemory chatMemory, SysDevice device, SysRole role, int maxMessages, List<Message> messages){
-        super(device, role, device.getSessionId(), messages);
-        this.chatMemory = chatMemory;
+    public MessageWindowConversation(SysDevice device, SysRole role, String sessionId, int maxMessages, ChatMemory chatMemory){
+        super(device, role, sessionId);
         this.maxMessages = maxMessages;
+        this.chatMemory = chatMemory;
+        logger.info("加载设备{}的普通消息(SysMessage.MESSAGE_TYPE_NORMAL)作为对话历史",device.getDeviceId());
+        List<SysMessage> history = chatMemory.getMessages(device.getDeviceId(), SysMessage.MESSAGE_TYPE_NORMAL, maxMessages);
+        super.messages = convert(history);
     }
 
     public static class Builder {
@@ -35,7 +38,7 @@ public class MessageWindowConversation extends Conversation {
         private SysRole role;
         private String sessionId;
         private int maxMessages;
-        private DatabaseChatMemory chatMemory;
+        private ChatMemory chatMemory;
 
         public Builder device(SysDevice device) {
             this.device = device;
@@ -51,7 +54,7 @@ public class MessageWindowConversation extends Conversation {
             return this;
         }
 
-        public Builder chatMemory(DatabaseChatMemory chatMemory) {
+        public Builder chatMemory(ChatMemory chatMemory) {
             this.chatMemory = chatMemory;
             return this;
         }
@@ -62,17 +65,7 @@ public class MessageWindowConversation extends Conversation {
         }
 
         public MessageWindowConversation build(){
-            Assert.notNull(device, "device must not be null");
-            Assert.notNull(role, "role must not be null");
-            String deviceId = device.getDeviceId();
-            Assert.notNull(deviceId, "deviceId must not be null");
-            Assert.notNull(role.getRoleId(), "roleId must not be null");
-            Assert.notNull(sessionId, "sessionId must not be null");
-            logger.info("获取设备{}的历史消息",deviceId);
-            List<SysMessage> history = chatMemory.getMessages(deviceId, SysMessage.MESSAGE_TYPE_NORMAL, maxMessages);
-            List<Message> messages =convert(history);
-
-            return new MessageWindowConversation(chatMemory,device,role,maxMessages,messages);
+            return new MessageWindowConversation(device,role,sessionId,maxMessages,chatMemory);
         }
     }
 
@@ -147,33 +140,6 @@ public class MessageWindowConversation extends Conversation {
         messages.add(userMessage);
 
         return messages;
-    }
-
-    /**
-     * 将数据库记录的SysMessag转换为spring-ai的Message。
-     * 加载的历史都是普通消息(SysMessage.MESSAGE_TYPE_NORMAL)
-     *
-     * @param messages
-     * @return
-     */
-    public static List<Message> convert(List<SysMessage> messages) {
-        if (messages == null || messages.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return messages.stream()
-                .filter(message -> MessageType.ASSISTANT.getValue().equals(message.getSender())
-                        || MessageType.USER.getValue().equals(message.getSender()))
-                .map(message -> {
-                    String role = message.getSender();
-                    // 一般消息("messageType", "NORMAL");//默认为普通消息
-                    Map<String, Object> metadata = Map.of("messageId", message.getMessageId(), "messageType",
-                            message.getMessageType());
-                    return switch (role) {
-                        case "assistant" -> new AssistantMessage(message.getMessage(), metadata);
-                        case "user" -> UserMessage.builder().text(message.getMessage()).metadata(metadata).build();
-                        default -> throw new IllegalArgumentException("Invalid role: " + role);
-                    };
-                }).collect(Collectors.toList());
     }
 
 }

@@ -16,16 +16,6 @@ import java.util.List;
  */
 public interface ChatMemory {
 
-    /**
-     * 不同的ChatMemory实现类，可以有不同的处理策略，可以初始化不同的Conversation子类。
-     *
-     * @param device    设备
-     * @param role      角色
-     * @param sessionId 会话ID
-     * @return 会话
-     */
-    Conversation initConversation(SysDevice device, SysRole role, String sessionId);
-
     // TODO 考虑将参数以Message对象传递，而不是多个参数。在再下一层Service层转换sparing ai的Message为Mapper需要的SysMessage对象
     void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, Long timeMillis);
 

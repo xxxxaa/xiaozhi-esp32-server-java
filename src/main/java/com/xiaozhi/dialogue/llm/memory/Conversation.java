@@ -1,13 +1,19 @@
 package com.xiaozhi.dialogue.llm.memory;
 
 import com.xiaozhi.entity.SysDevice;
+import com.xiaozhi.entity.SysMessage;
 import com.xiaozhi.entity.SysRole;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.util.Assert;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Conversation 是一个 对应于 sys_message 表的，但高于 sys_message 的一个抽象实体。
@@ -23,13 +29,18 @@ public abstract class Conversation {
     private final SysRole role;
     private final String sessionId;
 
-    private List<Message> messages;
+    protected List<Message> messages = new ArrayList<>();
 
-    public Conversation(SysDevice device, SysRole role, String sessionId, List<Message> messages) {
+    public Conversation(SysDevice device, SysRole role, String sessionId) {
+        // final 属性的规范要求
+        Assert.notNull(device, "device must not be null");
+        Assert.notNull(role, "role must not be null");
+        Assert.notNull(device.getDeviceId(), "deviceId must not be null");
+        Assert.notNull(role.getRoleId(), "roleId must not be null");
+        Assert.notNull(sessionId, "sessionId must not be null");
         this.device = device;
         this.role = role;
         this.sessionId = sessionId;
-        this.messages = new ArrayList<>(messages);
     }
 
     public SysDevice device() {
@@ -58,4 +69,30 @@ public abstract class Conversation {
      * @return
      */
     abstract public List<Message> prompt(UserMessage userMessage);
+
+    /**
+     * 将数据库记录的SysMessag转换为spring-ai的Message。
+     *
+     * @param messages
+     * @return
+     */
+    public static List<Message> convert(List<SysMessage> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return messages.stream()
+                .filter(message -> MessageType.ASSISTANT.getValue().equals(message.getSender())
+                        || MessageType.USER.getValue().equals(message.getSender()))
+                .map(message -> {
+                    String role = message.getSender();
+                    // 一般消息("messageType", "NORMAL");//默认为普通消息
+                    Map<String, Object> metadata = Map.of("messageId", message.getMessageId(), "messageType",
+                            message.getMessageType());
+                    return switch (role) {
+                        case "assistant" -> new AssistantMessage(message.getMessage(), metadata);
+                        case "user" -> UserMessage.builder().text(message.getMessage()).metadata(metadata).build();
+                        default -> throw new IllegalArgumentException("Invalid role: " + role);
+                    };
+                }).collect(Collectors.toList());
+    }
 }
