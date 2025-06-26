@@ -28,9 +28,9 @@ public class SysRole extends Base {
 
     private Integer sttId;
 
-    private Double temperature;
+    private Double temperature = 0.7;
 
-    private Double topP;
+    private Double topP = 0.9;
 
     private Float vadEnergyTh;
     private Float vadSpeechTh;

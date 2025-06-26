@@ -23,6 +23,20 @@
                   <a-input-search v-model="query[item.index]" placeholder="请输入" allow-clear @search="getData()" />
                 </a-form-item>
               </a-col>
+              <!-- 添加模型类型筛选，仅在LLM配置时显示 -->
+              <a-col :xxl="8" :xl="8" :lg="12" :xs="24" v-if="configType === 'llm'">
+                <a-form-item label="模型类型">
+                  <a-select v-model="query.modelType" @change="getData()">
+                    <a-select-option value="">
+                      <span>全部</span>
+                    </a-select-option>
+                    <a-select-option value="chat">对话模型</a-select-option>
+                    <a-select-option value="vision">视觉模型</a-select-option>
+                    <a-select-option value="intent">意图模型</a-select-option>
+                    <a-select-option value="embedding">向量模型</a-select-option>
+                  </a-select>
+                </a-form-item>
+              </a-col>
             </a-row>
           </a-form>
         </div>
@@ -74,7 +88,7 @@
                       </a-select>
                     </a-form-item>
                   </a-col>
-                  <a-col :xl="16" :lg="12" :xs="24">
+                  <a-col :xl="8" :lg="12" :xs="24">
                     <a-form-item :label="`${configTypeInfo.label}名称`">
                       <!-- 如果是 llm 且有 currentType，变为可输入的下拉框 -->
                       <a-select v-if="configType === 'llm' && currentType"
@@ -99,6 +113,20 @@
                         ]"
                         autocomplete="off"
                         :placeholder="`请输入${configTypeInfo.label}名称`" />
+                    </a-form-item>
+                  </a-col>
+                  <!-- 添加模型类型选择，仅在LLM配置时显示 -->
+                  <a-col :xl="8" :lg="12" :xs="24" v-if="configType === 'llm'">
+                    <a-form-item label="模型类型">
+                      <a-select v-decorator="[
+                        'modelType',
+                        { initialValue: 'chat', rules: [{ required: true, message: '请选择模型类型' }] }
+                      ]" placeholder="请选择模型类型">
+                        <a-select-option value="chat">对话模型</a-select-option>
+                        <a-select-option value="vision">视觉模型</a-select-option>
+                        <a-select-option value="intent">意图模型</a-select-option>
+                        <a-select-option value="embedding">向量模型</a-select-option>
+                      </a-select>
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -182,6 +210,7 @@ export default {
       // 查询框
       query: {
         provider: "",
+        modelType: ""
       },
       queryFilter: [
         {
@@ -401,6 +430,7 @@ export default {
 
       //填写llm默认url
       if (this.configType === 'llm') {
+        newValues.modelType = formValues.modelType || 'chat';
         const apiUrlField = configTypeMap.llm.typeFields[value].find(item => item.name === 'apiUrl');
         if (apiUrlField && apiUrlField.defaultUrl) {
           newValues.apiUrl = apiUrlField.defaultUrl;
@@ -564,6 +594,7 @@ export default {
               data: {
                 configId: record.configId,
                 configType: this.configType,
+                modelType: this.configType === 'llm' ? record.modelType : null,
                 isDefault: 1
               }
             })

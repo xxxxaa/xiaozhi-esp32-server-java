@@ -44,7 +44,7 @@ public class VadService {
     private AutomaticGainControl agc;
 
     // 语音检测前缓冲时长(毫秒)
-    private int preBufferMs = 300;
+    private int preBufferMs = 100;
 
     // 会话状态和锁
     private final ConcurrentHashMap<String, VadState> states = new ConcurrentHashMap<>();

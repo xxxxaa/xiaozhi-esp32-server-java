@@ -26,9 +26,14 @@ public class SysConfig extends Base {
     private String configDesc;
 
     /**
-     * 配置类型（model\stt\tts）
+     * 配置类型（llm\stt\tts）
      */
     private String configType;
+
+    /**
+     * 模型类型（chat\vision\intent\embedding）
+     */
+    private String modelType;
 
     /**
      * 服务提供商 (openai\quen\vosk\aliyun\tencent等)
@@ -111,6 +116,15 @@ public class SysConfig extends Base {
 
     public SysConfig setConfigType(String configType) {
         this.configType = configType;
+        return this;
+    }
+
+    public String getModelType() {
+        return modelType;
+    }
+
+    public SysConfig setModelType(String modelType) {
+        this.modelType = modelType;
         return this;
     }
 

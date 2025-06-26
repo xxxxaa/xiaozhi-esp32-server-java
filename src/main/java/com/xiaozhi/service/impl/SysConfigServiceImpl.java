@@ -73,6 +73,7 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
             sttServiceFactory.removeCache(config);
             ttsServiceFactory.removeCache(config);
         }
+        // TODO 还需处理缓存的默认视觉模型或者意图识别模型等
         return rows;
     }
 
@@ -87,6 +88,7 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
         resetConfig.setUserId(config.getUserId());
         // 其他类型正常处理，只重置同类型的配置
         resetConfig.setConfigType(config.getConfigType());
+        resetConfig.setModelType(config.getModelType());
         configMapper.resetDefault(resetConfig);
     }
 

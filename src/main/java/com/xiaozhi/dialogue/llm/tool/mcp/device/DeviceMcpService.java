@@ -7,13 +7,17 @@ import com.xiaozhi.communication.domain.mcp.device.initialize.DeviceMcpClientInf
 import com.xiaozhi.communication.domain.mcp.device.initialize.DeviceMcpInitialize;
 import com.xiaozhi.communication.domain.mcp.device.initialize.DeviceMcpVision;
 import com.xiaozhi.dialogue.llm.tool.ToolCallStringResultConverter;
+import com.xiaozhi.utils.CmsUtils;
 import com.xiaozhi.utils.JsonUtil;
+import jakarta.annotation.Resource;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,20 +29,28 @@ import java.util.concurrent.TimeUnit;
 public class DeviceMcpService {
     private static final Logger logger = LoggerFactory.getLogger(DeviceMcpService.class);
 
+    @Resource
+    private Environment environment;
+
+    @Resource
+    private CmsUtils cmsUtils;
+
     @Value("${xiaozhi.mcp:device:max.tools.count:32}")
-    private static final int maxToolsCount = 32; // 最大工具数量限制
+    private static int maxToolsCount = 32; // 最大工具数量限制
+
     /**
      * 初始化设备端MCP工具列表
+     *
      * @param chatSession
      */
     public void initialize(ChatSession chatSession) {
         //1、调用始化命令
         DeviceMcpMessage initResult = sendInitialize(chatSession);
         //根据调用结果进行处理
-        if(initResult != null){
+        if (initResult != null) {
             chatSession.getDeviceMcpHolder().setMcpInitialized(true);
         }
-        if(chatSession.getDeviceMcpHolder().isMcpInitialized()){
+        if (chatSession.getDeviceMcpHolder().isMcpInitialized()) {
             //2、获取工具列表
             sendToolsList(chatSession);
         }
@@ -46,6 +58,7 @@ public class DeviceMcpService {
 
     /**
      * 发送初始化命令
+     *
      * @param chatSession
      * @return
      */
@@ -56,18 +69,13 @@ public class DeviceMcpService {
         payload.setId(chatSession.getDeviceMcpHolder().getMcpRequestId());
         payload.setMethod("initialize");
 
-        // MCP初始化参数
-        DeviceMcpInitialize initialize = new DeviceMcpInitialize();
-        DeviceMcpVision vision = new DeviceMcpVision();//TODO: 摄像头视觉相关, 根据实际需要设置vision的属性
-        initialize.setCapabilities(Map.of(
-                "vision", vision
-        ));
-        initialize.setClientInfo(new DeviceMcpClientInfo());
+        DeviceMcpInitialize initialize = deviceMcpInitialize(chatSession);
+
         payload.setParams(initialize);
         message.setPayload(payload);
 
         DeviceMcpMessage result = sendMcpRequest(chatSession, message);
-        if(result != null) {
+        if (result != null) {
             logger.debug("SessionId: {}, MCP initialized successfully", chatSession.getSessionId());
             return result;
         }
@@ -75,7 +83,30 @@ public class DeviceMcpService {
     }
 
     /**
+     * 摄像头视觉相关, 根据实际需要设置vision的属性
+     */
+    @NotNull
+    private DeviceMcpInitialize deviceMcpInitialize(ChatSession chatSession) {
+        // MCP初始化参数
+        DeviceMcpInitialize initialize = new DeviceMcpInitialize();
+        initialize.setClientInfo(new DeviceMcpClientInfo());
+
+        DeviceMcpVision vision = new DeviceMcpVision();
+
+        //VLChatController
+        String url = cmsUtils.getServerAddress() + "/vl/chat";
+        vision.setUrl(url);
+        vision.setToken(chatSession.getSessionId());
+
+        initialize.setCapabilities(Map.of(
+                "vision", vision
+        ));
+        return initialize;
+    }
+
+    /**
      * 发送工具列表请求
+     *
      * @param chatSession
      */
     private void sendToolsList(ChatSession chatSession) {
@@ -84,7 +115,7 @@ public class DeviceMcpService {
         DeviceMcpPayload payload = new DeviceMcpPayload();
         payload.setId(chatSession.getDeviceMcpHolder().getMcpRequestId());
         payload.setMethod("tools/list");
-        if(chatSession.getDeviceMcpHolder().getMcpCursor() != null) {
+        if (chatSession.getDeviceMcpHolder().getMcpCursor() != null) {
             payload.setParams(Map.of(
                     "cursor", chatSession.getDeviceMcpHolder().getMcpCursor()));
         } else {
@@ -94,7 +125,7 @@ public class DeviceMcpService {
         message.setPayload(payload);
 
         DeviceMcpMessage result = sendMcpRequest(chatSession, message);
-        if(result != null) {
+        if (result != null) {
             //处理工具的注册
             List<Map<String, Object>> tools = (List<Map<String, Object>>) result.getPayload().getResult().get("tools");
             Object nextCursor = result.getPayload().getResult().get("nextCursor");
@@ -126,10 +157,14 @@ public class DeviceMcpService {
                                 request.setPayload(requestPayload);
                                 DeviceMcpMessage response = sendMcpRequest(chatSession, request);
                                 if (response != null) {
-                                    logger.debug("SessionId: {},  MCP function call response: {}" , chatSession.getSessionId(), response);
-                                    if("false".equals(String.valueOf(response.getPayload().getResult().get("isError")))){
+                                    logger.debug("SessionId: {},  MCP function call response: {}", chatSession.getSessionId(), response);
+                                    //空指针
+                                    if (response.getPayload().getResult() == null) {
+                                        return response.getPayload().getError().get("message");//返回结果
+                                    }
+                                    if ("false".equals(String.valueOf(response.getPayload().getResult().get("isError")))) {
                                         return response.getPayload().getResult().get("content");//返回结果
-                                    }else{
+                                    } else {
                                         return response.getPayload().getError();
                                     }
                                 } else {
@@ -147,14 +182,14 @@ public class DeviceMcpService {
                 }
             }
             // 如果cursor不为空，则迭代调用
-            if(nextCursor != null && !nextCursor.toString().isEmpty()) {
+            if (nextCursor != null && !nextCursor.toString().isEmpty()) {
                 // 如果有下一页游标，继续请求下一页
                 chatSession.getDeviceMcpHolder().setMcpCursor(nextCursor.toString());
                 sendToolsList(chatSession);
             } else {
                 // 所有工具加载完成
                 chatSession.getDeviceMcpHolder().setMcpCursor(null);
-                logger.debug("SessionId: {}, All tools loaded successfully", chatSession.getSessionId());
+                logger.debug("SessionId: {}, mcp tools loaded successfully", chatSession.getSessionId());
             }
         }
     }
@@ -168,7 +203,7 @@ public class DeviceMcpService {
         DeviceMcpMessage response = null;
         try {
             // 阻塞并等待异步操作完成
-            response = future.get(2, TimeUnit.SECONDS);//等待2秒，没反应则退出
+            response = future.get(30, TimeUnit.SECONDS);//等待2秒，没反应则退出
         } catch (Exception e) {
             logger.error("SessionId: {}, Error sending MCP request", chatSession.getSessionId(), e);
             chatSession.getDeviceMcpHolder().getMcpPendingRequests().remove(id);

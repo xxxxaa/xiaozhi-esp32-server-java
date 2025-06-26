@@ -664,8 +664,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             firstSentDone.get(task.sessionId).set(true);
         }
 
-        // 尝试处理队列（首句流式处理已完成或首句非流式处理完成）
-        if (firstSentDone.get(task.sessionId).get()) {
+        // 尝试处理队列
+        AtomicBoolean firstDone = firstSentDone.get(task.sessionId);
+        if (firstDone != null && firstDone.get()) {
             processQueue(task.session, task.sessionId);
         }
     }

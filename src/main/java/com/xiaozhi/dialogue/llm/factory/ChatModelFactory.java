@@ -72,6 +72,12 @@ public class ChatModelFactory {
         return createChatModel(config, role);
     }
 
+    public ChatModel takeVisionModel() {
+        SysConfig config = configService.query(new SysConfig().setConfigType("llm").setModelType("vision"), null).get(0);
+        Assert.notNull(config, "未配置多模态模型");
+        return createChatModel(config, new SysRole());
+    }
+
     /**
      * 创建ChatModel
      * 

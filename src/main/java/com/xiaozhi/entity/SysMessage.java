@@ -100,7 +100,7 @@ public class SysMessage extends Base {
     }
 
     public String getAudioPath() {
-        if (this.deviceId == null) {
+        if (this.createTime == null) {
             return audioPath; // 分页会先进行一次处理，但是获取的为count(0)，没有实际字段会报错，这里直接返回
         }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss");

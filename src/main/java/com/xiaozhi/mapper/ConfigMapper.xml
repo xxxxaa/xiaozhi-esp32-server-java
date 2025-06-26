@@ -3,13 +3,13 @@
 <mapper namespace="com.xiaozhi.dao.ConfigMapper">
 
     <sql id="configSql">
-        sys_config.configId, sys_config.userId, sys_config.configName, sys_config.configDesc, sys_config.configType, sys_config.provider,
+        sys_config.configId, sys_config.userId, sys_config.configName, sys_config.configDesc, sys_config.configType, sys_config.modelType, sys_config.provider,
         sys_config.appId, sys_config.apiKey, sys_config.apiSecret, sys_config.ak, sys_config.sk, sys_config.apiUrl, sys_config.isDefault, sys_config.state, sys_config.createTime
     </sql>
 
     <insert id="add" parameterType="com.xiaozhi.entity.SysConfig">
-        INSERT INTO sys_config (userId, configType, provider, configName, configDesc, appId, apiKey, apiSecret, ak, sk, apiUrl, isDefault)
-        VALUES (#{userId}, #{configType}, #{provider}, #{configName}, #{configDesc}, #{appId}, #{apiKey}, #{apiSecret}, #{ak}, #{sk}, #{apiUrl}, #{isDefault})
+        INSERT INTO sys_config (userId, configType, modelType, provider, configName, configDesc, appId, apiKey, apiSecret, ak, sk, apiUrl, isDefault)
+        VALUES (#{userId}, #{configType}, #{modelType}, #{provider}, #{configName}, #{configDesc}, #{appId}, #{apiKey}, #{apiSecret}, #{ak}, #{sk}, #{apiUrl}, #{isDefault})
     </insert>
 
     <update id="update" parameterType="com.xiaozhi.entity.SysConfig">
@@ -17,6 +17,7 @@
             sys_config
         <set>
             <if test="configType != null and configType != ''">configType = #{configType},</if>
+            <if test="modelType != null and modelType != ''">modelType = #{modelType},</if>
             <if test="provider != null and provider != ''">provider = #{provider},</if>
             <if test="configName != null and configName != ''">configName = #{configName},</if>
             <if test="configDesc != null and configDesc != ''">configDesc = #{configDesc},</if>
@@ -41,6 +42,7 @@
         </set>
         WHERE
             configType = #{configType}
+            <if test="modelType != null and modelType != ''">AND modelType = #{modelType}</if>
             AND userId = #{userId}
     </update>
 
@@ -55,6 +57,7 @@
             <if test="userId != null and userId != ''">AND sys_config.userId = #{userId}</if>
             <if test="isDefault != null and isDefault != ''">AND sys_config.isDefault = #{isDefault}</if>
             <if test="configType != null and configType != ''">AND configType = #{configType}</if>
+            <if test="modelType != null and modelType != ''">AND modelType = #{modelType}</if>
             <choose>
                 <when test="provider != null and provider != ''">
                     AND provider = #{provider}

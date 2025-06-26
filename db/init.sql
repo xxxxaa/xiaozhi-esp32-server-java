@@ -132,6 +132,7 @@ CREATE TABLE `xiaozhi`.`sys_config` (
   `configId` int unsigned NOT NULL AUTO_INCREMENT COMMENT '配置ID，主键',
   `userId` int NOT NULL COMMENT '创建用户ID',
   `configType` varchar(30) NOT NULL COMMENT '配置类型(llm, stt, tts等)',
+  `modelType` varchar(30) DEFAULT NULL COMMENT 'LLM模型类型(chat, vision, intent, embedding等)',
   `provider` varchar(30) NOT NULL COMMENT '服务提供商(openai, vosk, aliyun, tencent等)',
   `configName` varchar(50) DEFAULT NULL COMMENT '配置名称',
   `configDesc` TEXT DEFAULT NULL COMMENT '配置描述',
