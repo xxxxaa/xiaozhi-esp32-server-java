@@ -5,7 +5,6 @@ import com.xiaozhi.common.web.AjaxResult;
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.dialogue.llm.ChatService;
 import com.xiaozhi.entity.SysMessage;
-import com.xiaozhi.service.SysDeviceService;
 import com.xiaozhi.service.SysMessageService;
 import com.xiaozhi.utils.CmsUtils;
 import jakarta.annotation.Resource;
@@ -27,9 +26,6 @@ public class MessageController extends BaseController {
 
     @Resource
     private SysMessageService sysMessageService;
-
-    @Resource
-    private SysDeviceService deviceService;
 
     @Resource
     private ChatService chatService;

@@ -1,5 +1,10 @@
 package com.xiaozhi.entity;
 
+import com.xiaozhi.utils.AudioUtils;
+
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+
 /**
  * 聊天记录表
  * 
@@ -36,9 +41,7 @@ public class SysMessage extends Base {
 
     /**
      * 语音文件路径
-     * @deprecated 改为路径约定，而非实际存储音频文件的路径字符串。后续版本不再支持此字段。
      */
-    @Deprecated
     private String audioPath;
 
     /**
@@ -97,7 +100,20 @@ public class SysMessage extends Base {
     }
 
     public String getAudioPath() {
-        return audioPath;
+        if (this.deviceId == null) {
+            return audioPath; // 分页会先进行一次处理，但是获取的为count(0)，没有实际字段会报错，这里直接返回
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss");
+        String formattedTime = sdf.format(createTime);
+
+        String fileName = formattedTime + "-" + sender + ".wav";
+
+        return Paths.get(
+                AudioUtils.AUDIO_PATH,
+                deviceId.replace(":", "-"),
+                String.valueOf(roleId),
+                fileName
+        ).toString();
     }
 
     public SysMessage setAudioPath(String audioPath) {

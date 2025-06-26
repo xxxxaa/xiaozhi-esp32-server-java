@@ -17,7 +17,7 @@ public class Base implements java.io.Serializable {
      * 创建日期
      */
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createTime;
+    protected Date createTime;
 
     /**
      * 用户ID

@@ -3,11 +3,11 @@
 <mapper namespace="com.xiaozhi.dao.MessageMapper">
 
     <sql id="messageSql">
-        sys_message.messageId, sys_message.message, sys_message.sender, sys_message.roleId, sys_message.state, sys_message.createTime, sys_message.messageType
+        sys_message.messageId, sys_message.deviceId, sys_message.message, sys_message.sender, sys_message.roleId, sys_message.state, sys_message.createTime, sys_message.messageType
     </sql>
 
     <sql id="deviceSql">
-        sys_device.deviceId, sys_device.deviceName, sys_device.userId
+        sys_device.deviceName, sys_device.userId
     </sql>
 
     <sql id="roleSql">
@@ -18,18 +18,7 @@
         SELECT
         <include refid="messageSql"></include>,
         <include refid="deviceSql"></include>,
-        <include refid="roleSql"></include>,
-        CONCAT(
-            'audio/',
-            REPLACE(sys_device.deviceId, ':', '-'), 
-            '/', 
-            sys_message.roleId, 
-            '/', 
-            DATE_FORMAT(sys_message.createTime, '%Y-%m-%dT%H%i%s'), 
-            '-', 
-            sys_message.sender,
-            '.wav'
-        ) AS audioPath
+        <include refid="roleSql"></include>
         FROM
             sys_message
             LEFT JOIN sys_device ON sys_message.deviceId = sys_device.deviceId
@@ -56,8 +45,8 @@
     </select>
 
     <insert id="add" parameterType="com.xiaozhi.entity.SysMessage">
-        INSERT INTO sys_message ( deviceId, sessionId, sender, roleId, message, audioPath, messageType ,createTime)
-        SELECT #{deviceId}, #{sessionId}, #{sender}, #{roleId}, #{message}, #{audioPath}, #{messageType},#{createTime,jdbcType=TIMESTAMP}
+        INSERT INTO sys_message ( deviceId, sessionId, sender, roleId, message, messageType ,createTime)
+        SELECT #{deviceId}, #{sessionId}, #{sender}, #{roleId}, #{message}, #{messageType},#{createTime,jdbcType=TIMESTAMP}
     </insert>
 
     <update id="delete" parameterType="com.xiaozhi.entity.SysMessage">
