@@ -59,7 +59,7 @@ public class ChatModelFactory {
      * 根据配置ID创建ChatModel，首次调用时缓存，缓存key为配置ID。
      * 
      * @see SysConfigService#selectConfigById(Integer) 已经进行了Cacheable,所以此处没有必要缓存
-     * @param configId 配置ID，实际是模型ID。
+     * @param session 与网络链接绑定的聊天会话
      * @return
      */
     public ChatModel takeChatModel(ChatSession session) {
