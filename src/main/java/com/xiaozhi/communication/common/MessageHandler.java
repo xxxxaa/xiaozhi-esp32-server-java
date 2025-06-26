@@ -2,8 +2,8 @@ package com.xiaozhi.communication.common;
 
 import com.xiaozhi.communication.domain.*;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
-import com.xiaozhi.dialogue.llm.memory.ChatMemory;
 import com.xiaozhi.dialogue.llm.memory.Conversation;
+import com.xiaozhi.dialogue.llm.memory.ConversationFactory;
 import com.xiaozhi.dialogue.llm.tool.ToolsGlobalRegistry;
 import com.xiaozhi.dialogue.llm.tool.ToolsSessionHolder;
 import com.xiaozhi.dialogue.service.AudioService;
@@ -67,7 +67,7 @@ public class MessageHandler {
     private SttServiceFactory sttFactory;
 
     @Autowired
-    private ChatMemory chatMemory;
+    private ConversationFactory conversationFactory;
 
     @Resource
     private ChatModelFactory chatModelFactory;
@@ -124,7 +124,7 @@ public class MessageHandler {
                     }
                     if (role.getModelId() != null) {
                         chatModelFactory.takeChatModel(chatSession);// 提前初始化，加速后续使用
-                        Conversation conversation = chatMemory.initConversation(device, role, sessionId);
+                        Conversation conversation = conversationFactory.initConversation(device, role, sessionId);
                         chatSession.setConversation(conversation);
                         // 注册全局函数
                         toolsSessionHolder.registerGlobalFunctionTools(chatSession);
@@ -181,8 +181,11 @@ public class MessageHandler {
         audioService.cleanupSession(sessionId);
         // 清理对话
         dialogueService.cleanupSession(sessionId);
-        // 清理ChatService缓存的对话历史。
-        chatMemory.clearMessages(device.getDeviceId());
+        // 清理Conversation缓存的对话历史。
+        Conversation conversation = chatSession.getConversation();
+        if (conversation != null) {
+            conversation.clear();
+        }
     }
 
     /**

@@ -2,8 +2,8 @@ package com.xiaozhi.dialogue.llm.tool.function;
 
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.communication.common.ChatSession;
-import com.xiaozhi.dialogue.llm.memory.ChatMemory;
 import com.xiaozhi.dialogue.llm.memory.Conversation;
+import com.xiaozhi.dialogue.llm.memory.ConversationFactory;
 import com.xiaozhi.dialogue.llm.tool.ToolCallStringResultConverter;
 import com.xiaozhi.dialogue.llm.tool.ToolsGlobalRegistry;
 import com.xiaozhi.entity.SysDevice;
@@ -35,7 +35,7 @@ public class ChangeRoleFunction implements ToolsGlobalRegistry.GlobalFunction {
     @Resource
     private SysDeviceService sysDeviceService;
     @Resource
-    ChatMemory chatMemory;
+    ConversationFactory conversationFactory;
 
     @Override
     public ToolCallback getFunctionCallTool(ChatSession chatSession) {
@@ -59,9 +59,12 @@ public class ChangeRoleFunction implements ToolsGlobalRegistry.GlobalFunction {
                                 SysRole role = changedRole.get();
                                 sysDevice.setRoleId(role.getRoleId());//测试，固定角色
                                 sysDeviceService.update(sysDevice);
-                                // TODO 切换了角色，需要更换Conversation
-                                Conversation conversation = chatMemory.initConversation(sysDevice, role, chatSession.getSessionId());
-                                chatSession.setConversation( conversation);
+                                // 切换了角色，需要更换Conversation
+                                if(chatSession.getConversation()!=null){
+                                    chatSession.getConversation().clear();
+                                }
+                                Conversation conversation = conversationFactory.initConversation(sysDevice, role, chatSession.getSessionId());
+                                chatSession.setConversation(conversation);
                                 return "角色已切换至" + roleName;
                             }else{
                                 return "角色切换失败, 没有对应角色哦";

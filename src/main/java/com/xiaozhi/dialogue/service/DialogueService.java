@@ -376,8 +376,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 // 获取完整的音频数据并保存
                 saveUserAudio(session);
 
-
-
                 CompletableFuture.runAsync(() -> messageService.sendSttMessage(session, finalText))
                         .thenRun(() -> audioService.sendStart(session))
                         .thenRun(() -> {
@@ -873,7 +871,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                     return;
                 }
                 sessionManager.updateLastActivity(sessionId);
-
+                // 设置用户消息的创建时间戳，要在消息入库前获得时间戳。 后续考虑:传递的消息不一定是String，也可以是封装的。
+                final Long userTimeMillis =  System.currentTimeMillis();
+                session.setUserTimeMillis(userTimeMillis);
                 // 发送识别结果
                 messageService.sendSttMessage(session, inputText);
                 audioService.sendStart(session);
