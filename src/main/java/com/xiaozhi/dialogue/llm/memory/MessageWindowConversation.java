@@ -4,14 +4,10 @@ import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
 import com.xiaozhi.entity.SysRole;
 import org.springframework.ai.chat.messages.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-
-import java.util.stream.Collectors;
 
 /**
  * 限定消息条数（消息窗口）的Conversation实现。根据不同的策略，可实现聊天会话的持久化、加载、清除等功能。

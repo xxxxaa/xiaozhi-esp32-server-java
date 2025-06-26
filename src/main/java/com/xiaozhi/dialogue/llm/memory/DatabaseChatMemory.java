@@ -2,9 +2,7 @@ package com.xiaozhi.dialogue.llm.memory;
 
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.entity.Base;
-import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
-import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.service.SysMessageService;
 
 import org.slf4j.Logger;
@@ -19,11 +17,10 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
-import static com.xiaozhi.dialogue.llm.memory.MessageWindowConversation.DEFAULT_HISTORY_LIMIT;
-
 /**
  * 基于数据库的聊天记忆实现
  * 全局单例类，负责Conversatin里消息的获取、保存、清理。
+ * 后续考虑：DatabaseChatMemory 是对 SysMessageService 的一层薄封装，未来或者有可能考虑合并这两者。
  */
 @Service
 public class DatabaseChatMemory  implements ChatMemory {

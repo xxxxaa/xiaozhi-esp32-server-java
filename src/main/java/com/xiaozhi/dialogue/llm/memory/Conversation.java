@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * 只有sessionID是真正挂在Conversation的属性。
  *
  */
-public abstract class Conversation {
+public class Conversation {
     private final SysDevice device;
     private final SysRole role;
     private final String sessionId;
@@ -58,17 +58,27 @@ public abstract class Conversation {
         return messages;
     }
 
-    abstract public void clear();
+    public void clear(){
+        messages.clear();
+    }
 
-    abstract public void addMessage(UserMessage userMessage, Long userTimeMillis,AssistantMessage assistantMessage, Long assistantTimeMillis);
+    public void addMessage(UserMessage userMessage, Long userTimeMillis,AssistantMessage assistantMessage, Long assistantTimeMillis){
+        messages.add(userMessage);
+        messages.add(assistantMessage);
+    }
 
     /**
      * 获取适用于放入prompt提示词的多轮消息列表。
      * userMessage 不会因调用此方法而入库（或进入记忆）
      * @param userMessage 必须且不为空。
-     * @return
+     * @return 新的消息列表对象，避免污染原有的列表。
      */
-    abstract public List<Message> prompt(UserMessage userMessage);
+    public List<Message> prompt(UserMessage userMessage){
+        List<Message> newMessages = new ArrayList<>();
+        newMessages.addAll(this.messages);
+        newMessages.add(userMessage);
+        return newMessages;
+    }
 
     /**
      * 将数据库记录的SysMessag转换为spring-ai的Message。

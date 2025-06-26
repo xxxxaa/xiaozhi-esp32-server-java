@@ -1,8 +1,6 @@
 package com.xiaozhi.dialogue.llm.memory;
 
-import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysMessage;
-import com.xiaozhi.entity.SysRole;
 
 import java.util.List;
 
@@ -16,9 +14,21 @@ import java.util.List;
  */
 public interface ChatMemory {
 
-    // TODO 考虑将参数以Message对象传递，而不是多个参数。在再下一层Service层转换sparing ai的Message为Mapper需要的SysMessage对象
+    /**
+     * 添加消息
+     * TODO 参数太多，后续考虑如何简化一些
+     */
     void addMessage(String deviceId, String sessionId, String sender, String content, Integer roleId, String messageType, Long timeMillis);
 
+    /**
+     * 获取历史对话消息列表
+     * TODO messageType参数，后续考虑是否需要。另外可重构为一个枚举类
+     *
+     * @param deviceId 设备ID
+     * @param messageType 消息类型
+     * @param limit 限制数量
+     * @return 消息列表
+     */
     List<SysMessage> getMessages(String deviceId, String messageType, Integer limit);
 
     /**
