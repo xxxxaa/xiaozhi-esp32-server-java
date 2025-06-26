@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 
@@ -46,6 +48,12 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 
         // 检查是否是公共路径
         if (isPublicPath(path)) {
+            return true;
+        }
+
+        // 检查是否有@@UnLogin注解
+        if (hasUnLoginAnnotation(handler)) {
+            logger.debug("接口 {} 标记为不需要登录验证", path);
             return true;
         }
 
@@ -133,5 +141,32 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
      */
     private boolean isPublicPath(String path) {
         return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    }
+
+    /**
+     * 检查处理器是否有@UnLogin注解
+     */
+    private boolean hasUnLoginAnnotation(Object handler) {
+        if (!(handler instanceof HandlerMethod)) {
+            return false;
+        }
+
+        HandlerMethod handlerMethod = (HandlerMethod) handler;
+        Method method = handlerMethod.getMethod();
+        Class<?> controllerClass = handlerMethod.getBeanType();
+
+        // 检查方法上是否有@UnLogin注解
+        UnLogin methodAnnotation = method.getAnnotation(UnLogin.class);
+        if (methodAnnotation != null && methodAnnotation.value()) {
+            return true;
+        }
+
+        // 检查类上是否有@UnLogin注解
+        UnLogin classAnnotation = controllerClass.getAnnotation(UnLogin.class);
+        if (classAnnotation != null && classAnnotation.value()) {
+            return true;
+        }
+
+        return false;
     }
 }

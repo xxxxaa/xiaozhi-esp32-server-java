@@ -1,9 +1,13 @@
 package com.xiaozhi.utils;
 
+import com.xiaozhi.communication.server.websocket.WebSocketConfig;
 import com.xiaozhi.entity.SysUser;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
@@ -16,6 +20,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Component
 public class CmsUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(CmsUtils.class);
@@ -25,16 +30,21 @@ public class CmsUtils {
     private static String serverIp = null;
     private static boolean initializing = false;
 
-    // 静态初始化块，应用启动时自动执行一次
-    static {
-        // 在后台线程中预热IP缓存，避免第一次调用时的延迟
-        new Thread(() -> {
-            try {
-                getServerIp(); // 触发IP地址初始化
-            } catch (Exception e) {
-                logger.error("预热服务器IP缓存失败", e);
-            }
-        }).start();
+    // 新增的全局变量
+    private static String websocketAddress = null;
+    private static String otaAddress = null;
+    private static String serverAddress = null;
+
+    @Value("${server.port:8091}")
+    private int port;
+
+    // 初始化websocketAddress、otaAddress
+    @PostConstruct
+    private void initializeAddresses() {
+        String serverIp = getServerIp();
+        websocketAddress = "ws://" + serverIp + ":" + port + WebSocketConfig.WS_PATH; // 默认WebSocket端口
+        otaAddress = "http://" + serverIp + ":" + port + "/api/device/ota";
+        serverAddress = "http://" + serverIp + ":" + port;
     }
 
     public static SysUser getUser() {
@@ -75,6 +85,21 @@ public class CmsUtils {
         } else {
             return null;
         }
+    }
+
+    // WebSocket地址
+    public static String getWebsocketAddress() {
+        return websocketAddress;
+    }
+
+    // OTA地址
+    public static String getOtaAddress() {
+        return otaAddress;
+    }
+
+    // Server地址
+    public static String getServerAddress() {
+        return serverAddress;
     }
 
     // 以下是 IP 检测相关代码
@@ -200,23 +225,23 @@ public class CmsUtils {
 
     /**
      * 获取客户端真实IP地址
-     * 
+     *
      * @param request HTTP请求
      * @return 客户端真实IP地址
      */
     public static String getClientIp(HttpServletRequest request) {
         String ip = null;
-        
+
         // 按优先级检查各种HTTP头
         String[] headers = {
-            "X-Real-IP",           // 优先检查这个头，通常由Nginx设置
-            "X-Forwarded-For",     // 次优先，包含经过的所有代理IP
-            "Proxy-Client-IP",
-            "WL-Proxy-Client-IP",
-            "HTTP_CLIENT_IP",
-            "HTTP_X_FORWARDED_FOR"
+                "X-Real-IP",           // 优先检查这个头，通常由Nginx设置
+                "X-Forwarded-For",     // 次优先，包含经过的所有代理IP
+                "Proxy-Client-IP",
+                "WL-Proxy-Client-IP",
+                "HTTP_CLIENT_IP",
+                "HTTP_X_FORWARDED_FOR"
         };
-        
+
         for (String header : headers) {
             ip = request.getHeader(header);
             if (ip != null && ip.length() > 0 && !"unknown".equalsIgnoreCase(ip)) {
@@ -227,17 +252,17 @@ public class CmsUtils {
                 break;
             }
         }
-        
+
         // 如果仍未获取到IP，则使用远程地址
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
-        
+
         // 处理本地IPv6地址
         if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
             ip = "127.0.0.1";
         }
-        
+
         return ip;
     }
 
@@ -245,7 +270,7 @@ public class CmsUtils {
      * 获取服务器IP地址
      * 智能判断当前环境并返回合适的IP地址
      * 结果会被缓存，应用生命周期内只计算一次
-     * 
+     *
      * @return 合适的IP地址
      */
     public static String getServerIp() {
@@ -457,10 +482,10 @@ public class CmsUtils {
      */
     private static String getDockerGatewayIp() {
         List<String[]> commands = new ArrayList<>();
-        commands.add(new String[] { "ip", "route", "|", "grep", "default" });
-        commands.add(new String[] { "route", "-n" });
-        commands.add(new String[] { "netstat", "-rn" });
-        commands.add(new String[] { "cat", "/proc/net/route" });
+        commands.add(new String[]{"ip", "route", "|", "grep", "default"});
+        commands.add(new String[]{"route", "-n"});
+        commands.add(new String[]{"netstat", "-rn"});
+        commands.add(new String[]{"cat", "/proc/net/route"});
 
         for (String[] cmdArray : commands.toArray(new String[0][0])) {
             try {

@@ -3,6 +3,7 @@ package com.xiaozhi.common.config;
 import com.xiaozhi.common.interceptor.AuthenticationInterceptor;
 import com.xiaozhi.common.interceptor.LogInterceptor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -15,6 +16,7 @@ import jakarta.annotation.Resource;
 import java.io.File;
 
 @Configuration
+@Slf4j
 public class WebMvcConfig extends WebMvcConfigurationSupport {
 
     @Resource
@@ -28,13 +30,13 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
         registry.addInterceptor(authenticationInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
-                    "/api/user/login",
-                    "/api/user/register",
-                    "/api/device/ota",
-                    "/audio/**",
-                    "/uploads/**",
-                    "/avatar/**",
-                    "/ws/**"
+                        "/api/user/login",
+                        "/api/user/register",
+                        "/api/device/ota",
+                        "/audio/**",
+                        "/uploads/**",
+                        "/avatar/**",
+                        "/ws/**"
                 );
     }
 
@@ -61,7 +63,7 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
 
             super.addResourceHandlers(registry);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("添加资源失败", e);
         }
     }
 

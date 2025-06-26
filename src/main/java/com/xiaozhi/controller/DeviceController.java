@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -45,6 +44,9 @@ public class DeviceController extends BaseController {
 
     @Resource
     private Environment environment;
+
+    @Resource
+    private CmsUtils cmsUtils;
 
     /**
      * 设备查询
@@ -219,7 +221,7 @@ public class DeviceController extends BaseController {
             device.setLastLogin(new Date().toString());
 
             // 设置设备IP地址
-            device.setIp(CmsUtils.getClientIp(request));
+            device.setIp(cmsUtils.getClientIp(request));
 
             // 查询设备是否已绑定
             List<SysDevice> queryDevice = deviceService.query(device, new PageFilter());
@@ -232,14 +234,9 @@ public class DeviceController extends BaseController {
             serverTimeData.put("timestamp", timestamp);
             serverTimeData.put("timezone_offset", 480); // 东八区
 
-            // 获取服务器IP和端口
-            String serverIp = CmsUtils.getServerIp();
-            String portStr = environment.getProperty("server.port");
-            int port = Integer.parseInt(portStr);
             // 设置固件信息
-            firmwareData.put("url", "http://" + serverIp + ":" + port + request.getContextPath() + "/api/device/ota");
+            firmwareData.put("url", cmsUtils.getOtaAddress());
             firmwareData.put("version", "1.0.0");
-
             // 检查设备是否已绑定
             if (ObjectUtils.isEmpty(queryDevice)) {
                 // 设备未绑定，生成验证码
@@ -264,7 +261,7 @@ public class DeviceController extends BaseController {
                 // 设置WebSocket连接信息.
                 String websocketToken = "";//deviceService.generateToken(deviceId);
                 Map<String, Object> websocketData = new HashMap<>();
-                websocketData.put("url", "ws://" + serverIp + ":" + port + "/ws/xiaozhi/v1/");
+                websocketData.put("url", cmsUtils.getWebsocketAddress());
                 websocketData.put("token", websocketToken);
                 responseData.put("websocket", websocketData);
 
