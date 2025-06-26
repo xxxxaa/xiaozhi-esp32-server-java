@@ -176,6 +176,8 @@ public class AudioUtils {
 //        var outputPath = Paths.get(AUDIO_PATH, outputFileName).toString();
 
         try {
+            // 确保音频目录存在
+            Files.createDirectories(path.getParent());
             // 计算所有PCM数据的总大小
             var totalPcmSize = 0L;
             var audioChunks = new ArrayList<byte[]>();

@@ -26,7 +26,7 @@ public class MessageWindowConversation extends Conversation {
         this.chatMemory = chatMemory;
         logger.info("加载设备{}的普通消息(SysMessage.MESSAGE_TYPE_NORMAL)作为对话历史",device.getDeviceId());
         List<SysMessage> history = chatMemory.getMessages(device.getDeviceId(), SysMessage.MESSAGE_TYPE_NORMAL, maxMessages);
-        super.messages = convert(history);
+        super.messages.addAll(convert(history)) ;
     }
 
     public static class Builder {
@@ -121,6 +121,7 @@ public class MessageWindowConversation extends Conversation {
         }
     }
 
+    @Override
     public List<Message> prompt(UserMessage userMessage) {
         String roleDesc = role().getRoleDesc();
         SystemMessage systemMessage = new SystemMessage(StringUtils.hasText(roleDesc)?roleDesc:"");
