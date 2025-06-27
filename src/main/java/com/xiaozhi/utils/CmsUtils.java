@@ -27,13 +27,13 @@ public class CmsUtils {
     public static final String USER_ATTRIBUTE_KEY = "user";
 
     // 缓存服务器IP地址 - 只在第一次调用getServerIp时初始化
-    private static String serverIp = null;
-    private static boolean initializing = false;
+    private String serverIp = null;
+    private boolean initializing = false;
 
     // 新增的全局变量
-    private static String websocketAddress = null;
-    private static String otaAddress = null;
-    private static String serverAddress = null;
+    private String websocketAddress = null;
+    private String otaAddress = null;
+    private String serverAddress = null;
 
     @Value("${server.port:8091}")
     private int port;
@@ -88,17 +88,17 @@ public class CmsUtils {
     }
 
     // WebSocket地址
-    public static String getWebsocketAddress() {
+    public String getWebsocketAddress() {
         return websocketAddress;
     }
 
     // OTA地址
-    public static String getOtaAddress() {
+    public String getOtaAddress() {
         return otaAddress;
     }
 
     // Server地址
-    public static String getServerAddress() {
+    public String getServerAddress() {
         return serverAddress;
     }
 
@@ -211,7 +211,7 @@ public class CmsUtils {
     /**
      * 判断MAC地址是否合法
      */
-    public static boolean isMacAddressValid(String mac) {
+    public boolean isMacAddressValid(String mac) {
         // 正则校验格式
         if (!macPattern.matcher(mac).matches()) {
             return false;
@@ -273,7 +273,7 @@ public class CmsUtils {
      *
      * @return 合适的IP地址
      */
-    public static String getServerIp() {
+    public String getServerIp() {
         // 如果IP已经初始化，直接返回
         if (serverIp != null) {
             return serverIp;
@@ -1066,7 +1066,7 @@ public class CmsUtils {
     /**
      * 获取环境类型的详细信息，用于调试
      */
-    public static Map<String, Object> getEnvironmentDetails() {
+    public Map<String, Object> getEnvironmentDetails() {
         Map<String, Object> details = new HashMap<>();
 
         // 获取IP信息
