@@ -195,6 +195,11 @@ public class HuiBenService {
             AtomicLong frameIndexRef = new AtomicLong(0);
             Runnable frameTask = () -> {
                 try {
+                    if (scheduledTasks.get(sessionId) == null) {
+                        logger.error("{}任务已经终止", sessionId);
+
+                        return;
+                    }
                     int currentIndex = (int) frameIndexRef.get();
                     if (currentIndex >= frames.size()) {
                         // 所有帧已发送，取消任务

@@ -94,7 +94,7 @@ public class DeviceMcpService {
         DeviceMcpVision vision = new DeviceMcpVision();
 
         //VLChatController
-        String url = cmsUtils.getServerAddress() + "/vl/chat";
+        String url = CmsUtils.getServerAddress() + "/vl/chat";
         vision.setUrl(url);
         vision.setToken(chatSession.getSessionId());
 

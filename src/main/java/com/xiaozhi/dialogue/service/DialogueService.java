@@ -66,6 +66,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
     private MusicService musicService;
 
     @Resource
+    private HuiBenService huiBenService;
+
+    @Resource
     private VadService vadService;
 
     @Resource
@@ -920,6 +923,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
                 if (sessionManager.isMusicPlaying(sessionId)) {
                     musicService.stopMusic(sessionId);
+                    huiBenService.stopHuiBen(sessionId);
                     return;
                 }
                 // 清空句子队列

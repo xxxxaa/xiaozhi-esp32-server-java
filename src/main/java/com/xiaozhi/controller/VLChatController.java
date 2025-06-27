@@ -2,6 +2,8 @@ package com.xiaozhi.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaozhi.common.interceptor.UnLogin;
+import com.xiaozhi.communication.common.ChatSession;
+import com.xiaozhi.communication.common.SessionManager;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +28,10 @@ public class VLChatController extends BaseController {
     @Resource
     private ChatModelFactory chatModelFactory;
 
+    @Resource
+    private SessionManager sessionManager;
+
+
     /**
      * 视觉对话
      */
@@ -35,7 +41,18 @@ public class VLChatController extends BaseController {
                          @RequestParam String question,
                          HttpServletRequest request) {
         try {
+            //获取当前下发的session信息
+            String authorization = request.getHeader("authorization");
+            logger.info("用户authorization：{}", authorization);
+            //下发的是session
+            String sessionId = authorization.substring(7);
+            ChatSession session = sessionManager.getSession(sessionId);
+            if (session == null) {
+                return "session不存在";
+            }
+
             ChatModel chatModel = chatModelFactory.takeVisionModel();
+
             MimeType mimeType = MimeType.valueOf(file.getContentType());
             Media media = Media.builder()
                     .mimeType(mimeType)
