@@ -893,7 +893,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 } else {
                     logger.info("处理聊天文字输入: \"{}\"", inputText);
                     // 使用句子切分处理流式响应
-                    chatService.chatStreamBySentence(session, inputText, false,
+                    chatService.chatStreamBySentence(session, inputText, true,
                             (sentence, isFirst, isLast) -> {
                                 handleSentence(
                                         session,
