@@ -1,7 +1,6 @@
 package com.xiaozhi.dialogue.service;
 
 import com.xiaozhi.communication.common.ChatSession;
-import com.xiaozhi.communication.common.ConfigManager;
 import com.xiaozhi.communication.common.SessionManager;
 import com.xiaozhi.dialogue.llm.ChatService;
 import com.xiaozhi.dialogue.service.VadService.VadStatus;
@@ -12,6 +11,7 @@ import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.event.ChatSessionCloseEvent;
+import com.xiaozhi.service.SysConfigService;
 import com.xiaozhi.service.SysRoleService;
 import com.xiaozhi.utils.AudioUtils;
 import com.xiaozhi.utils.EmojiUtils;
@@ -75,7 +75,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
     private SessionManager sessionManager;
 
     @Resource
-    private ConfigManager configManager;
+    private SysConfigService configService;
     
     @Resource
     private SysRoleService roleService;
@@ -282,7 +282,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 }
                 SysRole role = roleService.selectRoleById(device.getRoleId());
                 // 获取STT和TTS配置
-                SysConfig sttConfig = role.getSttId() != null ? configManager.getConfig(role.getSttId())
+                SysConfig sttConfig = role.getSttId() != null ? configService.selectConfigById(role.getSttId())
                         : null;
 
                 // 处理VAD
@@ -490,7 +490,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         // 新增加的设备很有可能没有配置TTS，采用默认Edge需要传递null
         final SysConfig ttsConfig;
         if (role.getTtsId() != null) {
-            ttsConfig = configManager.getConfig(role.getTtsId());
+            ttsConfig = configService.selectConfigById(role.getTtsId());
         } else {
             ttsConfig = null;
         }

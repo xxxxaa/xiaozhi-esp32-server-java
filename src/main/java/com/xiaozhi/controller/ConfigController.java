@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.pagehelper.PageInfo;
 import com.xiaozhi.common.web.AjaxResult;
 import com.xiaozhi.common.web.PageFilter;
-import com.xiaozhi.communication.common.ConfigManager;
 import com.xiaozhi.dialogue.stt.factory.SttServiceFactory;
 import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
 import com.xiaozhi.entity.SysConfig;
@@ -39,9 +38,6 @@ public class ConfigController extends BaseController {
 
     @Resource
     private SysConfigService configService;
-
-    @Resource
-    private ConfigManager configManager;
 
     @Resource
     private TtsServiceFactory ttsServiceFactory;
@@ -84,7 +80,6 @@ public class ConfigController extends BaseController {
             SysConfig oldSysConfig = configService.selectConfigById(config.getConfigId());
             int rows = configService.update(config);
             if (rows > 0) {
-                configManager.getConfig(config.getConfigId());// 更新缓存
                 if (oldSysConfig != null) {
                     if ("stt".equals(oldSysConfig.getConfigType())
                             && !oldSysConfig.getApiKey().equals(config.getApiKey())) {

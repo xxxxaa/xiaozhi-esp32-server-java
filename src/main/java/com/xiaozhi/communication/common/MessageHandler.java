@@ -16,6 +16,7 @@ import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.enums.ListenState;
+import com.xiaozhi.service.SysConfigService;
 import com.xiaozhi.service.SysDeviceService;
 import com.xiaozhi.service.SysRoleService;
 import jakarta.annotation.Resource;
@@ -52,7 +53,7 @@ public class MessageHandler {
     private SessionManager sessionManager;
 
     @Resource
-    private ConfigManager configManager;
+    private SysConfigService configService;
 
     @Resource
     private DialogueService dialogueService;
@@ -111,13 +112,13 @@ public class MessageHandler {
                     SysRole role = roleService.selectRoleById(device.getRoleId());
 
                     if (role.getSttId() != null) {
-                        SysConfig sttConfig = configManager.getConfig(role.getSttId());
+                        SysConfig sttConfig = configService.selectConfigById(role.getSttId());
                         if (sttConfig != null) {
                             sttFactory.getSttService(sttConfig);// 提前初始化，加速后续使用
                         }
                     }
                     if (role.getTtsId() != null) {
-                        SysConfig ttsConfig = configManager.getConfig(role.getTtsId());
+                        SysConfig ttsConfig = configService.selectConfigById(role.getTtsId());
                         if (ttsConfig != null) {
                             ttsFactory.getTtsService(ttsConfig, role.getVoiceName());// 提前初始化，加速后续使用
                         }

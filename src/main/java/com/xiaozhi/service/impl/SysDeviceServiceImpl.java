@@ -3,7 +3,6 @@ package com.xiaozhi.service.impl;
 import com.github.pagehelper.PageHelper;
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.communication.common.ChatSession;
-import com.xiaozhi.communication.common.ConfigManager;
 import com.xiaozhi.communication.common.SessionManager;
 import com.xiaozhi.dao.ConfigMapper;
 import com.xiaozhi.dao.DeviceMapper;
@@ -57,9 +56,6 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     @Resource
     private SessionManager sessionManager;
 
-    @Resource
-    private ConfigManager configManager;
-
     /**
      * 添加设备
      *
@@ -81,18 +77,26 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
         queryRole.setUserId(device.getUserId());
         List<SysRole> roles = roleMapper.query(queryRole);
 
-        if (roles.size() > 0) {
-            // 优先绑定默认角色，否则随便绑定一个
-            for (SysRole role: roles) {
-                device.setRoleId(role.getRoleId());
-                if (role.getIsDefault().equals("1")) {
-                    break;
-                }
-            }
-            return deviceMapper.add(device);
-        } else {
+        if (roles.isEmpty()) {
             throw new NotFoundException("没有配置角色");
         }
+
+        SysRole selectedRole = null;
+
+        // 优先绑定默认角色
+        for (SysRole role: roles) {
+            if (("1").equals(role.getIsDefault())) {
+                selectedRole = role;
+                break;
+            }
+        }
+        if  (selectedRole == null) {
+            selectedRole = roles.getFirst();
+        }
+
+        device.setRoleId(selectedRole.getRoleId());
+        return deviceMapper.add(device);
+
     }
 
     /**

@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
  */
 public class CozeChatModel implements ChatModel {
 
-    private final TokenAuth authCli;
     private final CozeAPI coze;
     private final String botId;
 
@@ -46,7 +45,7 @@ public class CozeChatModel implements ChatModel {
     public CozeChatModel(String apiSecret, String model) {
 
         // 使用apiSecret作为access_token
-        this.authCli = new TokenAuth(apiSecret);
+        TokenAuth authCli = new TokenAuth(apiSecret);
 
         // 使用endpoint或默认的Coze API地址
         String baseUrl = "https://api.coze.cn";

@@ -10,6 +10,7 @@ import com.xiaozhi.service.SysConfigService;
 import jakarta.annotation.Resource;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +63,10 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
      */
     @Override
     @Transactional(transactionManager = "transactionManager")
-    @CacheEvict(value = CACHE_NAME, key = "#config.configId")
+    @Caching(evict = {
+        @CacheEvict(value = CACHE_NAME, key = "#config.configId"),
+        @CacheEvict(value = CACHE_NAME, key = "#config.modelType", condition = "#config.modelType != null")
+    })
     public int update(SysConfig config) {
         // 如果当前配置被设置为默认，则将同类型同用户的其他配置设置为非默认
         if (config.getIsDefault() != null && config.getIsDefault().equals("1")) {
@@ -73,7 +77,6 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
             sttServiceFactory.removeCache(config);
             ttsServiceFactory.removeCache(config);
         }
-        // TODO 还需处理缓存的默认视觉模型或者意图识别模型等
         return rows;
     }
 
@@ -122,6 +125,30 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
     @Cacheable(value = CACHE_NAME, key = "#configId", unless = "#result == null")
     public SysConfig selectConfigById(Integer configId) {
         return configMapper.selectConfigById(configId);
+    }
+
+    /**
+     * 查询默认配置
+     *
+     * @param modelType
+     * @return 配置
+     */
+    @Override
+    @Cacheable(value = CACHE_NAME, key ="#modelType", unless = "#result == null")
+    public SysConfig selectModelType(String modelType) {
+        SysConfig queryConfig = new SysConfig();
+        queryConfig.setModelType(modelType);
+
+        List<SysConfig> modelConfigs = configMapper.query(queryConfig);
+
+        for (SysConfig config : modelConfigs) {
+            if ("1".equals(config.getIsDefault())) {
+                return config;  // 找到默认配置就返回
+            }
+        }
+
+        // 没有默认配置，返回第一个即可
+        return modelConfigs.isEmpty() ? null : modelConfigs.getFirst();
     }
 
 }

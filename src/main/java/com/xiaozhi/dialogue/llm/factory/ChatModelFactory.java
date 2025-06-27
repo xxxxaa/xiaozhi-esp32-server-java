@@ -73,8 +73,20 @@ public class ChatModelFactory {
     }
 
     public ChatModel takeVisionModel() {
-        SysConfig config = configService.query(new SysConfig().setConfigType("llm").setModelType("vision"), null).get(0);
+        SysConfig config = configService.selectModelType("vision");
         Assert.notNull(config, "未配置多模态模型");
+        return createChatModel(config, new SysRole());
+    }
+
+    public ChatModel takeIntentModel() {
+        SysConfig config = configService.selectModelType("intent");
+        Assert.notNull(config, "未配置意图识别模型");
+        return createChatModel(config, new SysRole());
+    }
+
+    public ChatModel takeEmbeddingModel() {
+        SysConfig config = configService.selectModelType("embedding");
+        Assert.notNull(config, "未配置向量模型");
         return createChatModel(config, new SysRole());
     }
 

@@ -44,4 +44,9 @@ public interface SysConfigService {
    * @return
    */
   SysConfig selectConfigById(Integer configId);
+
+  /**
+   * 查询默认配置
+   */
+  SysConfig selectModelType(String modelType);
 }
