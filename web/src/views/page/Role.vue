@@ -21,6 +21,10 @@
             <a-tab-pane key="1" tab="角色列表">
               <a-table :columns="columns" :dataSource="roleItems" :loading="loading" :pagination="pagination"
                 rowKey="roleId" :scroll="{ x: 1000 }" size="middle">
+                <!-- 头像列 -->
+                <template slot="avatar" slot-scope="text, record">
+                  <a-avatar :src="getAvatarUrl(record.avatar)" icon="user" :size="40" />
+                </template>
                 <!-- 角色描述列 -->
                 <template slot="roleDesc" slot-scope="text, record">
                   <a-tooltip :title="text" :mouseEnterDelay="0.5" placement="leftTop">
@@ -85,7 +89,53 @@
                 style="padding: 10px 24px">
                 <!-- 基本信息区域 -->
                 <a-row :gutter="20">
-                  <a-col :xl="8" :lg="12" :xs="24">
+                  <a-col :xl="6" :lg="12" :xs="24">
+                    <a-form-item label="角色头像">
+                      <div class="avatar-uploader-wrapper">
+                        <!-- 整个区域都可点击的上传组件 -->
+                        <a-upload
+                          name="file"
+                          :show-upload-list="false"
+                          :before-upload="beforeAvatarUpload"
+                          accept=".jpg,.jpeg,.png,.gif"
+                          class="avatar-uploader"
+                        >
+                          <div class="avatar-content">
+                            <!-- 有头像时显示头像 -->
+                            <!-- <img v-if="avatarUrl" :src="getAvatarUrl(avatarUrl)" alt="角色头像" class="avatar-image" /> -->
+                            <a-avatar v-if="avatarUrl" :size="128" :src="getAvatarUrl(avatarUrl)" icon="user" />
+                            <!-- 无头像时显示上传图标 -->
+                            <div v-else class="avatar-placeholder">
+                              <a-icon type="user" />
+                              <p>点击上传</p>
+                            </div>
+                            
+                            <!-- 悬浮提示层，整个区域都会显示 -->
+                            <div class="avatar-hover-mask">
+                              <a-icon :type="avatarLoading ? 'loading' : 'camera'" />
+                              <p>{{ avatarUrl ? '更换头像' : '上传头像' }}</p>
+                            </div>
+                          </div>
+                        </a-upload>
+                        
+                        <!-- 如果有头像，显示删除按钮 -->
+                        <a-button 
+                          v-if="avatarUrl" 
+                          type="danger" 
+                          size="small"
+                          @click.stop="removeAvatar"
+                          class="avatar-remove-btn"
+                        >
+                          <a-icon type="delete" /> 移除头像
+                        </a-button>
+                        
+                        <div class="avatar-tip">
+                          支持JPG、PNG、GIF格式，不超过2MB
+                        </div>
+                      </div>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :xl="6" :lg="12" :xs="24">
                     <a-form-item label="角色名称">
                       <a-input v-decorator="[
                         'roleName',
@@ -458,6 +508,7 @@ const PROVIDER = {
   DIFY: 'dify',
   OTHER: 'other'
 };
+import { getResourceUrl } from '@/services/axios';
 
 export default {
   components: { AudioPlayer },
@@ -480,6 +531,13 @@ export default {
       
       // 表格列定义
       columns: [
+        {
+          title: '头像',
+          dataIndex: 'avatarUrl',
+          width: 80,
+          align: 'center',
+          scopedSlots: { customRender: 'avatar' },
+        },
         {
           title: '角色名称',
           dataIndex: 'roleName',
@@ -591,6 +649,11 @@ export default {
       defaultRole: null,
       defaultModelConfig: null,
       defaultSttConfig: null,
+
+      // 头像相关
+      avatarUrl: '',
+      avatarLoading: false,
+      avatarFile: null,
     };
   },
   
@@ -1226,6 +1289,7 @@ export default {
           // 添加语音提供商信息
           const formData = {
             ...values,
+            avatar: this.avatarUrl,
             // 将开关的布尔值转换为数字（0或1）
             isDefault: values.isDefault ? 1 : 0
           };
@@ -1274,6 +1338,8 @@ export default {
     edit(record) {
       this.editingRoleId = record.roleId;
       this.editingRoleDesc = record.roleDesc;
+      this.avatarUrl = record.avatar || ''; // 设置当前头像
+      this.avatarFile = null; // 清空文件对象，因为是编辑现有头像
       // 切换到创建角色标签页
       this.activeTabKey = '2';
 
@@ -1404,6 +1470,8 @@ export default {
       this.editingRoleId = null;
       this.promptEditorMode = 'custom';
       this.audioUrl = '';
+      this.avatarUrl = ''; // 重置头像
+      this.avatarFile = null; // 清空文件对象
 
       // 应用默认值
       this.applyDefaultValues();
@@ -1751,7 +1819,88 @@ export default {
       if (!items || !items.length) return "";
       const item = items.find(item => item[idField] === id);
       return item ? item[nameField] : "";
-    }
+    },
+
+    getAvatarUrl(avatar) {
+      return getResourceUrl(avatar);
+    },
+
+    // 头像上传前检查
+    beforeAvatarUpload(file) {
+      const isImage = file.type.startsWith('image/');
+      const isLt2M = file.size / 1024 / 1024 < 2;
+
+      if (!isImage) {
+        this.$message.error('只能上传图片文件!');
+        return false;
+      }
+      if (!isLt2M) {
+        this.$message.error('图片大小不能超过2MB!');
+        return false;
+      }
+
+      // 创建预览URL
+      this.avatarFile = file;
+
+      // 立即上传图片
+      this.uploadAvatarFile(file)
+        .then(url => {
+          this.avatarUrl = url;
+          this.avatarLoading = false;
+        })
+        .catch(error => {
+          this.$message.error('头像上传失败: ' + error);
+          this.avatarLoading = false;
+        });
+        
+        return false; // 阻止自动上传，我们会在提交表单时手动上传
+    },
+
+    // 上传头像文件并获取URL
+    uploadAvatarFile(file) {
+      return new Promise((resolve, reject) => {
+        // 创建FormData对象
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'avatar'); // 指定上传类型为头像
+
+        // 使用XMLHttpRequest发送请求，确保正确设置content-type
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', api.upload, true);
+
+        // 设置请求完成回调
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (response.code === 200) {
+                resolve(response.url);
+              } else {
+                reject(new Error(response.message || '上传失败'));
+              }
+            } catch (e) {
+              reject(new Error('解析响应失败'));
+            }
+          } else {
+            reject(new Error('上传失败，状态码: ' + xhr.status));
+          }
+        };
+
+        // 设置错误回调
+        xhr.onerror = function () {
+          reject(new Error('网络错误'));
+        };
+
+        // 发送请求
+        xhr.send(formData);
+      });
+    },
+
+    // 移除头像
+    removeAvatar() {
+      this.avatarUrl = '';
+      this.avatarFile = null;
+    },
   }
 }
 </script>
@@ -1785,5 +1934,101 @@ export default {
   margin: 16px 0;
   font-weight: bold;
   color: rgba(0, 0, 0, 0.85);
+}
+
+/* 头像上传样式 */
+.avatar-uploader-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 上传组件样式 */
+.avatar-uploader {
+  cursor: pointer;
+}
+
+/* 上传内容区域 */
+.avatar-content {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  border-radius: 64px;
+  background-color: #fafafa;
+  border: 1px dashed #d9d9d9;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.avatar-content:hover {
+  border-color: #1890ff;
+}
+
+/* 头像图片 */
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 占位符 */
+.avatar-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #999;
+}
+
+.avatar-placeholder .anticon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.avatar-placeholder p {
+  margin: 0;
+}
+
+/* 悬浮遮罩 - 整个区域都显示 */
+.avatar-hover-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.avatar-content:hover .avatar-hover-mask {
+  opacity: 1;
+}
+
+.avatar-hover-mask .anticon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.avatar-hover-mask p {
+  margin: 0;
+}
+
+/* 删除按钮 */
+.avatar-remove-btn {
+  margin-top: 8px;
+}
+
+/* 提示文字 */
+.avatar-tip {
+  margin-top: 8px;
+  color: #8c8c8c;
+  font-size: 12px;
 }
 </style>

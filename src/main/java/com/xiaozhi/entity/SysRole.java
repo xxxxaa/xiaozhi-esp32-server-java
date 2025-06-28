@@ -12,6 +12,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class SysRole extends Base {
     private Integer roleId;
 
+    private String avatar;
+
     private String roleName;
 
     private String roleDesc;
@@ -45,14 +47,6 @@ public class SysRole extends Base {
 
     private Integer totalDevice;
 
-    public Integer getTtsId() {
-        return ttsId;
-    }
-
-    public SysRole setTtsId(Integer ttsId) {
-        this.ttsId = ttsId;
-        return this;
-    }
 
     public Integer getModelId() {
         return modelId;
@@ -78,6 +72,15 @@ public class SysRole extends Base {
 
     public SysRole setSttId(Integer sttId) {
         this.sttId = sttId;
+        return this;
+    }
+
+    public Integer getTtsId() {
+        return ttsId;
+    }
+
+    public SysRole setTtsId(Integer ttsId) {
+        this.ttsId = ttsId;
         return this;
     }
 
@@ -159,6 +162,15 @@ public class SysRole extends Base {
 
     public SysRole setRoleId(Integer roleId) {
         this.roleId = roleId;
+        return this;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public SysRole setAvatar(String avatar) {
+        this.avatar = avatar;
         return this;
     }
 

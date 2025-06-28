@@ -39,7 +39,6 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             "/api/device/ota",
             "/audio/",
             "/uploads/",
-            "/avatar/",
             "/ws/");
 
     @Override

@@ -63,7 +63,7 @@ public class FileUploadController {
             // 如果是本地URL，需要调整格式
             if (!isCosUrl) {
                 // 将本地路径转换为访问URL格式
-                String accessUrl = relativePath + "/" + fileName;
+                String accessUrl = "uploads/" + relativePath + "/" + fileName;
                 result.put("url", accessUrl);
             }
 

@@ -35,7 +35,6 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
                         "/api/device/ota",
                         "/audio/**",
                         "/uploads/**",
-                        "/avatar/**",
                         "/ws/**"
                 );
     }
@@ -57,9 +56,16 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
             // 音频文件存储在项目根目录下的audio文件夹中
             String audioPath = "file:" + basePath + File.separator + "audio" + File.separator;
 
+            // 上传文件存储在项目根目录下的uploads文件夹中
+            String uploadsPath = "file:" + basePath + File.separator + "uploads" + File.separator;
+
             // 配置资源映射
             registry.addResourceHandler("/audio/**")
                     .addResourceLocations(audioPath);
+
+            // 为上传文件添加资源映射
+            registry.addResourceHandler("/uploads/**")
+                    .addResourceLocations(uploadsPath);
 
             super.addResourceHandlers(registry);
         } catch (Exception e) {
