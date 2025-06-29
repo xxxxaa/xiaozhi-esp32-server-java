@@ -96,6 +96,7 @@ CREATE TABLE `xiaozhi`.`sys_role` (
   `roleId` int unsigned NOT NULL AUTO_INCREMENT COMMENT '角色ID，主键',
   `roleName` varchar(100) NOT NULL COMMENT '角色名称',
   `roleDesc` TEXT DEFAULT NULL COMMENT '角色描述',
+  `avatar` varchar(255) DEFAULT NULL COMMENT '角色头像',
   `ttsId` int DEFAULT NULL COMMENT 'TTS服务ID',
   `modelId` int unsigned DEFAULT NULL COMMENT '模型ID',
   `sttId` int unsigned DEFAULT NULL COMMENT 'STT服务ID',
