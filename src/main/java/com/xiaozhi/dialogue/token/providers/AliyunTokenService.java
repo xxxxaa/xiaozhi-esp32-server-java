@@ -59,29 +59,18 @@ public class AliyunTokenService implements TokenService {
     }
 
     @Override
-    public String getToken() {
-        // 检查缓存是否存在且有效
-        if (tokenCache != null) {
-            // 更新最后使用时间
-            tokenCache.updateLastUsedTime();
-            
-            // 如果token已过期，清除缓存
-            if (tokenCache.isExpired()) {
-                clearTokenCache();
-            }
-            // 如果需要刷新（剩余1小时），异步刷新
-            else if (tokenCache.needsRefresh()) {
-                refreshTokenAsync();
-                return tokenCache.getToken(); // 返回当前还有效的token
-            }
-            // 如果token仍然有效，直接返回
-            else if (isTokenValid()) {
-                return tokenCache.getToken();
-            }
-        }
+    public TokenCache getTokenCache() {
+        return tokenCache;
+    }
 
-        // 缓存无效或不存在，获取新token
-        return refreshToken();
+    @Override
+    public void setTokenCache(TokenCache tokenCache) {
+        this.tokenCache = tokenCache;
+    }
+
+    @Override
+    public Integer getConfigId() {
+        return configId;
     }
 
     @Override
@@ -135,40 +124,4 @@ public class AliyunTokenService implements TokenService {
             refreshLock.unlock();
         }
     }
-
-    @Override
-    public boolean isTokenValid() {
-        if (tokenCache == null) {
-            return false;
-        }
-        
-        // 检查token是否过期
-        return !tokenCache.isExpired();
-    }
-
-    @Override
-    public void clearTokenCache() {
-        tokenCache = null;
-    }
-
-    /**
-     * 使用虚拟线程异步刷新token
-     */
-    private void refreshTokenAsync() {
-        Thread.startVirtualThread(() -> {
-            try {
-                refreshToken();
-            } catch (Exception e) {
-                logger.error("虚拟线程异步刷新Token失败，configId: {}: {}", configId, e.getMessage(), e);
-            }
-        });
-    }
-
-    /**
-     * 检查是否需要清除缓存（超过24小时未使用）
-     */
-    public boolean needsCacheCleanup() {
-        return tokenCache != null && tokenCache.needsCacheCleanup();
-    }
-
 }
