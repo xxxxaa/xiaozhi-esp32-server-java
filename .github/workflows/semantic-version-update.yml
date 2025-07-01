@@ -124,6 +124,9 @@ jobs:
               CHANGELOG_CONTENT="${CHANGELOG_CONTENT}### 其他变更\n${OTHERS}\n\n"
             fi
             
+            # 先拉取远程的notes
+            git fetch origin refs/notes/*:refs/notes/*
+            
             # 使用Git Notes记录版本信息和changelog
             git notes add -m "Version: ${NEW_VERSION}\n\nChangelog:\n${CHANGELOG_CONTENT}" $CURRENT_COMMIT
             
@@ -164,6 +167,7 @@ jobs:
             git add src/main/resources/application.properties
           fi
           git commit --amend --no-edit          
+          
           # 推送notes和文件更改
           git push origin refs/notes/*
           git push --force
