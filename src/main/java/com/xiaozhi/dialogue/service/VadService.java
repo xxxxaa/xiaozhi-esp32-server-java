@@ -389,15 +389,15 @@ public class VadService {
                 }
 
                 // 每10帧输出一次VAD概率
-                 if (state.getFrameCounter() % LOG_FRAME_INTERVAL == 0) {
+                /* if (state.getFrameCounter() % LOG_FRAME_INTERVAL == 0) {
                      // 预先格式化浮点数
                      String probStr = String.format("%.4f", speechProb);
                      String energyStr = String.format("%.6f", energy);
                      String thresholdStr = String.format("%.4f", speechThreshold);
-                    
+
                      logger.info("VAD状态 - SessionId: {}, 帧: {}, 概率: {}, 能量: {}, 阈值: {}",
                              sessionId, state.getFrameCounter(), probStr, energyStr, thresholdStr);
-                 }
+                } */
 
                 // 判断语音状态
                 boolean hasEnergy = energy > state.getAvgEnergy() * 1.5 && energy > energyThreshold;
