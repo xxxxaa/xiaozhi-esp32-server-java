@@ -1,4 +1,10 @@
 # 变更日志
+## [2.8.16] - 2025-07-02
+### 其他变更
+- refactor:vad重构，去除agc
+- refactor:重构音频发送逻辑，按照实际帧位置发送
+
+# 变更日志
 ## [2.8.15] - 2025-07-01
 
 ### 修复
@@ -9,75 +15,6 @@
 ### 其他变更
 - refactor:优化token缓存，减少冗余代码
 - update:阿里巴巴sdk日志级别改为warn
-
-## [2.8.14] - 2025-06-27
-
-## [2.8.13] - 2025-06-27
-
-### 其他变更
-- chore: update version to 2.8.13 [skip ci]
-
-## [2.8.12] - 2025-06-26
-
-### 其他变更
-- chore: update version to 2.8.12 [skip ci]
-
-## [2.8.11] - 2025-06-26
-
-### 其他变更
-- chore: update version to 2.8.11 [skip ci]
-
-## [2.8.10] - 2025-06-25
-
-### 其他变更
-- chore: update version to 2.8.10 [skip ci]
-
-## [2.8.9] - 2025-06-25
-
-### 其他变更
-- chore: update version to 2.8.9 [skip ci]
-
-## [2.8.8] - 2025-06-24
-
-### 其他变更
-- chore: update version to 2.8.8 [skip ci]
-
-## [2.8.7] - 2025-06-20
-
-### 其他变更
-- chore: update version to 2.8.7 [skip ci]
-- docs: update changelog for v2.8.6 [skip ci]
-- chore: update version to 2.8.6 [skip ci]
-
-## [2.8.6] - 2025-06-19
-
-### 其他变更
-- chore: update version to 2.8.6 [skip ci]
-
-## [2.8.5] - 2025-06-18
-
-### 其他变更
-- chore: update version to 2.8.5 [skip ci]
-
-## [2.8.4] - 2025-06-17
-
-### 其他变更
-- chore: update version to 2.8.4 [skip ci]
-
-## [2.8.3] - 2025-06-17
-
-### 其他变更
-- chore: update version to 2.8.3 [skip ci]
-
-## [2.8.2] - 2025-06-16
-
-### 其他变更
-- chore: update version to 2.8.2 [skip ci]
-
-## [2.8.1] - 2025-06-15
-
-### 其他变更
-- chore: update version to 2.8.1 [skip ci]
 
 ## [2.8.0] - 2025-06-15
 
@@ -126,16 +63,6 @@
 - docs: update changelog for v2.7.66 [skip ci]
 - chore: update version to 2.7.66 [skip ci]
 
-## [2.7.66] - 2025-06-14
-
-### 其他变更
-- chore: update version to 2.7.66 [skip ci]
-
-## [2.7.65] - 2025-06-12
-
-### 其他变更
-- chore: update version to 2.7.65 [skip ci]
-
 ## [2.7.64] - 2025-06-12
 
 ### 修复
@@ -146,21 +73,6 @@
 - chore: update version to 2.7.64 [skip ci]
 - docs: update changelog for v2.7.63 [skip ci]
 - chore: update version to 2.7.63 [skip ci]
-
-## [2.7.63] - 2025-06-12
-
-### 其他变更
-- chore: update version to 2.7.63 [skip ci]
-
-## [2.7.62] - 2025-06-11
-
-### 其他变更
-- chore: update version to 2.7.62 [skip ci]
-
-## [2.7.61] - 2025-06-11
-
-### 其他变更
-- chore: update version to 2.7.61 [skip ci]
 
 ## [2.7.60] - 2025-06-11
 
@@ -194,14 +106,4 @@
 - refactor(tts): add default implements
 - docs: update changelog for v2.7.58 [skip ci]
 - chore: update version to 2.7.58 [skip ci]
-
-## [2.7.58] - 2025-06-09
-
-### 其他变更
-- chore: update version to 2.7.58 [skip ci]
-
-## [2.7.57] - 2025-06-09
-
-
-## [2.7.56] - 2025-06-09
 
