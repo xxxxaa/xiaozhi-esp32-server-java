@@ -5,75 +5,55 @@ import com.xiaozhi.dialogue.vad.impl.SileroVadModel;
 import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.service.SysRoleService;
-import com.xiaozhi.utils.AutomaticGainControl;
 import com.xiaozhi.utils.OpusProcessor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 语音活动检测服务
+ */
 @Service
 public class VadService {
     private static final Logger logger = LoggerFactory.getLogger(VadService.class);
-
+    
+    // 会话状态
+    private final ConcurrentHashMap<String, VadState> states = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> locks = new ConcurrentHashMap<>();
+    
+    @Value("${vad.prebuffer.ms:200}")
+    private int preBufferMs;
+    
+    // 每10帧输出一次VAD状态
+    private static final int LOG_FRAME_INTERVAL = 10;
+    
+    // 最小PCM数据长度 (16kHz, 16bit, mono, 30ms = 960 bytes)
+    private static final int MIN_PCM_LENGTH = 960;
+    
+    // VAD模型的样本大小 (16kHz, 512 samples)
+    private static final int VAD_SAMPLE_SIZE = 512;
+    
     @Autowired
     private OpusProcessor opusProcessor;
 
     @Autowired
     private SileroVadModel vadModel;
-
-    @Autowired
-    private SessionManager sessionManager;
-
+    
     @Autowired
     private SysRoleService roleService;
-
+    
     @Autowired
-    private AutomaticGainControl agc;
-
-    // 语音检测前缓冲时长(毫秒)
-    private int preBufferMs = 100;
-
-    // 会话状态和锁
-    private final ConcurrentHashMap<String, VadState> states = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Object> locks = new ConcurrentHashMap<>();
-
-    // 最小PCM长度阈值(约100ms的16kHz 16bit音频)
-    private static final int MIN_PCM_LENGTH = 1600;
-
-    // VAD模型所需的样本大小
-    private static final int VAD_SAMPLE_SIZE = 512;
-
-    @PostConstruct
-    public void init() {
-        try {
-            if (vadModel != null) {
-                logger.info("VAD服务初始化成功");
-            } else {
-                logger.error("SileroVadModel未注入，VAD功能不可用");
-            }
-            
-            if (agc != null) {
-                logger.info("AGC服务初始化成功");
-            } else {
-                logger.warn("AGC服务未注入，将跳过自动增益控制");
-            }
-        } catch (Exception e) {
-            logger.error("初始化VAD服务失败", e);
-        }
-    }
+    private SessionManager sessionManager;
 
     @PreDestroy
     public void cleanup() {
@@ -95,7 +75,7 @@ public class VadService {
         private float avgEnergy = 0;
         private final List<Float> probs = new ArrayList<>();
         
-        // 添加原始VAD概率列表
+        // 原始VAD概率列表
         private final List<Float> originalProbs = new ArrayList<>();
         
         // 帧计数器（用于每10帧输出一次）
@@ -113,11 +93,6 @@ public class VadService {
         // 短帧累积
         private final ByteArrayOutputStream pcmAccumulator = new ByteArrayOutputStream();
         private long lastAccumTime = 0;
-
-        // AGC相关统计
-        private String detectedDeviceType = "normal";
-        private int lowQualityFrameCount = 0;
-        private int totalFrameCount = 0;
 
         public VadState() {
             this.maxPreBufferSize = preBufferMs * 32; // 16kHz, 16bit, mono = 32 bytes/ms
@@ -165,17 +140,6 @@ public class VadService {
             if (probs.size() > 10) {
                 probs.remove(0);
             }
-            
-            // 更新设备质量统计
-            totalFrameCount++;
-            if (prob < 0.3f) {
-                lowQualityFrameCount++;
-            }
-            
-            // 每50帧重新评估设备类型
-            if (totalFrameCount % 50 == 0) {
-                updateDeviceType();
-            }
         }
         
         // 添加原始VAD概率
@@ -205,37 +169,11 @@ public class VadService {
             return frameCounter;
         }
 
-        public String getDetectedDeviceType() {
-            return detectedDeviceType;
-        }
-
-        private void updateDeviceType() {
-            if (totalFrameCount < 10) {
-                return; // 样本不足
-            }
-            
-            float lowQualityRatio = (float) lowQualityFrameCount / totalFrameCount;
-            float avgProb = 0;
-            for (Float prob : probs) {
-                avgProb += prob;
-            }
-            avgProb /= probs.size();
-            
-            if (lowQualityRatio > 0.7f || avgProb < 0.2f) {
-                detectedDeviceType = "low_quality_mic";
-            } else if (lowQualityRatio < 0.2f && avgProb > 0.6f) {
-                detectedDeviceType = "high_quality_mic";
-            } else if (avgEnergy < 0.001f) {
-                detectedDeviceType = "weak_signal";
-            } else {
-                detectedDeviceType = "normal";
-            }
-        }
-
         // 预缓冲区管理
         public void addToPreBuffer(byte[] data) {
-            if (speaking)
+            if (speaking) {
                 return;
+            }
 
             preBuffer.add(data.clone());
             preBufferSize += data.length;
@@ -247,8 +185,9 @@ public class VadService {
         }
 
         public byte[] drainPreBuffer() {
-            if (preBuffer.isEmpty())
+            if (preBuffer.isEmpty()) {
                 return new byte[0];
+            }
 
             byte[] result = new byte[preBufferSize];
             int offset = 0;
@@ -324,11 +263,6 @@ public class VadService {
             opusData.clear();
             pcmAccumulator.reset();
             lastAccumTime = System.currentTimeMillis();
-            
-            // 重置AGC相关统计
-            detectedDeviceType = "normal";
-            lowQualityFrameCount = 0;
-            totalFrameCount = 0;
         }
     }
 
@@ -344,11 +278,6 @@ public class VadService {
                 states.put(sessionId, state);
             } else {
                 state.reset();
-            }
-            
-            // 重置AGC状态
-            if (agc != null) {
-                agc.resetSession(sessionId);
             }
             
             logger.info("VAD会话已初始化: {}", sessionId);
@@ -378,6 +307,7 @@ public class VadService {
     public VadResult processAudio(String sessionId, byte[] opusData) {
 
         if (!isSessionInitialized(sessionId)) {
+            logger.warn("会话未初始化: {}", sessionId);
             return null;
         }
 
@@ -386,7 +316,7 @@ public class VadService {
         // 获取设备配置
         SysDevice device = sessionManager.getDeviceConfig(sessionId);
         // 添加空值检查，使用默认值
-        float speechThreshold = 0.3f;
+        float speechThreshold = 0.4f;
         float silenceThreshold = 0.2f;
         float energyThreshold = 0.001f;
         int silenceTimeoutMs = 1200;
@@ -419,30 +349,20 @@ public class VadService {
                     return new VadResult(VadStatus.ERROR, null);
                 }
 
-                // 分析原始音频
-                float[] originalSamples = bytesToFloats(pcmData);
-                float originalEnergy = calcEnergy(originalSamples);
+                // 分析音频
+                float[] samples = bytesToFloats(pcmData);
+                float energy = calcEnergy(samples);
+                state.updateEnergy(energy);
                 
-                // 获取原始VAD概率
-                float originalSpeechProb = detectSpeech(originalSamples);
-                state.addOriginalProb(originalSpeechProb);
-
-                // ========== 应用 AGC ==========
-                String deviceType = state.getDetectedDeviceType();
-                byte[] originalPcm = pcmData.clone(); // 保留原始数据用于对比
+                // 获取VAD概率并乘以10（部分设备收音效果不好，这是一个奇怪但是很有效的解决方法。。。）
+                float speechProb = detectSpeech(samples) * 10;
                 
-                // 检查AGC是否可用
-                if (agc != null) {
-                    pcmData = agc.process(sessionId, pcmData, deviceType);
-                }
+                // 限制概率范围在[0,1]
+                speechProb = Math.min(1.0f, speechProb);
                 
-                // 获取AGC统计信息
-                AutomaticGainControl.AgcStats agcStats = agc != null ? agc.getStats(sessionId) : new AutomaticGainControl.AgcStats();
+                // 添加到原始概率列表
+                state.addOriginalProb(speechProb);
                 
-                // 根据AGC增益动态调整VAD阈值
-                float adjustedSpeechThreshold = adjustVadThreshold(speechThreshold, agcStats);
-                float adjustedSilenceThreshold = adjustVadThreshold(silenceThreshold, agcStats);
-
                 // 添加到预缓冲区
                 state.addToPreBuffer(pcmData);
 
@@ -461,21 +381,28 @@ public class VadService {
                         return new VadResult(VadStatus.NO_SPEECH, null);
                     }
                     
+                    // 重新分析累积后的音频
+                    samples = bytesToFloats(pcmData);
+                    energy = calcEnergy(samples);
+                    speechProb = detectSpeech(samples) * 10;
+                    speechProb = Math.min(1.0f, speechProb);
                 }
 
-                // 分析AGC处理后的音频
-                float[] samples = bytesToFloats(pcmData);
-                float energy = calcEnergy(samples);
-                state.updateEnergy(energy);
-
-                // VAD推断（AGC后）
-                float speechProb = detectSpeech(samples);
-                state.addProb(speechProb);
+                // 每10帧输出一次VAD概率
+                 if (state.getFrameCounter() % LOG_FRAME_INTERVAL == 0) {
+                     // 预先格式化浮点数
+                     String probStr = String.format("%.4f", speechProb);
+                     String energyStr = String.format("%.6f", energy);
+                     String thresholdStr = String.format("%.4f", speechThreshold);
+                    
+                     logger.info("VAD状态 - SessionId: {}, 帧: {}, 概率: {}, 能量: {}, 阈值: {}",
+                             sessionId, state.getFrameCounter(), probStr, energyStr, thresholdStr);
+                 }
 
                 // 判断语音状态
                 boolean hasEnergy = energy > state.getAvgEnergy() * 1.5 && energy > energyThreshold;
-                boolean isSpeech = speechProb > adjustedSpeechThreshold && hasEnergy;
-                boolean isSilence = speechProb < adjustedSilenceThreshold;
+                boolean isSpeech = speechProb > speechThreshold && hasEnergy;
+                boolean isSilence = speechProb < silenceThreshold;
                 state.updateSilence(isSilence);
 
                 // 处理状态转换
@@ -484,14 +411,13 @@ public class VadService {
                     state.pcmData.clear();
                     state.setSpeaking(true);
                     
-                    // 记录AGC和设备信息
-                    String agcInfo = "";
-                    agcInfo = String.format(", AGC增益: %.2f, 设备类型: %s", 
-                                            agcStats.gain, state.getDetectedDeviceType());
-                    
-                    logger.info("检测到语音开始 - SessionId: {}, 概率: {}, 原始概率: {}, 能量: {}, " +
-                              "调整后阈值: {}{}", 
-                              sessionId, speechProb, originalSpeechProb, energy, adjustedSpeechThreshold, agcInfo);
+                    // 预先格式化浮点数
+                    String probStr = String.format("%.4f", speechProb);
+                    String energyStr = String.format("%.6f", energy);
+                    String thresholdStr = String.format("%.4f", speechThreshold);
+
+                    logger.info("检测到语音开始 - SessionId: {}, 概率: {}, 能量: {}, 阈值: {}", 
+                            sessionId, probStr, energyStr, thresholdStr);
 
                     // 获取预缓冲数据
                     byte[] preBufferData = state.drainPreBuffer();
@@ -539,46 +465,11 @@ public class VadService {
     }
 
     /**
-     * 根据AGC统计信息调整VAD阈值
-     */
-    private float adjustVadThreshold(float baseThreshold, AutomaticGainControl.AgcStats agcStats) {
-        float gainFactor = agcStats.gain;
-        float snr = agcStats.snr;
-        
-        // 基于增益的调整
-        float gainAdjustment = 1.0f;
-        if (gainFactor > 10.0f) {
-            // 非常高的增益，大幅降低阈值
-            gainAdjustment = 0.5f;
-        } else if (gainFactor > 5.0f) {
-            // 高增益，降低阈值
-            gainAdjustment = 0.7f;
-        } else if (gainFactor > 2.0f) {
-            // 中等增益，略微降低阈值
-            gainAdjustment = 0.85f;
-        }
-        
-        // 基于信噪比的调整
-        float snrAdjustment = 1.0f;
-        if (snr < 2.0f) {
-            // 低信噪比，进一步降低阈值
-            snrAdjustment = 0.8f;
-        } else if (snr > 10.0f) {
-            // 高信噪比，可以提高阈值
-            snrAdjustment = 1.1f;
-        }
-        
-        float adjustedThreshold = baseThreshold * gainAdjustment * snrAdjustment;
-        
-        // 确保阈值在合理范围内
-        return Math.max(0.05f, Math.min(0.8f, adjustedThreshold));
-    }
-
-    /**
      * 执行语音检测
      */
     private float detectSpeech(float[] samples) {
         if (vadModel == null || samples == null || samples.length == 0) {
+            logger.warn("VAD模型为空或样本为空");
             return 0.0f;
         }
 
@@ -650,10 +541,7 @@ public class VadService {
             states.remove(sessionId);
             locks.remove(sessionId);
             
-            // 重置AGC状态
-            if (agc != null) {
-                agc.resetSession(sessionId);
-            }
+            logger.info("VAD会话已重置: {}", sessionId);
         }
     }
 
@@ -672,17 +560,6 @@ public class VadService {
      * 获取当前语音概率
      */
     public float getSpeechProbability(String sessionId) {
-        Object lock = getLock(sessionId);
-        synchronized (lock) {
-            VadState state = states.get(sessionId);
-            return state != null ? state.getLastProb() : 0.0f;
-        }
-    }
-    
-    /**
-     * 获取原始语音概率
-     */
-    public float getOriginalSpeechProbability(String sessionId) {
         Object lock = getLock(sessionId);
         synchronized (lock) {
             VadState state = states.get(sessionId);
@@ -709,38 +586,6 @@ public class VadService {
         synchronized (lock) {
             VadState state = states.get(sessionId);
             return state != null ? state.getOpusData() : new ArrayList<>();
-        }
-    }
-
-    /**
-     * 获取AGC统计信息
-     */
-    public AutomaticGainControl.AgcStats getAgcStats(String sessionId) {
-        return agc != null ? agc.getStats(sessionId) : new AutomaticGainControl.AgcStats();
-    }
-
-    /**
-     * 获取检测到的设备类型
-     */
-    public String getDetectedDeviceType(String sessionId) {
-        Object lock = getLock(sessionId);
-        synchronized (lock) {
-            VadState state = states.get(sessionId);
-            return state != null ? state.getDetectedDeviceType() : "normal";
-        }
-    }
-
-    /**
-     * 手动设置设备类型（用于测试或特殊情况）
-     */
-    public void setDeviceType(String sessionId, String deviceType) {
-        Object lock = getLock(sessionId);
-        synchronized (lock) {
-            VadState state = states.get(sessionId);
-            if (state != null) {
-                state.detectedDeviceType = deviceType;
-                logger.info("手动设置设备类型 - SessionId: {}, 类型: {}", sessionId, deviceType);
-            }
         }
     }
 
