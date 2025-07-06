@@ -1,6 +1,9 @@
 package com.xiaozhi.entity;
 
 import com.xiaozhi.utils.AudioUtils;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -11,7 +14,10 @@ import java.text.SimpleDateFormat;
  * @author Joey
  * 
  */
-public class SysMessage extends Base {
+@Data
+@Accessors(chain = true)
+@EqualsAndHashCode(callSuper = true)
+public class SysMessage extends Base<SysMessage> {
     /**
      * 消息类型 - 普通消息
      */
@@ -63,45 +69,10 @@ public class SysMessage extends Base {
     private String roleName;
     private String deviceName;
 
-    public String getDeviceId() {
-        return deviceId;
-    }
-
-    public SysMessage setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
-        return this;
-    }
-
-    public Integer getMessageId() {
-        return this.messageId;
-    }
-
-    public SysMessage setMessageId(Integer messageId) {
-        this.messageId = messageId;
-        return this;
-    }
-
-    public String getSender() {
-        return this.sender;
-    }
-
-    public SysMessage setSender(String sender) {
-        this.sender = sender;
-        return this;
-    }
-
-    public String getMessage() {
-        return this.message;
-    }
-
-    public SysMessage setMessage(String message) {
-        this.message = message;
-        return this;
-    }
-
     public String getAudioPath() {
         if (this.createTime == null) {
-            return audioPath; // 分页会先进行一次处理，但是获取的为count(0)，没有实际字段会报错，这里直接返回
+            // 分页会先进行一次处理，但是获取的为count(0)，没有实际字段会报错，这里直接返回
+            return audioPath;
         }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss");
         String formattedTime = sdf.format(createTime);
@@ -115,66 +86,4 @@ public class SysMessage extends Base {
                 fileName
         ).toString();
     }
-
-    public SysMessage setAudioPath(String audioPath) {
-        this.audioPath = audioPath;
-        return this;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public SysMessage setState(String state) {
-        this.state = state;
-        return this;
-    }
-
-    public String getMessageType() {
-        return messageType;
-    }
-
-    public void setMessageType(String messageType) {
-        this.messageType = messageType;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public Integer getRoleId() {
-        return roleId;
-    }
-
-    public void setRoleId(Integer roleId) {
-        this.roleId = roleId;
-    }
-
-    public String getRoleName() {
-        return roleName;
-    }
-
-    public void setRoleName(String roleName) {
-        this.roleName = roleName;
-    }
-
-    public String getDeviceName() {
-        return deviceName;
-    }
-
-    public void setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
-    }
-
-    @Override
-    public String toString() {
-        return "SysMessage [deviceId=" + deviceId + ", sessionId=" + sessionId + ", messageId=" + messageId
-                + ", sender=" + sender + ", message="
-                + message + ", audioPath=" + audioPath + ", state=" + state + ", messageType=" + messageType + "]";
-    }
-
 }

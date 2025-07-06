@@ -38,7 +38,7 @@
                 LEFT JOIN sys_device ON sys_device.deviceId = sys_message.deviceId
             WHERE
                 sys_device.userId = sys_user.userId
-                <if test="startTime != null and startTime != ''">
+                <if test="startTime != null">
                     AND sys_message.createTime &gt;= #{startTime} AND sys_message.createTime &lt;= #{endTime}
                 </if>
         ) AS totalMessage,
@@ -88,7 +88,7 @@
                 JOIN sys_device ON sys_device.deviceId = sys_message.deviceId
             WHERE
                 sys_device.userId = sys_user.userId
-                <if test="startTime != null and startTime != ''">
+                <if test="startTime != null">
                     AND sys_message.createTime &gt;= #{startTime} AND sys_message.createTime &lt;= #{endTime}
                 </if>
         ) AS totalMessage,
