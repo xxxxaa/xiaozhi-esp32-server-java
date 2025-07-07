@@ -1,230 +1,118 @@
 package com.xiaozhi.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 
 /**
- * 角色配置
- * 
+ * 角色配置实体类
+ *
  * @author Joey
  * 
  */
-@JsonIgnoreProperties({ "startTime", "endTime", "start", "limit", "userId", "code" })
-public class SysRole extends Base {
+@Data
+@Accessors(chain = true)
+@EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties({ "code" })
+public class SysRole extends Base<SysRole> {
+    /**
+     * 角色ID
+     */
     private Integer roleId;
 
+    /**
+     * 角色头像
+     */
     private String avatar;
 
+    /**
+     * 角色名称
+     */
     private String roleName;
 
+    /**
+     * 角色描述
+     */
     private String roleDesc;
 
+    /**
+     * 语音名称
+     */
     private String voiceName;
 
+    /**
+     * 状态(1启用 0禁用)
+     */
     private String state;
 
+    /**
+     * TTS服务ID
+     */
     private Integer ttsId;
 
+    /**
+     * 模型ID
+     */
     private Integer modelId;
 
+    /**
+     * 模型名称
+     */
     private String modelName;
 
+    /**
+     * STT服务ID
+     */
     private Integer sttId;
 
+    /**
+     * 温度参数，控制输出的随机性
+     */
     private Double temperature = 0.7;
 
+    /**
+     * Top-P参数，控制输出的多样性
+     */
     private Double topP = 0.9;
 
+    /**
+     * 语音活动检测-能量阈值
+     */
     private Float vadEnergyTh;
+
+    /**
+     * 语音活动检测-语音阈值
+     */
     private Float vadSpeechTh;
+
+    /**
+     * 语音活动检测-静音阈值
+     */
     private Float vadSilenceTh;
+
+    /**
+     * 语音活动检测-静音毫秒数
+     */
     private Integer vadSilenceMs;
 
+    /**
+     * 模型提供商
+     */
     private String modelProvider;
 
+    /**
+     * TTS服务提供商
+     */
     private String ttsProvider;
 
+    /**
+     * 是否默认角色(1是 0否)
+     */
     private String isDefault;
 
+    /**
+     * 总设备数
+     */
     private Integer totalDevice;
-
-
-    public Integer getModelId() {
-        return modelId;
-    }
-
-    public SysRole setModelId(Integer modelId) {
-        this.modelId = modelId;
-        return this;
-    }
-
-    public String getModelName() {
-        return modelName;
-    }
-
-    public SysRole setModelName(String modelName) {
-        this.modelName = modelName;
-        return this;
-    }
-
-    public Integer getSttId() {
-        return sttId;
-    }
-
-    public SysRole setSttId(Integer sttId) {
-        this.sttId = sttId;
-        return this;
-    }
-
-    public Integer getTtsId() {
-        return ttsId;
-    }
-
-    public SysRole setTtsId(Integer ttsId) {
-        this.ttsId = ttsId;
-        return this;
-    }
-
-    public Double getTemperature() {
-        return temperature;
-    }
-
-    public SysRole setTemperature(Double temperature) {
-        this.temperature = temperature;
-        return this;
-    }
-
-    public Double getTopP() {
-        return topP;
-    }
-
-    public SysRole setTopP(Double topP) {
-        this.topP = topP;
-        return this;
-    }
-
-    public Float getVadEnergyTh() {
-        return vadEnergyTh;
-    }
-
-    public SysRole setVadEnergyTh(Float vadEnergyTh) {
-        this.vadEnergyTh = vadEnergyTh;
-        return this;
-    }
-
-    public Float getVadSpeechTh() {
-        return vadSpeechTh;
-    }
-
-    public SysRole setVadSpeechTh(Float vadSpeechTh) {
-        this.vadSpeechTh = vadSpeechTh;
-        return this;
-    }
-
-    public Float getVadSilenceTh() {
-        return vadSilenceTh;
-    }
-
-    public SysRole setVadSilenceTh(Float vadSilenceTh) {
-        this.vadSilenceTh = vadSilenceTh;
-        return this;
-    }
-
-    public Integer getVadSilenceMs() {
-        return vadSilenceMs;
-    }
-
-    public SysRole setVadSilenceMs(Integer vadSilenceMs) {
-        this.vadSilenceMs = vadSilenceMs;
-        return this;
-    }
-
-    public String getTtsProvider() {
-        return ttsProvider;
-    }
-    
-    public SysRole setTtsProvider(String ttsProvider) {
-        this.ttsProvider = ttsProvider;
-        return this;
-    }
-
-    public String getModelProvider() {
-        return modelProvider;
-    }
-    
-    public SysRole setModelProvider(String modelProvider) {
-        this.modelProvider = modelProvider;
-        return this;
-    }
-
-    public Integer getRoleId() {
-        return roleId;
-    }
-
-    public SysRole setRoleId(Integer roleId) {
-        this.roleId = roleId;
-        return this;
-    }
-
-    public String getAvatar() {
-        return avatar;
-    }
-
-    public SysRole setAvatar(String avatar) {
-        this.avatar = avatar;
-        return this;
-    }
-
-    public String getRoleName() {
-        return roleName;
-    }
-
-    public SysRole setRoleName(String roleName) {
-        this.roleName = roleName;
-        return this;
-    }
-
-    public String getRoleDesc() {
-        return roleDesc;
-    }
-
-    public SysRole setRoleDesc(String roleDesc) {
-        this.roleDesc = roleDesc;
-        return this;
-    }
-
-    public String getVoiceName() {
-        return voiceName;
-    }
-
-    public SysRole setVoiceName(String voiceName) {
-        this.voiceName = voiceName;
-        return this;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public SysRole setState(String state) {
-        this.state = state;
-        return this;
-    }
-
-    public String getIsDefault() {
-        return isDefault;
-    }
-
-    public SysRole setIsDefault(String isDefault) {
-        this.isDefault = isDefault;
-        return this;
-    }
-
-    public Integer getTotalDevice() {
-        return totalDevice;
-    }
-
-    public SysRole setTotalDevice(Integer totalDevice) {
-        this.totalDevice = totalDevice;
-        return this;
-    }
 }

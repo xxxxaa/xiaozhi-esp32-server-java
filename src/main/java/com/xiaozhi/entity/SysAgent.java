@@ -1,14 +1,21 @@
 package com.xiaozhi.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 
 import java.util.Date;
+import org.springframework.format.annotation.DateTimeFormat;
 
 /**
  * 智能体实体类
  * 
  * @author Joey
  */
+@Data
+@Accessors(chain = true)
+@EqualsAndHashCode(callSuper = true)
 public class SysAgent extends SysConfig {
 
     /** 智能体ID */
@@ -28,59 +35,6 @@ public class SysAgent extends SysConfig {
 
     /** 发布时间 */
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date publishTime;
-
-    public Integer getAgentId() {
-        return agentId;
-    }
-
-    public SysAgent setAgentId(Integer agentId) {
-        this.agentId = agentId;
-        return this;
-    }
-
-    public String getAgentName() {
-        return agentName;
-    }
-
-    public SysAgent setAgentName(String agentName) {
-        this.agentName = agentName;
-        return this;
-    }
-
-    public String getBotId() {
-        return botId;
-    }
-
-    public SysAgent setBotId(String botId) {
-        this.botId = botId;
-        return this;
-    }
-
-    public String getAgentDesc() {
-        return agentDesc;
-    }
-
-    public SysAgent setAgentDesc(String agentDesc) {
-        this.agentDesc = agentDesc;
-        return this;
-    }
-
-    public String getIconUrl() {
-        return iconUrl;
-    }
-
-    public SysAgent setIconUrl(String iconUrl) {
-        this.iconUrl = iconUrl;
-        return this;
-    }
-
-    public Date getPublishTime() {
-        return publishTime;
-    }
-
-    public SysAgent setPublishTime(Date publishTime) {
-        this.publishTime = publishTime;
-        return this;
-    }
 }

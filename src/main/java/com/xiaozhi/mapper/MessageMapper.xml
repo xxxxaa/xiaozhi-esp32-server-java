@@ -35,7 +35,7 @@
             <if test="deviceName != null and deviceName != ''">
                 AND sys_device.deviceName = #{deviceName}
             </if>
-            <if test="startTime != null and startTime != ''">
+            <if test="startTime != null">
                 AND sys_message.createTime &gt;= #{startTime} AND sys_message.createTime &lt;= #{endTime}
             </if>
             <if test="sender != null and sender != ''">
