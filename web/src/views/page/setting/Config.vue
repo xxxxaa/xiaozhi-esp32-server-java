@@ -3,6 +3,70 @@
     <a-layout-content>
       <div class="layout-content-margin">
         <a-card title="个人设置" :bordered="false">
+          <!-- 导航样式设置 -->
+          <a-card size="small" title="导航样式设置" style="margin-bottom: 24px">
+            <a-row :gutter="24">
+              <a-col :md="12" :xs="24">
+                <a-form-item label="导航显示方式">
+                  <a-radio-group 
+                    :value="navigationStyle" 
+                    @change="handleNavigationStyleChange"
+                    style="width: 100%"
+                  >
+                    <a-radio-button value="breadcrumb" style="margin-right: 8px; margin-bottom: 8px">
+                      <a-icon type="home" /> 面包屑导航
+                    </a-radio-button>
+                    <a-radio-button value="tabs">
+                      <a-icon type="appstore" /> 浏览器标签页
+                    </a-radio-button>
+                  </a-radio-group>
+                  <div style="margin-top: 8px; color: #666; font-size: 12px">
+                    <div style="margin-bottom: 4px">
+                      <strong>面包屑导航：</strong>简洁的层级导航显示，适合传统的导航习惯
+                    </div>
+                    <div>
+                      <strong>浏览器标签页：</strong>多页面标签管理，支持快速切换和状态保持
+                    </div>
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :md="12" :xs="24">
+                <div class="style-preview">
+                  <div class="preview-title">样式预览</div>
+                  <!-- 面包屑预览 -->
+                  <div v-if="navigationStyle === 'breadcrumb'" class="breadcrumb-preview">
+                    <div class="preview-breadcrumb">
+                      <a-breadcrumb separator=">">
+                        <a-breadcrumb-item>首页</a-breadcrumb-item>
+                        <a-breadcrumb-item>设置</a-breadcrumb-item>
+                        <a-breadcrumb-item>个人设置</a-breadcrumb-item>
+                      </a-breadcrumb>
+                      <div class="preview-page-header">
+                        <h3>个人设置</h3>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- 标签页预览 -->
+                  <div v-else class="tabs-preview">
+                    <div class="preview-tabs">
+                      <div class="tab-item">
+                        <a-icon type="dashboard" /> 仪表盘
+                      </div>
+                      <div class="tab-item active">
+                        <a-icon type="setting" /> 个人设置
+                        <a-icon type="close" class="tab-close" />
+                      </div>
+                      <div class="tab-item">
+                        <a-icon type="user" /> 用户管理
+                        <a-icon type="close" class="tab-close" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a-col>
+            </a-row>
+          </a-card>
+          
           <a-row>
             <!-- 信息 -->
             <a-col :md="24" :lg="12">
@@ -141,6 +205,10 @@ export default {
     info () {
       return this.$store.getters.USER_INFO
     },
+    /* 导航样式 */
+    navigationStyle () {
+      return this.$store.getters.NAVIGATION_STYLE
+    },
     /* 密码状态 */
     passwordLevelClass () {
       return levelClass[this.state.passwordLevel]
@@ -241,6 +309,39 @@ export default {
       this.user.avatar = url
       Cookies.set('userInfo', JSON.stringify(this.user), { expires: 30 })
       this.$store.commit('USER_INFO', this.user)
+    },
+    /* 处理导航样式变化 */
+    handleNavigationStyleChange (e) {
+      const newStyle = e.target.value
+      const styleName = newStyle === 'breadcrumb' ? '面包屑导航' : '浏览器标签页'
+      
+      this.$store.commit('NAVIGATION_STYLE', newStyle)
+      
+      // 显示成功消息和提示
+      this.$message.success(`已切换为${styleName}`)
+      
+      // 延迟显示重新加载提示
+      setTimeout(() => {
+        this.$notification.info({
+          message: '导航样式已更新',
+          description: '为了获得最佳体验，建议刷新页面应用新的导航样式。',
+          duration: 4.5,
+          btn: h => {
+            return h('a-button', {
+              props: {
+                type: 'primary',
+                size: 'small'
+              },
+              on: {
+                click: () => {
+                  this.$notification.destroy()
+                  window.location.reload()
+                }
+              }
+            }, '立即刷新')
+          }
+        })
+      }, 1000)
     }
   }
 }
@@ -314,5 +415,99 @@ export default {
     color: #52c41a;
   }
 
+}
+
+/* 导航样式预览 */
+.style-preview {
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fafafa;
+  
+  .preview-title {
+    padding: 12px 16px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e8e8e8;
+    font-weight: 500;
+    font-size: 14px;
+    color: #333;
+  }
+}
+
+/* 面包屑预览样式 */
+.breadcrumb-preview {
+  padding: 16px;
+  background: #fff;
+  
+  .preview-breadcrumb {
+    .ant-breadcrumb {
+      margin-bottom: 16px;
+    }
+    
+    .preview-page-header {
+      h3 {
+        margin: 0;
+        color: #333;
+        font-size: 18px;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+/* 标签页预览样式 */
+.tabs-preview {
+  padding: 16px;
+  background: #fff;
+  
+  .preview-tabs {
+    display: flex;
+    border-bottom: 1px solid #e8e8e8;
+    
+    .tab-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      border: 1px solid #e8e8e8;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      background: #f5f5f5;
+      margin-right: 4px;
+      font-size: 14px;
+      color: #666;
+      position: relative;
+      
+      .anticon:first-child {
+        margin-right: 6px;
+      }
+      
+      .tab-close {
+        margin-left: 8px;
+        font-size: 12px;
+        color: #999;
+        
+        &:hover {
+          color: #ff4d4f;
+        }
+      }
+      
+      &.active {
+        background: #fff;
+        border-color: #1890ff;
+        color: #333;
+        z-index: 1;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: #1890ff;
+        }
+      }
+    }
+  }
 }
 </style>

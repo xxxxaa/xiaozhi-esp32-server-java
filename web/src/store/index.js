@@ -6,7 +6,8 @@ Vue.use(Vuex)
 const store = new Vuex.Store({
   state: {
     info: Cookies.getJSON('userInfo'),
-    isMobile: true
+    isMobile: true,
+    navigationStyle: Cookies.getJSON('navigationStyle')
   },
   getters: {
     USER_INFO: state => {
@@ -14,6 +15,9 @@ const store = new Vuex.Store({
     },
     MOBILE_TYPE: state => {
       return state.isMobile
+    },
+    NAVIGATION_STYLE: state => {
+      return state.navigationStyle
     }
   },
   mutations: {
@@ -22,6 +26,10 @@ const store = new Vuex.Store({
     },
     MOBILE_TYPE: (state, isMobile) => {
       state.isMobile = isMobile
+    },
+    NAVIGATION_STYLE: (state, navigationStyle) => {
+      Cookies.set('navigationStyle', JSON.stringify(navigationStyle))
+      state.navigationStyle = navigationStyle
     }
   }
 })

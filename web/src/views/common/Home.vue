@@ -30,7 +30,9 @@
         <a-layout>
           <!-- 主要内容 -->
           <a-layout-content>
-            <v-breadcrumb></v-breadcrumb>
+            <!-- 根据用户选择渲染不同的导航组件 -->
+            <v-breadcrumb v-if="navigationStyle === 'breadcrumb'"></v-breadcrumb>
+            <v-tabs-navigation v-else></v-tabs-navigation>
             <router-view />
           </a-layout-content>
           <!-- 页脚 -->
@@ -48,12 +50,14 @@ import vSidebar from './Sidebar.vue'
 import vHeader from './Header.vue'
 import vFooter from './Footer.vue'
 import vBreadcrumb from './Breadcrumb.vue'
+import vTabsNavigation from './TabsNavigation.vue'
 export default {
   components: {
     vHeader,
     vSidebar,
     vFooter,
-    vBreadcrumb
+    vBreadcrumb,
+    vTabsNavigation
   },
   data () {
     return {
@@ -80,6 +84,10 @@ export default {
     },
     userInfo () {
       return this.$store.getters.USER_INFO
+    },
+    navigationStyle() {
+      // 获取用户选择的导航样式
+      return this.$store.getters.NAVIGATION_STYLE
     }
   },
   watch: {
