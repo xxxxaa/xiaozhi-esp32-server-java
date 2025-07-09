@@ -592,6 +592,60 @@ export async function stopDirectRecording() {
   }
 }
 
+export async function reconnectToServer() {
+  try {
+    log('手动触发重连...', 'info');
+    
+    // 先断开现有连接
+    await disconnectFromServer();
+    
+    // 重置重连计数
+    reconnectAttempts = 0;
+    
+    // 获取配置
+    const store = getStore();
+    if (!store) {
+      throw new Error('无法获取store实例');
+    }
+    
+    const config = store.getters.WS_SERVER_CONFIG;
+    
+    // 立即尝试重新连接
+    return await connectToServer(config);
+  } catch (error) {
+    log(`手动重连失败: ${error.message}`, 'error');
+    connectionStatus = '重连失败';
+    notifyStatusChange();
+    return false;
+  }
+}
+
+// 停止自动重连
+export function stopAutoReconnect() {
+  try {
+    // 清除重连计时器
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+      log('已停止自动重连', 'info');
+    }
+    
+    // 重置重连尝试次数
+    reconnectAttempts = 0;
+    
+    // 如果当前状态是某种"等待重连"状态，则更新为"已停止重连"
+    if (connectionStatus.includes('重连')) {
+      connectionStatus = '已停止重连';
+      notifyStatusChange();
+    }
+    
+    return true;
+  } catch (error) {
+    log(`停止自动重连失败: ${error.message}`, 'error');
+    return false;
+  }
+}
+
 // 断开连接
 export function disconnectFromServer() {
   // 清除重连计时器

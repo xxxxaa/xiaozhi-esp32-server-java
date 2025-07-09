@@ -2,10 +2,7 @@
   <div v-if="visible" class="global-chat-popup">
     <div class="chat-popup-container">
       <!-- 标题栏 -->
-      <div 
-        class="chat-popup-header"
-        @dblclick="handleTitleDoubleClick"
-      >
+      <div class="chat-popup-header">
         <div class="header-left">
           <div class="connection-status">
             <div 
@@ -19,16 +16,14 @@
         <div class="header-title">
           <a-icon type="message" />
           <span>小智助手</span>
-          <a-tooltip title="双击标题跳转到聊天页面">
-            <a-icon type="info-circle" class="info-icon" />
-          </a-tooltip>
         </div>
         
         <div class="header-actions">
-          <a-button type="text" size="small" @click="handleMinimize">
-            <a-icon type="minus" />
+          <!-- 添加全屏按钮 -->
+          <a-button type="text" size="small" @click="handleGoToFullChat" title="全屏模式">
+            <a-icon type="fullscreen" />
           </a-button>
-          <a-button type="text" size="small" @click="handleClose">
+          <a-button type="text" size="small" @click="handleClose" title="关闭">
             <a-icon type="close" />
           </a-button>
         </div>
@@ -93,16 +88,6 @@
         </a-button>
       </div>
     </div>
-    
-    <!-- 最小化状态 -->
-    <div 
-      v-if="isMinimized" 
-      class="chat-popup-minimized"
-      @click="handleRestore"
-    >
-      <a-icon type="message" />
-      <span>小智助手</span>
-    </div>
   </div>
 </template>
 
@@ -129,37 +114,14 @@ export default {
   data() {
     return {
       messages: messages,
-      isMinimized: false,
       userAvatar: '/assets/user-avatar.png',
       aiAvatar: '/assets/ai-avatar.png'
     }
   },
-  watch: {
-    visible(newValue) {
-      if (newValue) {
-        this.isMinimized = false
-      }
-    }
-  },
   methods: {
-    // 处理标题双击
-    handleTitleDoubleClick() {
-      this.$emit('go-to-chat')
-    },
-    
     // 处理关闭
     handleClose() {
       this.$emit('close')
-    },
-    
-    // 处理最小化
-    handleMinimize() {
-      this.isMinimized = true
-    },
-    
-    // 处理恢复
-    handleRestore() {
-      this.isMinimized = false
     },
     
     // 处理切换连接状态 - 使用mixin中的方法
@@ -257,7 +219,6 @@ export default {
   background: linear-gradient(135deg, #1890ff, #40a9ff);
   color: white;
   border-radius: 12px 12px 0 0;
-  cursor: pointer;
   user-select: none;
 }
 
@@ -298,12 +259,6 @@ export default {
   gap: 8px;
   font-weight: 500;
   font-size: 16px;
-}
-
-.info-icon {
-  font-size: 12px;
-  opacity: 0.7;
-  cursor: help;
 }
 
 .header-actions {
@@ -362,35 +317,12 @@ export default {
   background: rgba(24, 144, 255, 0.1);
 }
 
-.chat-popup-minimized {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background: #1890ff;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 12px 12px 0 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-}
-
-.chat-popup-minimized:hover {
-  background: #40a9ff;
-  transform: translateY(-2px);
-}
-
 /* 响应式设计 */
 @media (max-width: 768px) {
   .global-chat-popup {
     bottom: 80px;
     right: 16px;
     left: 16px;
-    right: 16px;
   }
   
   .chat-popup-container {
@@ -423,69 +355,4 @@ export default {
     border-color: #333;
   }
 }
-:deep(.ant-popover.ant-popconfirm) {
-  .ant-popover-inner-content {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    border: 1px solid #e8e8e8;
-  }
-  
-  .ant-popover-message {
-    padding: 12px 16px 8px;
-    color: #333;
-    font-size: 14px;
-    line-height: 1.5;
-  }
-  
-  .ant-popover-message-icon {
-    color: #faad14;
-    font-size: 16px;
-  }
-  
-  .ant-popover-message-title {
-    color: #333;
-    font-weight: 500;
-  }
-  
-  .ant-popover-buttons {
-    padding: 8px 16px 12px;
-    gap: 8px;
-  }
-  
-  .ant-btn {
-    border-radius: 6px;
-    font-size: 12px;
-    height: 28px;
-    padding: 0 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-  
-  .ant-btn-primary {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
-    border: none;
-    color: #fff;
-    box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
-  }
-  
-  .ant-btn-primary:hover {
-    background: linear-gradient(135deg, #ff5252 0%, #e53935 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(255, 107, 107, 0.4);
-  }
-  
-  .ant-btn-default {
-    background: #f5f5f5;
-    border: 1px solid #d9d9d9;
-    color: #666;
-  }
-  
-  .ant-btn-default:hover {
-    background: #e8e8e8;
-    border-color: #b3b3b3;
-    color: #333;
-    transform: translateY(-1px);
-  }
-}
-</style> 
+</style>
