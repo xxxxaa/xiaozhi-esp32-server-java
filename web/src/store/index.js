@@ -35,8 +35,8 @@ const store = new Vuex.Store({
 
         // 如果没有统一配置，读取分散的配置
         return {
-          url: localStorage.getItem('xiaozhi_server_url') || 'ws://127.0.0.1:10095',
-          deviceId: localStorage.getItem('xiaozhi_device_id') || `web_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          url: localStorage.getItem('xiaozhi_server_url') || 'ws://127.0.0.1:8091/ws/xiaozhi/v1/',
+          deviceId: localStorage.getItem('xiaozhi_device_id') || `web_test`,
           deviceName: localStorage.getItem('xiaozhi_device_name') || 'Web客户端',
           token: localStorage.getItem('xiaozhi_token') || ''
         };
