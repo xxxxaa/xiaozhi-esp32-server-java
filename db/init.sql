@@ -95,7 +95,6 @@ DROP TABLE IF EXISTS `xiaozhi`.`sys_role`;
 CREATE TABLE `xiaozhi`.`sys_role` (
   `roleId` int unsigned NOT NULL AUTO_INCREMENT COMMENT '角色ID，主键',
   `roleName` varchar(100) NOT NULL COMMENT '角色名称',
-  `avatar` varchar(255) DEFAULT NULL COMMENT '角色头像',
   `roleDesc` TEXT DEFAULT NULL COMMENT '角色描述',
   `avatar` varchar(255) DEFAULT NULL COMMENT '角色头像',
   `ttsId` int DEFAULT NULL COMMENT 'TTS服务ID',
@@ -136,7 +135,6 @@ CREATE TABLE `xiaozhi`.`sys_config` (
   `configType` varchar(30) NOT NULL COMMENT '配置类型(llm, stt, tts等)',
   `modelType` varchar(30) DEFAULT NULL COMMENT 'LLM模型类型(chat, vision, intent, embedding等)',
   `provider` varchar(30) NOT NULL COMMENT '服务提供商(openai, vosk, aliyun, tencent等)',
-  `modelType` varchar(30) DEFAULT NULL COMMENT 'LLM模型类型(chat, vision, intent, embedding等)',
   `configName` varchar(50) DEFAULT NULL COMMENT '配置名称',
   `configDesc` TEXT DEFAULT NULL COMMENT '配置描述',
   `appId` varchar(100) DEFAULT NULL COMMENT 'APP ID',
