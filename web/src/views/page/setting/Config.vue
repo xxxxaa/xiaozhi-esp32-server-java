@@ -67,6 +67,49 @@
             </a-row>
           </a-card>
           
+          <!-- WebSocket连接设置 -->
+          <a-card size="small" title="WebSocket连接设置" style="margin-bottom: 24px">
+            <a-row :gutter="24">
+              <a-col :md="12" :xs="24">
+                <a-form-item label="自动连接">
+                  <a-switch
+                    :checked="autoConnect"
+                    @change="handleAutoConnectChange"
+                    checked-children="开"
+                    un-checked-children="关"
+                  />
+                  <div style="margin-top: 8px; color: #666; font-size: 12px">
+                    开启后，登录系统时将自动建立WebSocket连接
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :md="12" :xs="24">
+                <div class="connection-status">
+                  <div class="status-title">当前连接状态</div>
+                  <div class="status-info">
+                    <a-tag :color="connectionStatusColor">
+                      {{ connectionStatus }}
+                    </a-tag>
+                    <div v-if="connectionTime" class="connection-time">
+                      连接时间: {{ formatConnectionTime(connectionTime) }}
+                    </div>
+                  </div>
+                  <div class="connection-actions" style="margin-top: 8px">
+                    <a-button
+                      size="small"
+                      :type="isConnected ? 'default' : 'primary'"
+                      @click="toggleWebSocketConnection"
+                      :disabled="connectionStatus === '正在连接...'"
+                    >
+                      <a-icon :type="isConnected ? 'disconnect' : 'link'" />
+                      {{ isConnected ? '断开' : '连接' }}
+                    </a-button>
+                  </div>
+                </div>
+              </a-col>
+            </a-row>
+          </a-card>
+
           <a-row>
             <!-- 信息 -->
             <a-col :md="24" :lg="12">
@@ -209,6 +252,33 @@ export default {
     navigationStyle () {
       return this.$store.getters.NAVIGATION_STYLE
     },
+
+    /* WebSocket相关状态 */
+    autoConnect () {
+      return this.$store.getters.WS_AUTO_CONNECT
+    },
+    isConnected () {
+      return this.$store.getters.WS_IS_CONNECTED
+    },
+    connectionStatus () {
+      return this.$store.getters.WS_CONNECTION_STATUS
+    },
+    connectionTime () {
+      return this.$store.getters.WS_CONNECTION_TIME
+    },
+    serverConfig () {
+      return this.$store.getters.WS_SERVER_CONFIG
+    },
+    connectionStatusColor () {
+      if (this.isConnected) return 'green'
+      if (this.connectionStatus && (
+        this.connectionStatus.includes('错误') ||
+        this.connectionStatus.includes('失败')
+      )) return 'red'
+      if (this.connectionStatus === '正在连接...') return 'blue'
+      return 'default'
+    },
+
     /* 密码状态 */
     passwordLevelClass () {
       return levelClass[this.state.passwordLevel]
@@ -293,11 +363,11 @@ export default {
               }
             }).then(res => {
               if (res.code === 200) {
-                Cookies.set('userInfo', JSON.stringify(res.data), { expires: 30 })
+                localStorage.setItem('userInfo', JSON.stringify(res.data), { expires: 30 })
                 this.$store.commit('USER_INFO', res.data)
                 this.$message.success(res.message)
               } else {
-                this.$message.error(res.message)
+                this.showError(res.message)
               }
             }).catch(() => {
               this.showError();
@@ -307,19 +377,19 @@ export default {
     },
     setavatar (url) {
       this.user.avatar = url
-      Cookies.set('userInfo', JSON.stringify(this.user), { expires: 30 })
+      localStorage.setItem('userInfo', JSON.stringify(this.user), { expires: 30 })
       this.$store.commit('USER_INFO', this.user)
     },
     /* 处理导航样式变化 */
     handleNavigationStyleChange (e) {
       const newStyle = e.target.value
       const styleName = newStyle === 'breadcrumb' ? '面包屑导航' : '浏览器标签页'
-      
+
       this.$store.commit('NAVIGATION_STYLE', newStyle)
-      
+
       // 显示成功消息和提示
       this.$message.success(`已切换为${styleName}`)
-      
+
       // 延迟显示重新加载提示
       setTimeout(() => {
         this.$notification.info({
@@ -342,6 +412,48 @@ export default {
           }
         })
       }, 1000)
+    },
+
+    /* WebSocket连接相关方法 */
+    handleAutoConnectChange (checked) {
+      this.$store.commit('SET_WS_AUTO_CONNECT', checked)
+      this.$message.success(`已${checked ? '开启' : '关闭'}WebSocket自动连接`)
+    },
+
+    async connectWebSocket () {
+      try {
+        const success = await this.$store.dispatch('WS_CONNECT')
+        if (success) {
+          this.$message.success('WebSocket连接成功')
+        } else {
+          this.$message.error('WebSocket连接失败')
+        }
+      } catch (error) {
+        this.$message.error(`WebSocket连接错误: ${error.message}`)
+      }
+    },
+
+    async disconnectWebSocket () {
+      try {
+        await this.$store.dispatch('WS_DISCONNECT')
+        this.$message.success('WebSocket连接已断开')
+      } catch (error) {
+        this.$message.error(`WebSocket断开失败: ${error.message}`)
+      }
+    },
+
+    async toggleWebSocketConnection() {
+      if (this.isConnected) {
+        await this.disconnectWebSocket()
+      } else {
+        await this.connectWebSocket()
+      }
+    },
+
+    formatConnectionTime (time) {
+      if (!time) return ''
+      const date = new Date(time)
+      return date.toLocaleString()
     }
   }
 }
@@ -423,7 +535,7 @@ export default {
   border-radius: 6px;
   overflow: hidden;
   background: #fafafa;
-  
+
   .preview-title {
     padding: 12px 16px;
     background: #f5f5f5;
@@ -438,12 +550,12 @@ export default {
 .breadcrumb-preview {
   padding: 16px;
   background: #fff;
-  
+
   .preview-breadcrumb {
     .ant-breadcrumb {
       margin-bottom: 16px;
     }
-    
+
     .preview-page-header {
       h3 {
         margin: 0;
@@ -459,11 +571,11 @@ export default {
 .tabs-preview {
   padding: 16px;
   background: #fff;
-  
+
   .preview-tabs {
     display: flex;
     border-bottom: 1px solid #e8e8e8;
-    
+
     .tab-item {
       display: flex;
       align-items: center;
@@ -476,27 +588,27 @@ export default {
       font-size: 14px;
       color: #666;
       position: relative;
-      
+
       .anticon:first-child {
         margin-right: 6px;
       }
-      
+
       .tab-close {
         margin-left: 8px;
         font-size: 12px;
         color: #999;
-        
+
         &:hover {
           color: #ff4d4f;
         }
       }
-      
+
       &.active {
         background: #fff;
         border-color: #1890ff;
         color: #333;
         z-index: 1;
-        
+
         &::after {
           content: '';
           position: absolute;
@@ -508,6 +620,28 @@ export default {
         }
       }
     }
+  }
+}
+
+/* WebSocket连接状态样式 */
+.connection-status {
+  .status-title {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+  }
+
+  .status-info {
+    .connection-time {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #666;
+    }
+  }
+
+  .connection-actions {
+    display: flex;
+    gap: 8px;
   }
 }
 </style>

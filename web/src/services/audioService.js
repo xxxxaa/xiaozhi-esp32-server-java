@@ -279,7 +279,7 @@ export async function initAudio() {
     };
     
     // 设置全局处理函数，避免循环依赖
-    window.handleBinaryAudioMessage = handleBinaryAudioMessage;
+    window.currentAudioHandler = handleBinaryAudioMessage;
     
     // 加载libopus.js但不初始化解码器
     await loadOpusLibrary();

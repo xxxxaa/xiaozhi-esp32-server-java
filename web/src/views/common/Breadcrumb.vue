@@ -25,6 +25,22 @@
 
 <script>
 export default {
-
+  name: 'Breadcrumb'
 }
 </script>
+
+<style scoped>
+.breadcrumb-header {
+  background: #fff;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.breadcrumb-header .ant-breadcrumb {
+  margin-bottom: 16px;
+}
+
+.breadcrumb-header .ant-page-header {
+  padding: 0;
+}
+</style>

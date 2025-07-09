@@ -1,5 +1,22 @@
 // websocketService.js - 统一的WebSocket、消息和日志管理服务
 
+// 为了避免循环依赖，我们将store引用延迟到需要时获取
+let storeInstance = null;
+
+// 获取store实例
+function getStore() {
+  if (!storeInstance) {
+    try {
+      // 动态导入store，避免循环依赖
+      const store = require('@/store').default;
+      storeInstance = store;
+    } catch (error) {
+      console.warn('无法获取store实例:', error);
+    }
+  }
+  return storeInstance;
+}
+
 // 日志相关
 // =============================
 const LOG_LEVELS = {
@@ -71,7 +88,7 @@ export function addMessage(message) {
 
   const newMessage = {
     id: message.id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-    content: message.content,
+    content: String(message.content).trim(),
     type: message.type || 'stt',
     isUser: !!message.isUser,
     timestamp: message.timestamp || new Date(),
@@ -85,8 +102,8 @@ export function addMessage(message) {
   return newMessage;
 }
 
-// 更新消息
-export function updateMessage(id, updates) {
+// 更新消息 - 内部使用
+function updateMessage(id, updates) {
   const index = messages.findIndex(msg => msg.id === id);
   if (index === -1) {
     log(`未找到要更新的消息: ${id}`, 'warning');
@@ -105,8 +122,8 @@ export function updateMessage(id, updates) {
   return updatedMessage;
 }
 
-// 添加语音转文本消息
-export function addSTTMessage(content) {
+// 添加语音转文本消息 - 内部使用
+function addSTTMessage(content) {
   return addMessage({
     content,
     type: 'stt',
@@ -114,8 +131,8 @@ export function addSTTMessage(content) {
   });
 }
 
-// 添加文本转语音消息
-export function addTTSMessage(content) {
+// 添加文本转语音消息 - 内部使用
+function addTTSMessage(content) {
   return addMessage({
     content,
     type: 'tts',
@@ -123,8 +140,8 @@ export function addTTSMessage(content) {
   });
 }
 
-// 添加音频消息
-export function addAudioMessage(options) {
+// 添加音频消息 - 内部使用
+function addAudioMessage(options) {
   const message = {
     content: options.content || '语音消息',
     type: 'audio',
@@ -136,8 +153,8 @@ export function addAudioMessage(options) {
   return addMessage(message);
 }
 
-// 删除消息
-export function deleteMessage(id) {
+// 删除消息 - 内部使用
+function deleteMessage(id) {
   const index = messages.findIndex(msg => msg.id === id);
   if (index === -1) return false;
 
@@ -149,7 +166,8 @@ export function deleteMessage(id) {
 
 // 清空所有消息
 export function clearMessages() {
-  messages.length = 0;
+  // 使用splice方法清空数组，Vue可以检测到这种变化
+  messages.splice(0, messages.length);
   log('清空所有消息', 'info');
 
   return true;
@@ -165,11 +183,67 @@ let reconnectAttempts = 0;
 let maxReconnectAttempts = 5;
 let reconnectDelay = 2000; // 初始重连延迟2秒
 
-// 导出的状态
-export let connectionStatus = '未连接';
-export let connectionTime = null;
-export let sessionId = null;
-export let isConnected = false;
+// 内部状态变量 - 不导出，通过store管理
+let connectionStatus = '未连接';
+let connectionTime = null;
+let sessionId = null;
+let isConnected = false;
+
+// 添加状态变更回调
+let statusChangeCallbacks = [];
+
+// 注册状态变更回调
+export function registerStatusChangeCallback(callback) {
+  if (typeof callback === 'function' && !statusChangeCallbacks.includes(callback)) {
+    statusChangeCallbacks.push(callback);
+    return true;
+  }
+  return false;
+}
+
+// 移除状态变更回调
+export function unregisterStatusChangeCallback(callback) {
+  const index = statusChangeCallbacks.indexOf(callback);
+  if (index !== -1) {
+    statusChangeCallbacks.splice(index, 1);
+    return true;
+  }
+  return false;
+}
+
+// 通知状态变更
+function notifyStatusChange() {
+  const status = {
+    isConnected,
+    connectionStatus,
+    connectionTime,
+    sessionId
+  };
+
+  // 同步状态到Vue store
+  try {
+    const store = getStore();
+    if (store) {
+      store.commit('SET_WS_CONNECTION_STATUS', {
+        isConnected,
+        status: connectionStatus,
+        connectionTime,
+        sessionId
+      });
+    }
+  } catch (error) {
+    log(`同步状态到store失败: ${error.message}`, 'error');
+  }
+
+  // 通知所有注册的回调
+  statusChangeCallbacks.forEach(callback => {
+    try {
+      callback(status);
+    } catch (error) {
+      log(`状态变更回调执行错误: ${error.message}`, 'error');
+    }
+  });
+}
 
 // 注册消息处理函数
 export function registerMessageHandler(handler) {
@@ -260,6 +334,7 @@ export async function connectToServer(config) {
       connectionTime = new Date();
       reconnectAttempts = 0;
       log('WebSocket连接已建立', 'success');
+      notifyStatusChange();
     };
 
     // 接收消息事件
@@ -282,6 +357,8 @@ export async function connectToServer(config) {
         // 尝试重新连接
         scheduleReconnect(config);
       }
+
+      notifyStatusChange();
     };
 
     // 连接错误事件
@@ -290,6 +367,7 @@ export async function connectToServer(config) {
       isConnected = false;
       connectionStatus = '连接错误';
       log('WebSocket连接错误', 'error');
+      notifyStatusChange();
 
       // 错误时不立即重连，让onclose处理
     };
@@ -319,11 +397,11 @@ export async function connectToServer(config) {
           clearTimeout(timeoutId);
           resolve(true);
         } else if (connectionStatus.includes('错误') || connectionStatus.includes('超时')) {
-          clearTimeout(timeoutId);
-          resolve(false);
-        } else {
-          setTimeout(checkConnected, 100);
-        }
+            clearTimeout(timeoutId);
+            resolve(false);
+          } else {
+            setTimeout(checkConnected, 100);
+          }
       };
 
       checkConnected();
@@ -333,6 +411,7 @@ export async function connectToServer(config) {
     isConnected = false;
     connectionStatus = '连接失败';
     log(`WebSocket连接失败: ${error.message}`, 'error');
+    notifyStatusChange();
     return false;
   }
 }
@@ -342,6 +421,7 @@ function scheduleReconnect(config) {
   if (reconnectAttempts >= maxReconnectAttempts) {
     log(`已达到最大重连次数(${maxReconnectAttempts})，停止重连`, 'warning');
     connectionStatus = '重连失败';
+    notifyStatusChange();
     return;
   }
 
@@ -349,7 +429,8 @@ function scheduleReconnect(config) {
   const delay = reconnectDelay * Math.pow(1.5, reconnectAttempts);
 
   log(`计划在${delay / 1000}秒后重新连接(尝试${reconnectAttempts + 1}/${maxReconnectAttempts})`, 'info');
-  connectionStatus = `${reconnectAttempts + 1}秒后重连...`;
+  connectionStatus = `${Math.ceil(delay / 1000)}秒后重连...`;
+  notifyStatusChange();
 
   reconnectTimer = setTimeout(() => {
     reconnectAttempts++;
@@ -365,8 +446,8 @@ function handleWebSocketMessage(event) {
       // 处理二进制音频数据
       // 这里我们需要从audioService导入handleBinaryMessage
       // 但为了避免循环依赖，我们在Chat.vue中处理这个问题
-      if (typeof window.handleBinaryAudioMessage === 'function') {
-        window.handleBinaryAudioMessage(event.data);
+      if (typeof window.currentAudioHandler === 'function') {
+        window.currentAudioHandler(event.data);
       } else {
         log('未找到二进制音频处理函数', 'warning');
       }
@@ -380,6 +461,7 @@ function handleWebSocketMessage(event) {
     if (data.session_id && !sessionId) {
       sessionId = data.session_id;
       log(`会话ID: ${sessionId}`, 'info');
+      notifyStatusChange();
     }
 
     // 根据消息类型处理
@@ -531,6 +613,7 @@ export function disconnectFromServer() {
     isConnected = false;
     connectionStatus = '已断开';
     log('WebSocket连接已断开', 'info');
+    notifyStatusChange();
 
     return true;
   } catch (error) {
