@@ -307,7 +307,6 @@ public class VadService {
     public VadResult processAudio(String sessionId, byte[] opusData) {
 
         if (!isSessionInitialized(sessionId)) {
-            logger.warn("会话未初始化: {}", sessionId);
             return null;
         }
 
