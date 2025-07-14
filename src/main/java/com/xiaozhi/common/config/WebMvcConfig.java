@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;  // 改为实现接口
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 
@@ -17,7 +17,7 @@ import java.io.File;
 
 @Configuration
 @Slf4j
-public class WebMvcConfig extends WebMvcConfigurationSupport {
+public class WebMvcConfig implements WebMvcConfigurer {  // 实现接口而不是继承
 
     @Resource
     private LogInterceptor logInterceptor;
@@ -35,7 +35,12 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
                         "/api/device/ota",
                         "/audio/**",
                         "/uploads/**",
-                        "/ws/**"
+                        "/ws/**",
+                        // 添加 swagger 相关路径
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/swagger-resources/**",
+                        "/webjars/**"
                 );
     }
 
@@ -67,7 +72,6 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
             registry.addResourceHandler("/uploads/**")
                     .addResourceLocations(uploadsPath);
 
-            super.addResourceHandlers(registry);
         } catch (Exception e) {
             log.error("添加资源失败", e);
         }
