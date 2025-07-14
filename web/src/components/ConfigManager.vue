@@ -53,6 +53,14 @@
                     <span v-else style="padding: 0 50px">&nbsp;&nbsp;&nbsp;</span>
                   </a-tooltip>
                 </template>
+                <!-- 模型应该输出不同颜色的标识 -->
+                <template v-if="configType == 'llm'" slot="modelType" slot-scope="text">
+                  <a-tag v-if="text === 'chat'" color="blue">对话模型</a-tag>
+                  <a-tag v-else-if="text === 'vision'" color="purple">视觉模型</a-tag>
+                  <a-tag v-else-if="text === 'intent'" color="orange">意图模型</a-tag>
+                  <a-tag v-else-if="text === 'embedding'" color="green">向量模型</a-tag>
+                  <span v-else>-</span>
+                </template>
                 <!-- 添加默认标识列的自定义渲染 -->
                 <template slot="isDefault" slot-scope="text">
                   <a-tag v-if="text == 1" color="green">默认</a-tag>
@@ -249,11 +257,20 @@ export default {
           align: 'center',
         },
         {
+          title: '模型类型',
+          dataIndex: 'modelType',
+          key: 'modelType',
+          width: 120,
+          align: 'center',
+          scopedSlots: { customRender: 'modelType' },
+        },
+        {
           title: '描述',
           dataIndex: 'configDesc',
           scopedSlots: { customRender: 'configDesc' },
           key: 'configDesc',
           align: 'center',
+          width: 200,
           ellipsis: true,
         },
         // 添加默认标识列
@@ -302,7 +319,9 @@ export default {
     getColumns() {
       if (this.configType === 'tts') {
         // 对于TTS，过滤掉isDefault列
-        return this.columns.filter(col => col.key !== 'isDefault');
+        return this.columns.filter(col => col.key !== 'isDefault' && col.key !== 'modelType');
+      } else if (this.configType !== 'llm') {
+        return this.columns.filter(col => col.key !== 'modelType')
       }
       return this.columns;
     }
