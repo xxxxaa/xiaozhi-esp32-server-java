@@ -1,94 +1,96 @@
 <template>
-  <div v-if="visible" class="global-chat-popup">
-    <div class="chat-popup-container">
-      <!-- 标题栏 -->
-      <div class="chat-popup-header">
-        <div class="header-left">
-          <div class="connection-status">
-            <div 
-              class="status-dot"
-              :class="{ 'connected': wsIsConnected, 'disconnected': !wsIsConnected }"
-            />
-            <span class="status-text">{{ wsConnectionStatus }}</span>
+  <transition name="scale" @after-leave="$emit('close')">
+    <div v-if="internalVisible" class="global-chat-popup">
+      <div class="chat-popup-container">
+        <!-- 标题栏 -->
+        <div class="chat-popup-header">
+          <div class="header-left">
+            <div class="connection-status">
+              <div 
+                class="status-dot"
+                :class="{ 'connected': wsIsConnected, 'disconnected': !wsIsConnected }"
+              />
+              <span class="status-text">{{ wsConnectionStatus }}</span>
+            </div>
+          </div>
+          
+          <div class="header-title">
+            <a-icon type="message" />
+            <span>小智助手</span>
+          </div>
+          
+          <div class="header-actions">
+            <!-- 添加全屏按钮 -->
+            <a-button type="text" size="small" @click="handleGoToFullChat" title="全屏模式">
+              <a-icon type="fullscreen" />
+            </a-button>
+            <a-button type="text" size="small" @click="handleClose" title="关闭">
+              <a-icon type="minus" />
+            </a-button>
           </div>
         </div>
         
-        <div class="header-title">
-          <a-icon type="message" />
-          <span>小智助手</span>
+        <!-- 聊天内容 -->
+        <div class="chat-popup-content">
+          <ChatComponent
+            ref="chatComponentRef"
+            :message-list="messages"
+            :show-input="true"
+            :show-voice-toggle="true"
+            :user-avatar="userAvatar"
+            :ai-avatar="aiAvatar"
+            :input-placeholder="'输入消息...'"
+            :empty-text="'暂无对话，开始聊天吧'"
+            :is-connected-prop="wsIsConnected"
+            :avatar-size="32"
+            :content-max-height="'calc(100% - 80px)'"
+            @recording-start="handleRecordingStart"
+            @recording-stop="handleRecordingStop"
+            @recording-error="handleRecordingError"
+            @mode-change="handleModeChange"
+          />
         </div>
         
-        <div class="header-actions">
-          <!-- 添加全屏按钮 -->
-          <a-button type="text" size="small" @click="handleGoToFullChat" title="全屏模式">
-            <a-icon type="fullscreen" />
+        <!-- 快捷操作 -->
+        <div class="chat-popup-footer">
+          <a-button 
+            type="text" 
+            size="small" 
+            @click="handleToggleConnection"
+            :disabled="wsConnectionStatus === '正在连接...'"
+            :loading="wsConnectionStatus === '正在连接...'"
+          >
+            <a-icon :type="wsIsConnected ? 'disconnect' : 'link'" />
+            {{ wsIsConnected ? '断开' : '连接' }}
           </a-button>
-          <a-button type="text" size="small" @click="handleClose" title="关闭">
-            <a-icon type="close" />
+          <a-popconfirm
+            title="确定要清空所有对话记录吗？"
+            ok-text="确定"
+            cancel-text="取消"
+            placement="top"
+            :overlay-style="{ maxWidth: '300px' }"
+            @confirm="handleClearMessages"
+          >
+            <a-button 
+              type="text" 
+              size="small"
+            >
+              <a-icon type="delete" />
+              清空
+            </a-button>
+          </a-popconfirm>
+          <a-button 
+            type="text" 
+            size="small" 
+            @click="handleGoToFullChat"
+          >
+            <a-icon type="fullscreen" />
+            全屏
           </a-button>
         </div>
       </div>
-      
-      <!-- 聊天内容 -->
-      <div class="chat-popup-content">
-        <ChatComponent
-          ref="chatComponentRef"
-          :message-list="messages"
-          :show-input="true"
-          :show-voice-toggle="true"
-          :user-avatar="userAvatar"
-          :ai-avatar="aiAvatar"
-          :input-placeholder="'输入消息...'"
-          :empty-text="'暂无对话，开始聊天吧'"
-          :is-connected-prop="wsIsConnected"
-          :avatar-size="32"
-          :content-max-height="'calc(100% - 80px)'"
-          @recording-start="handleRecordingStart"
-          @recording-stop="handleRecordingStop"
-          @recording-error="handleRecordingError"
-          @mode-change="handleModeChange"
-        />
-      </div>
-      
-      <!-- 快捷操作 -->
-      <div class="chat-popup-footer">
-        <a-button 
-          type="text" 
-          size="small" 
-          @click="handleToggleConnection"
-          :disabled="wsConnectionStatus === '正在连接...'"
-          :loading="wsConnectionStatus === '正在连接...'"
-        >
-          <a-icon :type="wsIsConnected ? 'disconnect' : 'link'" />
-          {{ wsIsConnected ? '断开' : '连接' }}
-        </a-button>
-        <a-popconfirm
-          title="确定要清空所有对话记录吗？"
-          ok-text="确定"
-          cancel-text="取消"
-          placement="top"
-          :overlay-style="{ maxWidth: '300px' }"
-          @confirm="handleClearMessages"
-        >
-          <a-button 
-            type="text" 
-            size="small"
-          >
-            <a-icon type="delete" />
-            清空
-          </a-button>
-        </a-popconfirm>
-        <a-button 
-          type="text" 
-          size="small" 
-          @click="handleGoToFullChat"
-        >
-          <a-icon type="fullscreen" />
-          全屏
-        </a-button>
-      </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script>
@@ -115,13 +117,27 @@ export default {
     return {
       messages: messages,
       userAvatar: '/assets/user-avatar.png',
-      aiAvatar: '/assets/ai-avatar.png'
+      aiAvatar: '/assets/ai-avatar.png',
+      internalVisible: false
     }
+  },
+  watch: {
+    visible(newVal) {
+      // 当外部visible属性变化时，更新内部状态
+      this.internalVisible = newVal;
+    }
+  },
+  mounted() {
+    // 初始化内部状态
+    this.internalVisible = this.visible;
   },
   methods: {
     // 处理关闭
     handleClose() {
-      this.$emit('close')
+      // 先设置内部状态为false，触发动画
+      this.internalVisible = false;
+      // 同时通知父组件
+      this.$emit('close');
     },
     
     // 处理切换连接状态 - 使用mixin中的方法
@@ -186,6 +202,7 @@ export default {
   right: 24px;
   z-index: 1001;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transform-origin: bottom right; /* 设置变换的原点在右下角 */
 }
 
 .chat-popup-container {
@@ -197,17 +214,37 @@ export default {
   border: 1px solid #e8e8e8;
   display: flex;
   flex-direction: column;
-  animation: slideInUp 0.3s ease-out;
 }
 
-@keyframes slideInUp {
-  from {
-    transform: translateY(20px);
+/* 缩放动画 - 进入 */
+.scale-enter-active {
+  animation: scale-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 弹性缓动 */
+}
+
+/* 缩放动画 - 离开 */
+.scale-leave-active {
+  animation: scale-out 0.25s cubic-bezier(0.55, 0.055, 0.675, 0.19); /* 快速缓出 */
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0.3);
     opacity: 0;
   }
-  to {
-    transform: translateY(0);
+  100% {
+    transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes scale-out {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.3);
+    opacity: 0;
   }
 }
 
@@ -323,6 +360,7 @@ export default {
     bottom: 80px;
     right: 16px;
     left: 16px;
+    transform-origin: bottom center; /* 在移动设备上改变变换原点 */
   }
   
   .chat-popup-container {
