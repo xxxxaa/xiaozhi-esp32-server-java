@@ -25,10 +25,10 @@ sudo firewall-cmd --permanent --add-port=3306/tcp
 sudo firewall-cmd --reload
 ```
 
-## 2. 安装Java JDK 8
+## 2. 安装Java JDK 21
 
 ```bash
-sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel
+sudo yum install -y java-21-openjdk java-21-openjdk-devel
 ```
 
 验证安装：
@@ -37,10 +37,11 @@ sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel
 java -version
 ```
 
-## 3. 安装MySQL 5.7
+## 3. 安装MySQL 8.0
 
 ```bash
-sudo yum localinstall -y https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm
+# 安装MySQL 8.0存储库
+sudo yum localinstall -y https://dev.mysql.com/get/mysql80-community-release-el7-7.noarch.rpm
 sudo yum install -y mysql-community-server
 ```
 
@@ -142,7 +143,7 @@ cd xiaozhi-esp32-server-java
 
 ```bash
 mvn clean package -DskipTests
-java -jar target/xiaozhi.server-1.0.jar &
+java -jar target/xiaozhi.server-*.jar &（版本号可能不同）
 ```
 
 ### 9.3 前端部署
@@ -173,7 +174,7 @@ After=syslog.target network.target
 [Service]
 User=root
 WorkingDirectory=/path/to/xiaozhi-esp32-server-java
-ExecStart=/usr/bin/java -jar target/xiaozhi.server-1.0.jar
+ExecStart=/usr/bin/java -jar target/xiaozhi.server-*.jar（版本号可能不同）
 SuccessExitStatus=143
 Restart=always
 RestartSec=10
@@ -305,5 +306,5 @@ sudo systemctl enable nginx
    增加JVM内存：
 
    ```bash
-   java -Xms512m -Xmx1024m -jar target/xiaozhi.server-1.0.jar
+   java -Xms512m -Xmx1024m -jar target/xiaozhi.server-*.jar（版本号可能不同）
    ```

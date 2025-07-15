@@ -3,6 +3,8 @@
 1. 下载`xiaozhi-esp32`
    项目，按照这个教程配置项目环境[《Windows搭建 ESP IDF 5.3.2开发环境以及编译小智》](https://icnynnzcwou8.feishu.cn/wiki/JEYDwTTALi5s2zkGlFGcDiRknXf)
 
+# 1.6.2以下版本固件
+
 2. 打开`xiaozhi-esp32/main/Kconfig.projbuild`文件，找到`WEBSOCKET_URL`的`default`的内容，把`wss://api.tenclass.net`
    改成你自己的地址，例如，我的接口地址是`ws://192.168.1.25:8091`，就把内容改成这个。
 
@@ -34,7 +36,10 @@ config WEBSOCKET_URL
 
 注意：你的地址是`ws://`开头，不是`wss://`开头，一定不要写错了。
 
-**你也可以修改ota地址以提供更多设备信息服务**（修改ota地址后无法通过官方ota自动升级，可选项）
+# 1.6.2以后固件
+
+找到`OTA_URL`的`default`的内容，把`https://api.tenclass.net/xiaozhi/ota/`
+   改成你自己的地址，例如，我的接口地址是`http://192.168.5.165:8091/api/device/ota/`，就把内容改成这个。
 
 修改前：
 ```
@@ -54,6 +59,13 @@ config OTA_VERSION_URL
         The application will access this URL to check for updates.
 ```
 
+注意：你的地址是`http://`开头，不是`https://`开头，一定不要写错了。
+
+注意：你的地址是`http://`开头，不是`https://`开头，一定不要写错了。
+
+注意：你的地址是`http://`开头，不是`https://`开头，一定不要写错了。
+
+
 3. 设置编译参数
 
 ```
@@ -65,13 +77,8 @@ idf.py set-target esp32s3
 idf.py menuconfig
 ```
 
-![图片](images/build_setting01.png)
-
-进入菜单配置后，再进入`Xiaozhi Assistant`，将`CONNECTION_TYPE`设置为`Websocket`
-回退到主菜单，再进入`Xiaozhi Assistant`，将`BOARD_TYPE`设置你板子的具体型号
+进入菜单配置后，再进入`Xiaozhi Assistant`，将`BOARD_TYPE`设置你板子的具体型号
 保存退出，回到终端命令行。
-
-![图片](images/build_setting02.png)
 
 4. 编译固件
 

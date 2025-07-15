@@ -5,21 +5,19 @@
   - Windows 10或更高版本（建议使用最新版本）
   - 管理员权限
 
-## 1. 安装Java JDK 8
-1. 访问Oracle官网下载JDK 8：[Oracle JDK 8下载](https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html)  
-   备用下载地址：[CSDN下载](https://download.csdn.net/download/weixin_55629186/89045298)
-   - 选择"Windows x64"版本下载（如`jdk-8u381-windows-x64.exe`）
+## 1. 安装Java JDK 21
+1. 访问Oracle官网下载JDK 21：[Oracle JDK 21下载](https://www.oracle.com/java/technologies/downloads/#java21)  
 2. 运行安装程序，按向导完成安装
 3. 配置环境变量：
    - 右键"此电脑" → 属性 → 高级系统设置 → 环境变量
    - 在"系统变量"中新建：
      - 变量名：`JAVA_HOME`
-     - 变量值：`C:\Program Files\Java\jdk1.8.0_381`（具体路径取决于您的安装版本）
+     - 变量值：`C:\Program Files\Java\jdk-21.0.7`（具体路径取决于您的安装版本）
    - 编辑"Path"变量，添加：`%JAVA_HOME%\bin`
 4. 验证安装：
    - 打开命令提示符（Win+R，输入`cmd`）
    - 输入：`java -version`
-   - 应显示类似：`java version "1.8.0_381"`
+   - 应显示类似：`openjdk version "21.0.7"`
 
 ## 2. 安装MySQL数据库
 1. 下载MySQL社区版：[MySQL下载](https://dev.mysql.com/downloads/installer/)
@@ -32,7 +30,7 @@
    - 记住您设置的密码
 5. 完成安装后，启动MySQL服务
 6. 配置变量
-   - 找到MySQL的安装路径，默认路径通常是：`C:\Program Files\MySQL\MySQL Server 5.7\bin`
+   - 找到MySQL的安装路径，默认路径通常是：`C:\Program Files\MySQL\MySQL Server 8\bin`
    - 如果不确定，可以在文件资源管理器中搜索 `mysql.exe` 的路径。
 7. 添加到环境变量
    - 右键 此电脑 → 属性 → 高级系统设置 → 环境变量。
@@ -40,7 +38,7 @@
    - 保存后关闭所有窗口。
 8. 验证是否生效
    - 重新打开命令提示符（CMD），输入`mysql --version`
-   - 如果显示版本信息（如 `mysql Ver 14.14 Distrib 5.7.43`），则配置成功。
+   - 如果显示版本信息（如 `mysql  Ver 8.0.42`），则配置成功。
 
 ## 3. 安装Maven
 1. 下载Maven：[Maven下载](https://maven.apache.org/download.cgi)
@@ -122,7 +120,7 @@
    ```
 4. 运行后端服务：
    ```bash
-   java -jar target\xiaozhi.server-1.0.jar
+   java -jar target\xiaozhi.server-*.jar（版本号可能不同）
    ```
 
 ## 前端部署（Windows）

@@ -1,4 +1,26 @@
 # 变更日志
+## [2.8.17] - 2025-07-16
+### 新增
+- feat: 新增 Swagger
+- update: 模型增加辨识度标签
+- update: 删除全局聊天多余缩小按钮
+- update: 优化展示样式，可以切换浏览器标签页样式
+- update: 实体采用 Lombok 方法
+### 修复
+- fix: 修复地址错误问题
+- fix: 修复添加设备时验证码未生效问题
+- fix: 修复 init SQL 脚本初始化缺少字段问题
+- fix: 修复 issues #119 #120
+### 样式优化
+- style: 更新全局聊天缩放动画，更接近苹果效果
+- 优化: 聊天样式
+### 删除
+- delete: 删除无用 log
+### 重构
+- refactor(stt): 优化 VoskSttService 类的代码结构
+- refactor: 去掉多余 log
+
+# 变更日志
 ## [2.8.16] - 2025-07-02
 ### 其他变更
 - refactor:vad重构，去除agc

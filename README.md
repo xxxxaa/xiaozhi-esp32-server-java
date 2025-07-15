@@ -93,7 +93,7 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 | **TTS多引擎支持** | ✅ | 支持微软、阿里、火山等多种TTS引擎 |
 | **多用户支持** | ✅ | 支持多用户配置，满足家庭多成员使用需求 |
 | **用户端** | ✅ | 原生卡片方式用户端设备管理页面，方便用户简洁配置 |
-
+| **语音提醒与闹钟** | ✅ | 支持设置语音提醒和闹钟功能 |
 
 ### 开发中功能 🚧
 
@@ -109,7 +109,6 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 | **多设备协同** | 🚧 | 支持多设备协同工作，实现全屋覆盖的语音助手系统 |
 | **自定义插件系统** | 🚧 | 支持自定义插件开发，扩展系统功能 |
 | **知识库集成** | 🚧 | 支持接入外部知识库，增强问答能力 |
-| **语音提醒与闹钟** | 🚧 | 支持设置语音提醒和闹钟功能 |
 | **远程控制** | 🚧 | 支持远程控制设备，实现外出时的设备管理 |
 
 
@@ -154,7 +153,7 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 
 我们提供了多种部署方式，以满足不同用户的需求：
 
-### 1. 本地源码运行（该文档基于旧版本JDK8编写，暂未更新，目前项目依赖JDK21）
+### 1. 本地源码运行
 
 - [Windows部署文档](./docs/WINDOWS_DEVELOPMENT.md) - 适合Windows环境开发和测试 - 由群友"汇合"提供
 - [CentOS部署文档](./docs/CENTOS_DEVELOPMENT.md) - 适合Linux服务器环境部署 - 由群友"汇合"提供
@@ -165,17 +164,11 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 
 - [Docker部署文档](./docs/DOCKER.md) - 快速容器化部署方案 - 由群友"💍Mr_li"提供
 
-成功启动后，WebSocket 连接需要通过宿主IP进行通信，例如：`ws://192.168.31.100:8091/ws/xiaozhi/v1/`
-
-### 3. 视频教程
-
-- [视频部署教程](https://doc.sivitacraft.com/article/xiaozhiai-javaserver/) - 由群友成员"苦瓜"录制
-
-### 4. 固件编译
+### 3. 固件编译
 
 - [固件编译文档](./docs/FIRMWARE-BUILD.md) - 详细的固件编译和烧录过程
 
-烧录成功且联网成功后，通过唤醒词唤醒小智，留意 server 端输出的控制台信息。
+烧录成功且联网成功后，通过唤醒词唤醒小智，留意后端控制台输出的信息。
 
 ---
 
