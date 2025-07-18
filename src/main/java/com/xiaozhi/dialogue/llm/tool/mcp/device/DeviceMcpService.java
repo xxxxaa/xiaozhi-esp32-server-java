@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.beans.factory.annotation.Value;
@@ -136,13 +137,12 @@ public class DeviceMcpService {
                 for (Map<String, Object> tool : tools) {
                     //开始注册工具
                     String name = (String) tool.get("name");
-                    var funcName = "mcp_" + name;
+                    String funcName = "mcp_" + name.replace(".", "_");
                     String funcDescription = (String) tool.get("description");
                     Object inputSchema = tool.get("inputSchema");
 
-                    var toolCallback = FunctionToolCallback
+                    ToolCallback toolCallback = FunctionToolCallback
                             .builder(funcName, (Map<String, Object> params, ToolContext toolContext) -> {
-                                String actFuncName = funcName.substring(4); // 原始方法调用，去掉iot_前缀
                                 DeviceMcpMessage request = new DeviceMcpMessage();
                                 request.setSessionId(chatSession.getSessionId());
 
@@ -150,7 +150,7 @@ public class DeviceMcpService {
                                 requestPayload.setMethod("tools/call");
                                 requestPayload.setId(chatSession.getDeviceMcpHolder().getMcpRequestId());
                                 requestPayload.setParams(Map.of(
-                                        "name", actFuncName,
+                                        "name", name,
                                         "arguments", params
                                 ));
 
