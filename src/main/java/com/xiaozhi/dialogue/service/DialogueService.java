@@ -44,7 +44,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
     private static final DecimalFormat df = new DecimalFormat("0.00");
     private static final long TIMEOUT_MS = 5000;
     private static final int MAX_CONCURRENT_PER_SESSION = 3; // 每个session最大并发数
-    private static final int MAX_RETRY_COUNT = 2; // 最大重试次数
+    private static final int MAX_RETRY_COUNT = 1; // 最大重试次数
     private static final long TTS_TIMEOUT_MS = 10000; // TTS生成超时时间
 
     @Resource
@@ -250,6 +250,10 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             }
             return Integer.compare(this.sentence.getSeq(), other.sentence.getSeq());
         }
+
+        public String getSessionId() {
+            return this.sessionId;
+        }
     }
 
     /**
@@ -318,6 +322,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                             sessionManager.completeAudioStream(sessionId);
                             sessionManager.setStreamingState(sessionId, false);
                         }
+                        break;
+
+                    default:
                         break;
                 }
             } catch (Exception e) {
@@ -465,6 +472,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         seqCounters.putIfAbsent(sessionId, new AtomicInteger(0));
         // 获取句子序列号
         int seq = seqCounters.get(sessionId).incrementAndGet();
+        
+        // 耗时操作需及时更新最后活动时间，避免误判为会话终止
+        sessionManager.updateLastActivity(sessionId);
 
         // 累加完整回复内容
         if (text != null && !text.isEmpty()) {
@@ -500,6 +510,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         Sentence sentence = new Sentence(seq, text, isFirst, isLast);
         sentence.setModelResponseTime(responseTime); // 记录模型响应时间
         sentence.setAssistantTimeMillis(assistantTimeMillis); // 设置对话ID
+        
+        logger.info("处理LLM返回的句子: seq={}, text={}, isFirst={}, isLast={}, responseTime={}s", seq, text, isFirst, isLast, responseTime);
 
         // 添加到句子队列
         CopyOnWriteArrayList<Sentence> queue = sentenceQueue.get(sessionId);
@@ -572,6 +584,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             Semaphore semaphore = getSessionSemaphore(sessionId);
 
             while (!taskQueue.isEmpty()) {
+                // 耗时操作需及时更新最后活动时间，避免误判为会话终止
+                sessionManager.updateLastActivity(sessionId);
+
                 // 尝试获取许可
                 if (!semaphore.tryAcquire()) {
                     // 无法获取许可，等待其他任务完成
@@ -618,20 +633,21 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         }, Thread::startVirtualThread);
 
         try {
+            // 耗时操作需及时更新最后活动时间，避免误判为会话终止
+            sessionManager.updateLastActivity(task.getSessionId());
+
             // 设置超时
             String audioPath = future.get(TTS_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
             // 成功生成音频
             handleTtsSuccess(task, audioPath);
-
         } catch (TimeoutException e) {
-            logger.warn("TTS生成超时 - 序号: {}, 重试次数: {}/{}, 内容: \"{}\"",
-                    task.sentence.getSeq(), task.retryCount, MAX_RETRY_COUNT, task.sentence.getText());
+            // logger.warn("TTS生成超时 - 序号: {}, 重试次数: {}/{}, 内容: \"{}\"",
+            //         task.sentence.getSeq(), task.retryCount, MAX_RETRY_COUNT, task.sentence.getText());
             handleTtsFailure(task, "超时");
-
         } catch (Exception e) {
-            logger.error("TTS生成失败 - 序号: {}, 重试次数: {}/{}, 错误: {}",
-                    task.sentence.getSeq(), task.retryCount, MAX_RETRY_COUNT, e.getMessage());
+            // logger.error("TTS生成失败 - 序号: {}, 重试次数: {}/{}, 错误: {}",
+            //         task.sentence.getSeq(), task.retryCount, MAX_RETRY_COUNT, e.getMessage());
             handleTtsFailure(task, e.getMessage());
         }
     }
@@ -643,6 +659,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         // 记录心情
         task.sentence.setMoods(task.emoSentence.getMoods());
 
+        // 耗时操作需及时更新最后活动时间，避免误判为会话终止
+        sessionManager.updateLastActivity(task.getSessionId());
         // 记录日志
         logger.info("句子音频生成完成 - 序号: {}, 对话ID: {}, 模型响应: {}秒, 语音生成: {}秒, 内容: \"{}\"",
                 task.sentence.getSeq(), task.sentence.getAssistantTimeMillis(),
@@ -659,10 +677,13 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                     .put(task.sentence.getSeq(), audioPath);
         }
 
-
         // 如果是首句，需要标记首句处理完成
         if (task.isFirst) {
-            firstSentDone.get(task.sessionId).set(true);
+            if(firstSentDone.get(task.sessionId) != null) {
+                firstSentDone.get(task.sessionId).set(true);
+            } else {
+                logger.error("会话 {} 已经被删除，无法标记首句处理完成。", task.sessionId);
+            }
         }
 
         // 尝试处理队列
@@ -677,20 +698,25 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
      */
     private void handleTtsFailure(TtsTask task, String reason) {
         task.retryCount++;
+    
+        // 耗时操作需及时更新最后活动时间，避免服务端误判为会话终止
+        sessionManager.updateLastActivity(task.getSessionId());
+        // 异常或失败，发送类似心跳包，避免设备端误判为会话终止
+        messageService.sendEmotion(task.session, "happy");
 
         if (task.retryCount <= MAX_RETRY_COUNT) {
             // 标记为重试任务并重新提交
             task.isRetry = true;
-            logger.info("TTS任务重试 - 序号: {}, 重试次数: {}/{}, 原因: {}",
-                    task.sentence.getSeq(), task.retryCount, MAX_RETRY_COUNT, reason);
+            logger.info("TTS任务重试 - 序号: {}, 重试次数: {}/{}, 内容: \"{}\", 原因: {}",
+                    task.sentence.getSeq(), task.retryCount, MAX_RETRY_COUNT, task.sentence.getText(), reason);
 
             // 延迟后重试
             CompletableFuture.delayedExecutor(500 * task.retryCount, TimeUnit.MILLISECONDS)
                     .execute(() -> submitTtsTask(task));
         } else {
             // 超过最大重试次数，标记为失败
-            logger.error("TTS任务失败 - 序号: {}, 已达最大重试次数, 原因: {}",
-                    task.sentence.getSeq(), reason);
+            logger.error("TTS任务失败 - 序号: {}, 重试次数: {}/{}, 已达最大重试次数, 原因: {}",
+                    task.sentence.getSeq(), task.retryCount, MAX_RETRY_COUNT, reason);
 
             // 即使失败也标记为准备好，以便队列继续处理
             task.sentence.setAudio(null);
@@ -698,11 +724,20 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
             // 如果是首句，需要标记首句处理完成
             if (task.isFirst) {
-                firstSentDone.get(task.sessionId).set(true);
+                if(firstSentDone.get(task.sessionId) != null) {
+                    firstSentDone.get(task.sessionId).set(true);
+                } else {
+                    logger.error("会话 {} 已经被删除，无法标记首句处理完成。", task.sessionId);
+                }
             }
+
             // 尝试处理队列
-            if (firstSentDone.get(task.sessionId).get()) {
-                processQueue(task.session, task.sessionId);
+            if(firstSentDone.get(task.sessionId) != null ) {
+                if (firstSentDone.get(task.sessionId).get()) {
+                    processQueue(task.session, task.sessionId);
+                }
+            } else {
+                logger.error("会话 {} 已经被删除，无法处理队列。", task.sessionId);
             }
         }
     }

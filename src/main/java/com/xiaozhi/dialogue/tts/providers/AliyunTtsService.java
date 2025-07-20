@@ -318,10 +318,10 @@ public class AliyunTtsService implements TtsService {
                     audio = future.get(TTS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 } catch (TimeoutException e) {
                     future.cancel(true);
-                    logger.warn("语音合成aliyun - 使用{}模型超时，正在重试 ({}/{})", voiceName, attempts + 1, MAX_RETRY_ATTEMPTS);
+                    logger.warn("语音合成aliyun - 使用{}模型超时，正在重试 ({}/{})，文本：{}", voiceName, attempts + 1, MAX_RETRY_ATTEMPTS, text);
                     attempts++;
                     if (attempts >= MAX_RETRY_ATTEMPTS) {
-                        logger.error("语音合成aliyun - 使用{}模型多次超时，放弃重试", voiceName);
+                        logger.error("语音合成aliyun - 使用{}模型多次超时，放弃重试，文本：{}", voiceName, text);
                         executor.shutdownNow();
                         return StrUtil.EMPTY;
                     }

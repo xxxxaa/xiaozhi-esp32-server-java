@@ -4,6 +4,7 @@ import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.communication.common.SessionManager;
 import com.xiaozhi.utils.AudioUtils;
 import com.xiaozhi.utils.OpusProcessor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -30,6 +37,9 @@ public class AudioService {
     
     // 预缓冲帧数量
     private static final int PRE_BUFFER_FRAMES = 3;
+
+    // 仅播放文本的 Sleep 时长
+    private static final long ONLY_TEXT_SLEEP_TIME_MS = 1000;
 
     @Autowired
     private OpusProcessor opusProcessor;
@@ -151,7 +161,33 @@ public class AudioService {
         CompletableFuture<Void> startFuture = isFirst ? CompletableFuture.runAsync(()->sendStart(session))
                 : CompletableFuture.completedFuture(null);
         
+        logger.info("向设备发送音频消息（sendAudioMessage） - SessionId: {}, 文本: {}, 音频路径: {}", sessionId, text, audioPath);
+
         if (audioPath == null) {
+            if(text != null && !text.isEmpty()) {
+                // 发送句子开始标记
+                CompletableFuture<Void> sentenceStartFuture = startFuture.thenRun(() -> sendSentenceStart(session, text + "--语音合成异常!!"));
+
+                // 发送句子表情
+                CompletableFuture<Void> emotionFuture = sentenceStartFuture.thenRun(() -> sendSentenceEmotion(session, sentence, null));
+                
+                // 使用单独的变量存储播放状态引用
+                final AtomicBoolean finalPlayingState = playingState;
+
+                return emotionFuture.thenCompose(v -> {
+                    finalPlayingState.set(false);
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(ONLY_TEXT_SLEEP_TIME_MS);
+                    } catch (InterruptedException e) {
+                        logger.error("等待异常提示播放失败", e);
+                    }
+
+                    if (isLast) {
+                        return sendStop(session);
+                    }
+                    return CompletableFuture.completedFuture(null);
+                });
+            }
             // 如果没有音频路径但是结束消息，发送结束标记
             if (isLast) {
                 return startFuture.thenCompose(v -> sendStop(session));
