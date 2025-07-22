@@ -63,10 +63,13 @@ public class AudioService {
     
     // 存储首帧发送状态
     private final Map<String, AtomicBoolean> firstFrameSent = new ConcurrentHashMap<>();
-    
+
     // 存储每个会话的调度任务
     private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
-    
+
+    // 存储每个会话的音频发送任务
+    private final Map<String, CompletableFuture<?>> sendAudioTasks = new ConcurrentHashMap<>();
+
     // 存储播放开始时间（纳秒）
     private final Map<String, Long> playStartTimes = new ConcurrentHashMap<>();
     
@@ -91,6 +94,13 @@ public class AudioService {
      * 发送停止消息
      */
     public CompletableFuture<Void> sendStop(ChatSession session) {
+        return sendStop(session, false);
+    }
+
+    /**
+     * 发送停止消息
+     */
+    public CompletableFuture<Void> sendStop(ChatSession session, boolean stopByAudioTaskInner) {
         String sessionId = session.getSessionId();
 
         try {
@@ -117,6 +127,13 @@ public class AudioService {
                 });
             }
             sessionManager.setPlaying(sessionId, false);
+
+            if(!stopByAudioTaskInner){
+                CompletableFuture<?> sendAudioTask = sendAudioTasks.remove(sessionId);
+                if(sendAudioTask != null && !sendAudioTask.isDone()){
+                    sendAudioTask.cancel(true);
+                }
+            }
             return sendTtsMessageFuture;
         } catch (Exception e) {
             logger.error("发送停止消息失败", e);
@@ -170,7 +187,7 @@ public class AudioService {
 
                 // 发送句子表情
                 CompletableFuture<Void> emotionFuture = sentenceStartFuture.thenRun(() -> sendSentenceEmotion(session, sentence, null));
-                
+
                 // 使用单独的变量存储播放状态引用
                 final AtomicBoolean finalPlayingState = playingState;
 
@@ -328,7 +345,7 @@ public class AudioService {
         }).thenCompose(v -> {
             // 发送停止消息（只有在isLast为true时才发送）
             if (isLast) {
-                return sendStop(session);
+                return sendStop(session, true);
             }
             return CompletableFuture.completedFuture(null);
         }).exceptionally(error -> {
@@ -337,7 +354,7 @@ public class AudioService {
             // 如果发生错误但仍然是结束消息，确保发送stop
             if (isLast) {
                 try {
-                    sendStop(session);
+                    sendStop(session, true);
                 } catch (Exception e) {
                     logger.error("发送停止消息失败", e);
                 }
