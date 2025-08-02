@@ -41,7 +41,7 @@ public class FileUploadController {
      */
     @PostMapping("/upload")
     @ResponseBody
-    @Operation(summary = "文件上传", description = "返回上传结果")
+    @Operation(summary = "文件上传", description = "如果有配置腾讯云对象存储的话默认会存储到对象存储中")
     public AjaxResult uploadFile(
             @Parameter(description = "上传的文件") @RequestParam("file") MultipartFile file,
             @Parameter(description = "文件类型") @RequestParam(value = "type", required = false, defaultValue = "common") String type) {

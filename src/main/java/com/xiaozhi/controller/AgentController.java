@@ -28,7 +28,7 @@ import jakarta.annotation.Resource;
  */
 @RestController
 @RequestMapping("/api/agent")
-@Tag(name = "智能体管理", description = "智能体相关操作")
+@Tag(name = "智能体管理", description = "Coze、Dify智能体相关操作")
 public class AgentController extends BaseController {
     @Resource
     private SysAgentService agentService;
@@ -36,12 +36,12 @@ public class AgentController extends BaseController {
     /**
      * 查询智能体列表
      * 
-     * @param agent    查询条件
+     * @param agent 查询条件
      * @return 智能体列表
      */
     @GetMapping("/query")
     @ResponseBody
-    @Operation(summary = "根据条件查询智能体", description = "返回智能体列表信息")
+    @Operation(summary = "根据条件查询智能体", description = "返回智能体列表信息，会自动查询Coze和Dify当前存在智能体并更新本地数据库信息")
     public AjaxResult query(@io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "智能体信息",
             content = @Content(schema = @Schema(implementation = SysAgent.class))) SysAgent agent) {

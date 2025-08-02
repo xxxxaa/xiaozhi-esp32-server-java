@@ -65,7 +65,7 @@ public class MessageController extends BaseController {
      */
     @PostMapping("/delete")
     @ResponseBody
-    @Operation(summary = "删除对话消息", description = "返回删除结果")
+    @Operation(summary = "删除对话消息", description = "传递messageId只会删除单条消息，传递deviceId会删除该设备所有消息，逻辑删除")
     public AjaxResult delete(SysMessage message) {
         try {
 

@@ -6,6 +6,7 @@ import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.communication.common.SessionManager;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -41,6 +42,7 @@ public class VLChatController extends BaseController {
      */
     @UnLogin
     @PostMapping(value = "/vl/chat", produces = "application/json;charset=UTF-8")
+    @Operation(summary = "图片识别", description = "根据问题返回识别结果")
     public String vlChat(
         @Parameter(description = "文件") @RequestParam("file") MultipartFile file,
         @Parameter(description = "问题") @RequestParam String question,
