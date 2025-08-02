@@ -8,9 +8,15 @@ import com.xiaozhi.common.web.AjaxResult;
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.dialogue.stt.factory.SttServiceFactory;
 import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
+import com.xiaozhi.entity.SysAgent;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.service.SysConfigService;
 import com.xiaozhi.utils.CmsUtils;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -34,6 +40,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/config")
+@Tag(name = "配置管理", description = "配置相关操作")
 public class ConfigController extends BaseController {
 
     @Resource
@@ -53,6 +60,7 @@ public class ConfigController extends BaseController {
      */
     @GetMapping("/query")
     @ResponseBody
+    @Operation(summary = "根据条件查询配置", description = "返回配置信息列表")
     public AjaxResult query(SysConfig config, HttpServletRequest request) {
         try {
             PageFilter pageFilter = initPageFilter(request);
@@ -74,6 +82,7 @@ public class ConfigController extends BaseController {
      */
     @PostMapping("/update")
     @ResponseBody
+    @Operation(summary = "更新配置信息", description = "返回更新结果")
     public AjaxResult update(SysConfig config) {
         try {
             config.setUserId(CmsUtils.getUserId());
@@ -104,6 +113,7 @@ public class ConfigController extends BaseController {
      */
     @PostMapping("/add")
     @ResponseBody
+    @Operation(summary = "添加配置信息", description = "返回添加结果")
     public AjaxResult add(SysConfig config) {
         try {
             config.setUserId(CmsUtils.getUserId());
@@ -117,6 +127,7 @@ public class ConfigController extends BaseController {
 
     @PostMapping("/getModels")
     @ResponseBody
+    @Operation(summary = "获取模型列表", description = "返回模型列表")
     public AjaxResult getModels(SysConfig config) {
         try {
             RestTemplate restTemplate = new RestTemplate();

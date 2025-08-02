@@ -2,6 +2,8 @@ package com.xiaozhi.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -19,12 +21,14 @@ import org.springframework.format.annotation.DateTimeFormat;
 @Getter
 @Accessors(chain = true)
 @JsonIgnoreProperties({ "start", "limit", "userId", "startTime", "endTime" })
+@Schema(description = "基础信息")
 public class Base<T extends Base<T>> implements java.io.Serializable {
     /**
      * 创建日期
      */
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "创建时间")
     protected Date createTime;
 
     /**
@@ -32,11 +36,13 @@ public class Base<T extends Base<T>> implements java.io.Serializable {
      */
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "更新时间")
     protected Date updateTime;
 
     /**
      * 用户ID
      */
+    @Schema(description = "用户ID")
     private Integer userId;
 
     /**
@@ -44,6 +50,7 @@ public class Base<T extends Base<T>> implements java.io.Serializable {
      */
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "查询开始时间")
     private Date startTime;
 
     /**
@@ -51,6 +58,7 @@ public class Base<T extends Base<T>> implements java.io.Serializable {
      */
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "查询结束时间")
     private Date endTime;
 
     @SuppressWarnings("unchecked")

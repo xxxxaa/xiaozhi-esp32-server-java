@@ -5,6 +5,8 @@ import com.xiaozhi.common.web.AjaxResult;
 import com.xiaozhi.entity.SysTemplate;
 import com.xiaozhi.service.SysTemplateService;
 import com.xiaozhi.utils.CmsUtils;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +17,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/template")
+@Tag(name = "提示词模板管理", description = "提示词模板相关操作")
 public class TemplateController {
 
     @Resource

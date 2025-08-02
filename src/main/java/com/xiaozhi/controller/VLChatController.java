@@ -5,6 +5,9 @@ import com.xiaozhi.common.interceptor.UnLogin;
 import com.xiaozhi.communication.common.ChatSession;
 import com.xiaozhi.communication.common.SessionManager;
 import com.xiaozhi.dialogue.llm.factory.ChatModelFactory;
+
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -23,6 +26,7 @@ import java.util.Map;
  * 视觉对话
  */
 @RestController
+@Tag(name = "视觉对话管理", description = "视觉对话相关操作")
 public class VLChatController extends BaseController {
 
     @Resource
@@ -37,9 +41,10 @@ public class VLChatController extends BaseController {
      */
     @UnLogin
     @PostMapping(value = "/vl/chat", produces = "application/json;charset=UTF-8")
-    public String vlChat(@RequestParam("file") MultipartFile file,
-                         @RequestParam String question,
-                         HttpServletRequest request) {
+    public String vlChat(
+        @Parameter(description = "文件") @RequestParam("file") MultipartFile file,
+        @Parameter(description = "问题") @RequestParam String question,
+        HttpServletRequest request) {
         try {
             //获取当前下发的session信息
             String authorization = request.getHeader("authorization");

@@ -7,6 +7,9 @@ import com.xiaozhi.dialogue.llm.ChatService;
 import com.xiaozhi.entity.SysMessage;
 import com.xiaozhi.service.SysMessageService;
 import com.xiaozhi.utils.CmsUtils;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +25,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/message")
+@Tag(name = "消息管理", description = "消息相关操作")
 public class MessageController extends BaseController {
 
     @Resource
@@ -38,6 +42,7 @@ public class MessageController extends BaseController {
      */
     @GetMapping("/query")
     @ResponseBody
+    @Operation(summary = "根据条件查询对话消息", description = "返回对话消息列表")
     public AjaxResult query(SysMessage message, HttpServletRequest request) {
         try {
             PageFilter pageFilter = initPageFilter(request);
@@ -60,6 +65,7 @@ public class MessageController extends BaseController {
      */
     @PostMapping("/delete")
     @ResponseBody
+    @Operation(summary = "删除对话消息", description = "返回删除结果")
     public AjaxResult delete(SysMessage message) {
         try {
 
