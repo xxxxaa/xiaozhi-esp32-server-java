@@ -13,6 +13,12 @@ import com.xiaozhi.service.SysUserService;
 import com.xiaozhi.utils.CmsUtils;
 import com.xiaozhi.utils.ImageUtils;
 import io.github.biezhi.ome.OhMyEmail;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.SchemaProperty;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -34,6 +40,7 @@ import static io.github.biezhi.ome.OhMyEmail.SMTP_QQ;
  */
 @RestController
 @RequestMapping("/api/user")
+@Tag(name = "用户管理", description = "用户相关操作")
 public class UserController extends BaseController {
 
     @Resource
@@ -62,6 +69,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/login")
     @ResponseBody
+    @Operation(summary = "用户登录", description = "返回登录结果")
     public AjaxResult login(@RequestBody Map<String, Object> loginRequest, HttpServletRequest request) {
         try {
             String username = (String) loginRequest.get("username");
@@ -96,6 +104,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/add")
     @ResponseBody
+    @Operation(summary = "新增用户", description = "返回添加结果")
     public AjaxResult add(@RequestBody Map<String, Object> loginRequest, HttpServletRequest request) {
         try {
             String username = (String) loginRequest.get("username");
@@ -135,7 +144,8 @@ public class UserController extends BaseController {
      */
     @GetMapping("/query")
     @ResponseBody
-    public AjaxResult query(String username) {
+    @Operation(summary = "根据用户名查询用户信息", description = "返回用户信息")
+    public AjaxResult query(@Parameter(description = "用户名") String username) {
         try {
             SysUser user = userService.query(username);
             AjaxResult result = AjaxResult.success();
@@ -155,6 +165,7 @@ public class UserController extends BaseController {
      */
     @GetMapping("/queryUsers")
     @ResponseBody
+    @Operation(summary = "根据条件查询用户信息列表", description = "返回用户信息列表")
     public AjaxResult queryUsers(SysUser user, HttpServletRequest request) {
         try {
             PageFilter pageFilter = initPageFilter(request);
@@ -176,6 +187,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/update")
     @ResponseBody
+    @Operation(summary = "修改用户信息", description = "返回修改结果")
     public AjaxResult update(@RequestBody Map<String, Object> loginRequest) {
         try {
             String username = (String) loginRequest.get("username");
@@ -222,8 +234,10 @@ public class UserController extends BaseController {
      */
     @PostMapping("/sendEmailCaptcha")
     @ResponseBody
-    public AjaxResult sendEmailCaptcha(@RequestBody(required = false) Map<String, Object> requestBody,
-            HttpServletRequest request) {
+    @Operation(summary = "发送邮箱验证码", description = "返回发送结果")
+    public AjaxResult sendEmailCaptcha(
+        @RequestBody(required = false) Map<String, Object> requestBody,
+        HttpServletRequest request) {
         try {
             String email = (String) requestBody.get("email");
             String type = (String) requestBody.get("type");
@@ -299,7 +313,10 @@ public class UserController extends BaseController {
      */
     @GetMapping("/checkCaptcha")
     @ResponseBody
-    public AjaxResult checkCaptcha(String code, String email) {
+    @Operation(summary = "验证验证码是否有效", description = "返回验证结果")
+    public AjaxResult checkCaptcha(
+        @Parameter(description = "验证码") String code, 
+        @Parameter(description = "邮箱地址") String email) {
         try {
             int row = userService.queryCaptcha(code, email);
             if (1 > row)
@@ -320,7 +337,10 @@ public class UserController extends BaseController {
      */
     @GetMapping("/checkUser")
     @ResponseBody
-    public AjaxResult checkUser(String username, String email) {
+    @Operation(summary = "检查用户名和邮箱是否已存在", description = "返回检查结果")
+    public AjaxResult checkUser(
+        @Parameter(description = "用户名") String username, 
+        @Parameter(description = "邮箱地址") String email) {
         try {
             SysUser userName = userService.selectUserByUsername(username);
             SysUser userEmail = userService.selectUserByEmail(email);

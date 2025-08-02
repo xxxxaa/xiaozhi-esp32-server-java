@@ -5,6 +5,9 @@ import com.xiaozhi.common.web.AjaxResult;
 import com.xiaozhi.entity.SysTemplate;
 import com.xiaozhi.service.SysTemplateService;
 import com.xiaozhi.utils.CmsUtils;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/template")
+@Tag(name = "提示词模板管理", description = "提示词模板相关操作")
 public class TemplateController {
 
     @Resource
@@ -25,6 +29,7 @@ public class TemplateController {
      */
     @GetMapping("/query")
     @ResponseBody
+    @Operation(summary = "根据条件查询角色模板", description = "返回模板列表")
     public AjaxResult query(SysTemplate template) {
         try {
             template.setUserId(CmsUtils.getUserId());
@@ -42,6 +47,7 @@ public class TemplateController {
      */
     @PostMapping("/add")
     @ResponseBody
+    @Operation(summary = "添加角色模板", description = "返回添加结果")
     public AjaxResult add(SysTemplate template) {
             try {
             template.setUserId(CmsUtils.getUserId());
@@ -57,6 +63,7 @@ public class TemplateController {
      */
     @PostMapping("/update")
     @ResponseBody
+    @Operation(summary = "更新角色模板", description = "返回更新结果")
     public AjaxResult update(SysTemplate template) {
         try {
             template.setUserId(CmsUtils.getUserId());

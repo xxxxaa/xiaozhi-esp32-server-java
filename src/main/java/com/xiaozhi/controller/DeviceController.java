@@ -10,8 +10,11 @@ import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.service.SysDeviceService;
 import com.xiaozhi.utils.CmsUtils;
 import com.xiaozhi.utils.JsonUtil;
+
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -34,6 +37,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/device")
+@Tag(name = "设备管理", description = "设备相关操作")
 public class DeviceController extends BaseController {
 
     @Resource
@@ -56,6 +60,7 @@ public class DeviceController extends BaseController {
      */
     @GetMapping("/query")
     @ResponseBody
+    @Operation(summary = "根据条件查询设备", description = "返回设备信息列表")
     public AjaxResult query(SysDevice device, HttpServletRequest request) {
         try {
             PageFilter pageFilter = initPageFilter(request);
@@ -77,7 +82,8 @@ public class DeviceController extends BaseController {
      */
     @PostMapping("/add")
     @ResponseBody
-    public AjaxResult add(String code) {
+    @Operation(summary = "添加设备", description = "返回添加结果")
+    public AjaxResult add(@Parameter(description = "设备验证码") String code) {
         try {
             SysDevice device = new SysDevice();
             device.setCode(code);
@@ -119,6 +125,7 @@ public class DeviceController extends BaseController {
      */
     @PostMapping("/update")
     @ResponseBody
+    @Operation(summary = "更新设备信息", description = "返回更新结果")
     public AjaxResult update(SysDevice device) {
         try {
             device.setUserId(CmsUtils.getUserId());
@@ -138,6 +145,7 @@ public class DeviceController extends BaseController {
      */
     @PostMapping("/delete")
     @ResponseBody
+    @Operation(summary = "删除设备", description = "返回删除结果")
     public AjaxResult delete(SysDevice device) {
         try {
             device.setUserId(CmsUtils.getUserId());
@@ -163,8 +171,11 @@ public class DeviceController extends BaseController {
 
     @PostMapping("/ota")
     @ResponseBody
-    public ResponseEntity<byte[]> ota(@RequestHeader("Device-Id") String deviceIdAuth, @RequestBody String requestBody,
-                                   HttpServletRequest request) {
+    @Operation(summary = "处理OTA请求", description = "返回OTA结果")
+    public ResponseEntity<byte[]> ota(
+        @Parameter(description = "设备ID") @RequestHeader("Device-Id") String deviceIdAuth, 
+        @RequestBody String requestBody,
+        HttpServletRequest request) {
         try {
             // 读取请求体内容
             SysDevice device = new SysDevice();
@@ -200,7 +211,6 @@ public class DeviceController extends BaseController {
                     if (board.containsKey("type")) {
                         device.setType((String) board.get("type"));
                     }
-
                 }
             } catch (Exception e) {
                 logger.debug("JSON解析失败: {}", e.getMessage());
@@ -309,8 +319,10 @@ public class DeviceController extends BaseController {
 
     @PostMapping("/ota/activate")
     @ResponseBody
-    public ResponseEntity<String> otaActivate(@Parameter(name = "Device-Id", description = "设备唯一标识", required = true, in = ParameterIn.HEADER)
-                                                  @RequestHeader("Device-Id") String deviceId) {
+    @Operation(summary = "查询OTA激活状态", description = "返回OTA激活状态")
+    public ResponseEntity<String> otaActivate(
+        @Parameter(name = "Device-Id", description = "设备唯一标识", required = true, in = ParameterIn.HEADER)
+        @RequestHeader("Device-Id") String deviceId) {
         try {
             if(!cmsUtils.isMacAddressValid(deviceId)){
                 return ResponseEntity.status(202).build();

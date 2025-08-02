@@ -9,6 +9,10 @@ import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.service.SysConfigService;
 import com.xiaozhi.service.SysRoleService;
 import com.xiaozhi.utils.CmsUtils;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +28,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/role")
+@Tag(name = "角色管理", description = "角色相关操作")
 public class RoleController extends BaseController {
 
     @Resource
@@ -43,6 +48,7 @@ public class RoleController extends BaseController {
      */
     @GetMapping("/query")
     @ResponseBody
+    @Operation(summary = "根据条件查询角色信息", description = "返回角色信息列表")
     public AjaxResult query(SysRole role, HttpServletRequest request) {
         try {
             PageFilter pageFilter = initPageFilter(request);
@@ -65,6 +71,7 @@ public class RoleController extends BaseController {
      */
     @PostMapping("/update")
     @ResponseBody
+    @Operation(summary = "更新角色信息", description = "返回更新结果")
     public AjaxResult update(SysRole role) {
         try {
             role.setUserId(CmsUtils.getUserId());
@@ -83,6 +90,7 @@ public class RoleController extends BaseController {
      */
     @PostMapping("/add")
     @ResponseBody
+    @Operation(summary = "添加角色信息", description = "返回添加结果")
     public AjaxResult add(SysRole role) {
         try {
             role.setUserId(CmsUtils.getUserId());
@@ -96,7 +104,12 @@ public class RoleController extends BaseController {
 
     @GetMapping("/testVoice")
     @ResponseBody
-    public AjaxResult testAudio(String message, String provider, Integer ttsId, String voiceName) {
+    @Operation(summary = "测试语音合成", description = "返回语音合成结果")
+    public AjaxResult testAudio(
+        @Parameter(description = "消息文本") String message, 
+        @Parameter(description = "语音合成提供方") String provider, 
+        @Parameter(description = "TTS ID") Integer ttsId, 
+        @Parameter(description = "音色名称") String voiceName) {
         SysConfig config = null;
         try {
             if (!provider.equals("edge")) {

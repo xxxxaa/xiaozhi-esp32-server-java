@@ -2,6 +2,12 @@ package com.xiaozhi.controller;
 
 import com.xiaozhi.common.web.AjaxResult;
 import com.xiaozhi.utils.FileUploadUtils;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +25,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/file")
+@Tag(name = "文件上传控制器", description = "文件上传相关操作")
 public class FileUploadController {
     private static final Logger logger = LoggerFactory.getLogger(FileUploadController.class);
 
@@ -34,9 +41,10 @@ public class FileUploadController {
      */
     @PostMapping("/upload")
     @ResponseBody
+    @Operation(summary = "文件上传", description = "如果有配置腾讯云对象存储的话默认会存储到对象存储中")
     public AjaxResult uploadFile(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "type", required = false, defaultValue = "common") String type) {
+            @Parameter(description = "上传的文件") @RequestParam("file") MultipartFile file,
+            @Parameter(description = "文件类型") @RequestParam(value = "type", required = false, defaultValue = "common") String type) {
 
         // 构建文件存储路径，按日期和类型分类
         String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
