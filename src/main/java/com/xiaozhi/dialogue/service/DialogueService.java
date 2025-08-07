@@ -276,7 +276,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
      * 处理音频数据
      */
     public void processAudioData(ChatSession session, byte[] opusData) {
-        Thread.startVirtualThread(() -> {
             try {
                 String sessionId = session.getSessionId();
                 SysDevice device = session.getSysDevice();
@@ -330,7 +329,6 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             } catch (Exception e) {
                 logger.error("处理音频数据失败: {}", e.getMessage(), e);
             }
-        });
     }
 
     /**

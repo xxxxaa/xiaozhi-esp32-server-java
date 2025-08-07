@@ -21,7 +21,7 @@ public class AudioUtils {
     public static final int FRAME_SIZE = 960;
     public static final int SAMPLE_RATE = 16000; // 采样率
     public static final int CHANNELS = 1; // 单声道
-    public static final int BITRATE = 24000; // 24kbps比特率
+    public static final int BITRATE = 16000; // 16kbps比特率
     public static final int SAMPLE_FORMAT = avutil.AV_SAMPLE_FMT_S16; // 16位PCM
     public static final int OPUS_FRAME_DURATION_MS = 60; // OPUS帧持续时间（毫秒）
 
@@ -153,7 +153,7 @@ public class AudioUtils {
                 dos.write(audioData);
             }
         } catch (FrameRecorder.Exception e) {
-            logger.error("编码MP3时发生错误", e);
+            logger.error("编码WAV时发生错误", e);
         } catch (IOException e) {
             logger.error("写入WAV文件时发生错误", e);
         }

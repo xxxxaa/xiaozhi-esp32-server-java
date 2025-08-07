@@ -423,13 +423,11 @@ public class VadService {
                     byte[] result;
 
                     if (preBufferData.length > 0) {
-                        // 使用改进的平滑连接方法
-                        List<byte[]> toJoin = new ArrayList<>();
-                        toJoin.add(preBufferData);
-                        toJoin.add(pcmData);
-                        result = opusProcessor.smoothJoinPcm(toJoin);
+                        // 预缓冲数据已经包含当前帧，直接使用
+                        result = preBufferData;
                         state.addPcm(result);
                     } else {
+                        // 没有预缓冲数据，使用当前帧
                         result = pcmData;
                         state.addPcm(pcmData);
                     }
