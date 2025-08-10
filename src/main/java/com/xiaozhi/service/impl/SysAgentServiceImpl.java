@@ -281,9 +281,9 @@ public class SysAgentServiceImpl implements SysAgentService {
         // 普通用户应该只能查询使用管理员配置的内容
         Integer userId = config.getUserId();
 
-        String token = tokenService.getTokenService(config).getToken();
 
         try {
+            String token = tokenService.getTokenService(config).getToken();
             // 调用Coze API获取智能体列表
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://api.coze.cn/v1/space/published_bots_list?space_id=" + spaceId))
@@ -395,6 +395,9 @@ public class SysAgentServiceImpl implements SysAgentService {
             }
         } catch (IOException | InterruptedException e) {
             logger.error("查询Coze智能体列表异常", e);
+        } catch (RuntimeException e) {
+            logger.error("获取Coze Token失败", e);
+            throw new RuntimeException("无法获取Coze平台授权码，请检查您的平台配置是否正确", e);
         }
         
         return agentList;

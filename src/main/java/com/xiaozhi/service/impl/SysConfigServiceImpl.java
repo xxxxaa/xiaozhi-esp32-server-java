@@ -4,6 +4,7 @@ import com.github.pagehelper.PageHelper;
 import com.xiaozhi.common.web.PageFilter;
 import com.xiaozhi.dao.ConfigMapper;
 import com.xiaozhi.dialogue.stt.factory.SttServiceFactory;
+import com.xiaozhi.dialogue.token.factory.TokenServiceFactory;
 import com.xiaozhi.dialogue.tts.factory.TtsServiceFactory;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.service.SysConfigService;
@@ -32,6 +33,9 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
 
     @Resource
     private ConfigMapper configMapper;
+
+    @Resource
+    private TokenServiceFactory tokenService;
 
     @Resource
     private SttServiceFactory sttServiceFactory;
@@ -76,6 +80,7 @@ public class SysConfigServiceImpl extends BaseServiceImpl implements SysConfigSe
         if (rows > 0) {
             sttServiceFactory.removeCache(config);
             ttsServiceFactory.removeCache(config);
+            tokenService.removeCache(configMapper.query(config).getFirst());
         }
         return rows;
     }

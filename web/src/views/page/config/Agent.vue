@@ -66,7 +66,7 @@
                 <!-- 添加设为默认按钮 -->
                 <a v-if="record.isDefault != 1" href="javascript:" :disabled="record.isDefault == 1" @click="setAsDefault(record)">设为默认</a>
                 <a-popconfirm title="确定要删除此智能体吗？" @confirm="handleDelete(record)">
-                  <a v-if="record.isDefault != 1" href="javascript:" style="color: #ff4d4f">删除</a>
+                  <!-- <a v-if="record.isDefault != 1" href="javascript:" style="color: #ff4d4f">删除</a> -->
                 </a-popconfirm>
               </a-space>
             </template>
@@ -249,7 +249,7 @@ export default {
             this.agentList = res.data.list;
             this.pagination.total = res.data.total;
           } else {
-            this.$message.error(res.msg);
+            this.$message.error(res.message);
           }
         })
         .catch(error => {
@@ -323,7 +323,7 @@ export default {
             
             this.platformModalVisible = true;
           } else {
-            this.$message.error(res.msg || '获取平台配置失败');
+            this.$message.error(res.message || '获取平台配置失败');
           }
         })
         .catch(error => {
@@ -372,7 +372,7 @@ export default {
                 // 刷新智能体列表
                 this.getData();
               } else {
-                this.$message.error(res.msg || (this.isEdit ? '更新平台配置失败' : '添加平台配置失败'));
+                this.$message.error(res.message || (this.isEdit ? '更新平台配置失败' : '添加平台配置失败'));
               }
             })
             .catch(error => {
@@ -439,7 +439,7 @@ export default {
             this.$message.success('删除成功');
             this.getData();
           } else {
-            this.$message.error(res.msg || '删除失败');
+            this.$message.error(res.message || '删除失败');
           }
         })
         .catch(() => {

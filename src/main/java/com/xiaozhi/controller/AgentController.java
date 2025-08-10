@@ -52,8 +52,8 @@ public class AgentController extends BaseController {
             data.put("total", sysAgents.size());
             return AjaxResult.success(data);
         }catch (Exception e){
-            logger.error("查询智能体列表失败", e);
-            return AjaxResult.error("查询智能体列表失败");
+            logger.error("查询智能体列表失败", e.getMessage());
+            return AjaxResult.error(e.getMessage());
         }
     }
 
