@@ -215,7 +215,7 @@ public class AliyunTtsService implements TtsService {
                 com.alibaba.dashscope.audio.ttsv2.SpeechSynthesisParam param =
                 com.alibaba.dashscope.audio.ttsv2.SpeechSynthesisParam.builder()
                                 .apiKey(apiKey)
-                                .model("cosyvoice-v1")
+                                .model("cosyvoice-v2")
                                 .voice(voiceName)
                                 .format(com.alibaba.dashscope.audio.ttsv2.SpeechSynthesisAudioFormat.WAV_16000HZ_MONO_16BIT)
                                 .build();
