@@ -407,9 +407,10 @@ export default {
       this.loading = true;
 
       axios.post({
-        url: api.template.delete,
+        url: api.template.update,
         data: {
-          templateId: record.templateId
+          templateId: record.templateId,
+          state: '0'
         }
       })
         .then(res => {
