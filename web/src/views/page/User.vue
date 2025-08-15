@@ -23,7 +23,7 @@
                     v-model="query[item.index]"
                     placeholder="请输入"
                     allow-clear
-                    @search="getData()"
+                    @search="pagination.page = 1; getData()"
                   />
                 </a-form-item>
               </a-col>

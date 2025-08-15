@@ -8,7 +8,7 @@
             <a-row class="filter-flex">
               <a-col :xl="8" :lg="12" :xs="24">
                 <a-form-item label="平台">
-                  <a-select v-model="query.provider" @change="getData()">
+                  <a-select v-model="query.provider" @change="pagination.page = 1; getData()">
                     <a-select-option v-for="item in providerOptions" :key="item.value" :value="item.value">
                       {{ item.label }}
                     </a-select-option>
@@ -17,7 +17,7 @@
               </a-col>
               <a-col :xl="8" :lg="12" :xs="24">
                 <a-form-item label="智能体名称">
-                  <a-input-search v-model="query.agentName" placeholder="请输入" allow-clear @search="getData()" />
+                  <a-input-search v-model="query.agentName" placeholder="请输入" allow-clear @search="pagination.page = 1; getData()" />
                 </a-form-item>
               </a-col>
             </a-row>

@@ -8,12 +8,12 @@
             <a-row class="filter-flex">
               <a-col :xl="6" :lg="12" :xs="24">
                 <a-form-item label="模板名称">
-                  <a-input-search v-model="query.templateName" placeholder="请输入" allow-clear @search="getData()" />
+                  <a-input-search v-model="query.templateName" placeholder="请输入" allow-clear @search="pagination.page = 1; getData()" />
                 </a-form-item>
               </a-col>
               <a-col :xl="6" :lg="12" :xs="24">
                 <a-form-item label="分类">
-                  <a-select v-model="query.category" @change="getData()" placeholder="请选择分类">
+                  <a-select v-model="query.category" @change="pagination.page = 1; getData()" placeholder="请选择分类">
                     <a-select-option key="" value="">
                       <span>全部</span>
                     </a-select-option>

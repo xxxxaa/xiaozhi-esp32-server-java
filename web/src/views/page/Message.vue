@@ -8,12 +8,12 @@
             <a-row class="filter-flex">
               <a-col :xxl="6" :xl="6" :lg="12" :md="12" :xs="24" v-for="item in queryFilter" :key="item.index">
                 <a-form-item :label="item.label">
-                  <a-input-search v-model="query[item.index]" placeholder="请输入" allow-clear @search="getData()" />
+                  <a-input-search v-model="query[item.index]" placeholder="请输入" allow-clear @search="pagination.page = 1; getData()" />
                 </a-form-item>
               </a-col>
               <a-col :xxl="6" :xl="6" :lg="12" :md="12" :xs="24">
                 <a-form-item label="消息发送方">
-                  <a-select v-model="query.sender" @change="getData()">
+                  <a-select v-model="query.sender" @change="pagination.page = 1; getData()">
                     <a-select-option v-for="item in senderItems" :key="item.value">
                       <span>{{ item.label }}</span>
                     </a-select-option>
@@ -26,7 +26,7 @@
                     今天: [moment().startOf('day'), moment().endOf('day')],
                     本月: [moment().startOf('month'), moment().endOf('month')],
                   }" :allowClear="false" :style="{ width: 100 }" v-model="timeRange" format="MM-DD"
-                    @change="getData()" />
+                    @change="pagination.page = 1; getData()" />
                 </a-form-item>
               </a-col>
             </a-row>

@@ -8,7 +8,7 @@
             <a-row class="filter-flex">
               <a-col :xl="6" :lg="12" :xs="24" v-for="item in queryFilter" :key="item.index">
                 <a-form-item :label="item.label">
-                  <a-input-search v-model="query[item.index]" placeholder="请输入" allow-clear @search="getData()" />
+                  <a-input-search v-model="query[item.index]" placeholder="请输入" allow-clear @search="pagination.page = 1; getData()" />
                 </a-form-item>
               </a-col>
             </a-row>

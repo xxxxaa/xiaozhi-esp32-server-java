@@ -8,12 +8,12 @@
             <a-row class="filter-flex">
               <a-col :xl="6" :lg="12" :xs="24" v-for="(item, index) in queryFilter" :key="index">
                 <a-form-item :label="item.label">
-                  <a-input-search v-model="item.value" :placeholder="`请输入${item.label}`" allowClear @search="getData()" />
+                  <a-input-search v-model="item.value" :placeholder="`请输入${item.label}`" allowClear @search="pagination.page = 1; getData()" />
                 </a-form-item>
               </a-col>
               <a-col :xxl="6" :xl="6" :lg="12" :xs="24">
                 <a-form-item label="设备状态">
-                  <a-select v-model="query.state" placeholder="请选择" @change="getData()">
+                  <a-select v-model="query.state" placeholder="请选择" @change="pagination.page = 1; getData()">
                     <a-select-option v-for="item in stateItems" :key="item.key" :value="item.value">
                       {{ item.label }}
                     </a-select-option>
