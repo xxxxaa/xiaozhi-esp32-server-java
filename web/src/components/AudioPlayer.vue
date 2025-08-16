@@ -131,9 +131,9 @@ export default {
       });
 
       this.wavesurfer.on("error", (err) => {
-        console.error("音频加载失败:", err);
-        this.$message.error({ content: "音频加载失败", key: "audioError" });
         this.loading = false;
+        // 向父组件发送音频加载失败的事件
+        this.$emit('audio-load-error');
       });
 
       // 加载音频

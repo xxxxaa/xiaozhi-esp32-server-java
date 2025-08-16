@@ -49,8 +49,8 @@
               </a-tooltip>
             </templace>
             <template slot="audioPath" slot-scope="text, record">
-              <div v-if="text && text.trim()" class="audio-player-container">
-                <audio-player :audio-url="text" />
+              <div v-if="text && text.trim() && !record.audioLoadError" class="audio-player-container">
+                <audio-player :audio-url="text" @audio-load-error="handleAudioLoadError(record)" />
               </div>
               <span v-else>无音频</span>
             </template>
@@ -202,6 +202,11 @@ export default {
     EventBus.$emit('stop-all-audio');
   },
   methods: {
+    /* 处理音频加载错误 */
+    handleAudioLoadError(record) {
+      // 使用Vue的响应式特性，为记录添加audioLoadError标记
+      this.$set(record, 'audioLoadError', true);
+    },
     /* 查询参数列表 */
     getData() {
       this.loading = true;
@@ -218,7 +223,10 @@ export default {
         })
         .then((res) => {
           if (res.code === 200) {
-            this.data = res.data.list;
+            this.data = res.data.list.map(item => ({
+              ...item,
+              audioLoadError: false
+            }));
             this.pagination.total = res.data.total;
           } else {
             this.showError(res.message);

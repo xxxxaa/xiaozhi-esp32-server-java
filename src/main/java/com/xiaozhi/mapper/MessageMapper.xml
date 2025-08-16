@@ -41,7 +41,7 @@
             <if test="sender != null and sender != ''">
                 AND sys_message.sender = #{sender}
             </if>
-        ORDER BY sys_message.createTime DESC
+        ORDER BY sys_message.createTime DESC, sender DESC
     </select>
 
     <insert id="add" parameterType="com.xiaozhi.entity.SysMessage">
