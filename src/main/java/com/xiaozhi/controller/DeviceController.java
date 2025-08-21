@@ -185,8 +185,12 @@ public class DeviceController extends BaseController {
                 Map<String, Object> jsonData = JsonUtil.OBJECT_MAPPER.readValue(requestBody, new TypeReference<>() {});
 
                 // 获取设备ID (MAC地址)
-                if (deviceIdAuth == null && jsonData.containsKey("mac_address")) {
-                    deviceIdAuth = (String) jsonData.get("mac_address");
+                if (deviceIdAuth == null) {
+                    if (jsonData.containsKey("mac_address")) {
+                        deviceIdAuth = (String) jsonData.get("mac_address");
+                    } else if (jsonData.containsKey("mac")) {
+                        deviceIdAuth = (String) jsonData.get("mac");
+                    }
                 }
 
                 // 提取芯片型号
