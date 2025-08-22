@@ -481,13 +481,82 @@ public class CmsUtils {
      * 尝试获取Docker网关IP
      */
     private static String getDockerGatewayIp() {
+        String os = System.getProperty("os.name").toLowerCase();
+        
+        if (os.contains("windows")) {
+            return getWindowsGatewayIp();
+        } else {
+            return getLinuxGatewayIp();
+        }
+    }
+
+    /**
+     * 获取Windows环境下的网关IP
+     */
+    private static String getWindowsGatewayIp() {
+        try {
+            // 使用Windows的route命令
+            Process process = Runtime.getRuntime().exec(new String[]{"route", "print", "0.0.0.0"});
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    // 解析Windows route print的输出
+                    // 格式类似: 0.0.0.0 0.0.0.0 192.168.1.1 192.168.1.100 1
+                    String[] parts = line.trim().split("\\s+");
+                    if (parts.length >= 4) {
+                        if (parts[0].equals("0.0.0.0") && parts[1].equals("0.0.0.0")) {
+                            String gateway = parts[2];
+                            if (gateway.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
+                                logger.debug("Windows网关IP: {}", gateway);
+                                return gateway;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Windows网关检测失败: {}", e.getMessage());
+        }
+
+        // 尝试使用ipconfig命令
+        try {
+            Process process = Runtime.getRuntime().exec(new String[]{"ipconfig"});
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                String currentAdapter = null;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (line.contains("适配器") || line.contains("Adapter")) {
+                        currentAdapter = line;
+                    } else if (line.contains("默认网关") || line.contains("Default Gateway")) {
+                        String[] parts = line.split(":");
+                        if (parts.length > 1) {
+                            String gateway = parts[1].trim();
+                            if (gateway.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
+                                logger.debug("Windows默认网关: {} (适配器: {})", gateway, currentAdapter);
+                                return gateway;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Windows ipconfig检测失败: {}", e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * 获取Linux环境下的网关IP
+     */
+    private static String getLinuxGatewayIp() {
         List<String[]> commands = new ArrayList<>();
-        commands.add(new String[]{"ip", "route", "|", "grep", "default"});
+        commands.add(new String[]{"ip", "route", "show", "default"});
         commands.add(new String[]{"route", "-n"});
         commands.add(new String[]{"netstat", "-rn"});
-        commands.add(new String[]{"cat", "/proc/net/route"});
 
-        for (String[] cmdArray : commands.toArray(new String[0][0])) {
+        for (String[] cmdArray : commands) {
             try {
                 Process process = Runtime.getRuntime().exec(cmdArray);
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -496,12 +565,12 @@ public class CmsUtils {
                         // 尝试提取网关IP
                         String gatewayIp = extractGatewayIp(line, cmdArray[0]);
                         if (gatewayIp != null) {
+                            logger.debug("Linux网关IP: {} (命令: {})", gatewayIp, String.join(" ", cmdArray));
                             return gatewayIp;
                         }
                     }
                 }
             } catch (Exception e) {
-                // 忽略错误，尝试下一个命令
             }
         }
 
@@ -524,14 +593,16 @@ public class CmsUtils {
                                 int b = Integer.parseInt(hex.substring(4, 6), 16);
                                 int c = Integer.parseInt(hex.substring(2, 4), 16);
                                 int d = Integer.parseInt(hex.substring(0, 2), 16);
-                                return a + "." + b + "." + c + "." + d;
+                                String gateway = a + "." + b + "." + c + "." + d;
+                                logger.debug("从/proc/net/route读取到网关IP: {}", gateway);
+                                return gateway;
                             }
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            logger.warn("读取路由表失败: {}", e.getMessage());
+            logger.debug("读取Linux路由表失败: {}", e.getMessage());
         }
 
         return null;
@@ -563,11 +634,9 @@ public class CmsUtils {
                         }
                     }
                 }
-            } else if ("cat".equals(command)) {
-                // 已在主方法中处理
             }
         } catch (Exception e) {
-            // 忽略解析错误
+            logger.debug("解析网关IP失败: {}", e.getMessage());
         }
         return null;
     }
@@ -1029,34 +1098,63 @@ public class CmsUtils {
                 return true;
             }
 
-            // 方法2: 检查cgroup信息
-            File cgroupFile = new File("/proc/1/cgroup");
-            if (cgroupFile.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(cgroupFile));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.contains("docker") || line.contains("kubepods")) {
-                        reader.close();
-                        return true;
-                    }
-                }
-                reader.close();
-            }
-
-            // 方法3: 检查进程树
-            Process p = Runtime.getRuntime().exec("cat /proc/self/cgroup");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("docker") || line.contains("kubepods")) {
-                    reader.close();
+            // 方法2: 检查环境变量（最可靠的方法）
+            String[] dockerEnvVars = {
+                "DOCKER_CONTAINER", 
+                "KUBERNETES_SERVICE_HOST", 
+                "KUBERNETES_PORT",
+                "DOCKER_HOST",
+                "COMPOSE_PROJECT_NAME"
+            };
+            for (String envVar : dockerEnvVars) {
+                String value = System.getenv(envVar);
+                if (value != null) {
+                    logger.debug("检测到Docker环境变量 {}: {}", envVar, value);
                     return true;
                 }
             }
-            reader.close();
+
+            // 方法3: 检查主机名是否包含docker相关标识
+            String hostname = System.getenv("HOSTNAME");
+            if (hostname != null && (hostname.contains("docker") || hostname.contains("container"))) {
+                logger.debug("检测到Docker相关主机名: {}", hostname);
+                return true;
+            }
+
+            // 方法4: 检查操作系统类型，只在Linux环境下检查/proc文件系统
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("linux")) {
+                // 检查cgroup信息
+                File cgroupFile = new File("/proc/1/cgroup");
+                if (cgroupFile.exists()) {
+                    try (BufferedReader reader = new BufferedReader(new FileReader(cgroupFile))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            if (line.contains("docker") || line.contains("kubepods")) {
+                                logger.debug("在cgroup中检测到Docker标识: {}", line);
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                // 检查进程树
+                File selfCgroupFile = new File("/proc/self/cgroup");
+                if (selfCgroupFile.exists()) {
+                    try (BufferedReader reader = new BufferedReader(new FileReader(selfCgroupFile))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            if (line.contains("docker") || line.contains("kubepods")) {
+                                logger.debug("在self cgroup中检测到Docker标识: {}", line);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
 
         } catch (Exception e) {
-            logger.warn("检测Docker环境失败: {}", e.getMessage());
+            logger.warn("检测Docker环境时发生异常: {}", e.getMessage());
             // 忽略异常，继续检查其他方法
         }
 
