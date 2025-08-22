@@ -33,7 +33,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(webSocketHandler, WS_PATH)
                 .setAllowedOrigins("*");
 
+        logger.info("==========================================================");
         logger.info("📡 WebSocket服务地址: {}", cmsUtils.getWebsocketAddress());
+        logger.info("🔧 OTA服务地址: {}", cmsUtils.getOtaAddress());
         logger.info("==========================================================");
     }
     
