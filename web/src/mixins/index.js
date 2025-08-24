@@ -6,8 +6,8 @@ const mixin = {
       // 遮罩层
       loading: true,
       exportLoading: false,
-      timeRange: [moment().startOf("month"), moment().endOf("month")],
-      time: moment(),
+      timeRange: [this.moment().startOf("month"), this.moment().endOf("month")],
+      time: this.moment(),
       // 分页
       pagination: {
         total: 0,

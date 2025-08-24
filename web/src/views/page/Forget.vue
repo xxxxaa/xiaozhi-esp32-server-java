@@ -212,8 +212,10 @@
 <script>
 import axios from "@/services/axios";
 import api from "@/services/api";
+import mixin from "@/mixins/index";
 
 export default {
+  mixins: [mixin],
   data() {
     // 确认密码验证
     const validateConfirmPassword = (rule, value, callback) => {

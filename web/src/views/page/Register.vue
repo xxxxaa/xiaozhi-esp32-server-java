@@ -274,6 +274,7 @@
 // 脚本部分保持不变
 import axios from "@/services/axios";
 import api from "@/services/api";
+import mixin from "@/mixins/index";
 
 // 密码强度级别
 const levelNames = {
@@ -296,6 +297,7 @@ const levelColor = {
 };
 
 export default {
+  mixins: [mixin],
   data() {
     // 确认密码验证
     const validateConfirmPassword = (rule, value, callback) => {

@@ -142,9 +142,11 @@
 import axios from '@/services/axios'
 import api from '@/services/api'
 import Cookies from 'js-cookie'
+import mixin from "@/mixins/index"
 import { encrypt, decrypt } from '@/utils/jsencrypt'
 
 export default {
+  mixins: [mixin],
   data() {
     return {
       loginForm: {

@@ -259,6 +259,9 @@ export default {
       // 已到最后一条数据
       isLastData: false,
       uploadLoading: false,
+      // 头像配置
+      userAvatar: '/assets/user-avatar.png',
+      aiAvatar: '/assets/ai-avatar.png',
     };
   },
   beforeMount() {},
