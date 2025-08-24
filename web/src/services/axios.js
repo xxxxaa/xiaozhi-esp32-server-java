@@ -1,5 +1,5 @@
 import axios from "axios";
-const qs = window.Qs;
+import qs from "qs";
 import { message } from "ant-design-vue";
 
 // 设置axios的基础URL，根据环境变量

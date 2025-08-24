@@ -13,19 +13,6 @@ module.exports = {
   entry: {
     app: "./src/main.js"
   },
-  externals: {
-    vue: "Vue",
-    "vue-router": "VueRouter",
-    "ant-design-vue": "antd",
-    vuex: "Vuex",
-    moment: "moment",
-    "js-cookie": "Cookies",
-    nprogress: "NProgress",
-    axios: "axios",
-    JSEncrypt: "jsencrypt",
-    ClipboardJS: "clipboard",
-    html2canvas: "html2canvas"
-  },
   output: {
     path: config.build.assetsRoot,
     filename: "[name].js",
