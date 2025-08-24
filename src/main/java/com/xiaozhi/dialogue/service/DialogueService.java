@@ -16,15 +16,16 @@ import com.xiaozhi.service.SysRoleService;
 import com.xiaozhi.utils.AudioUtils;
 import com.xiaozhi.utils.EmojiUtils;
 import com.xiaozhi.utils.EmojiUtils.EmoSentence;
-import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+import jakarta.annotation.Resource;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -43,9 +44,19 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
     private static final Logger logger = LoggerFactory.getLogger(DialogueService.class);
     private static final DecimalFormat df = new DecimalFormat("0.00");
     private static final long TIMEOUT_MS = 5000;
-    private static final int MAX_CONCURRENT_PER_SESSION = 3; // 每个session最大并发数
-    private static final int MAX_RETRY_COUNT = 1; // 最大重试次数
-    private static final long TTS_TIMEOUT_MS = 10000; // TTS生成超时时间
+    
+    // 从配置文件读取TTS相关参数
+    @Value("${tts.timeout.ms:10000}")
+    private long TTS_TIMEOUT_MS;
+    
+    @Value("${tts.max.retry.count:1}")
+    private int MAX_RETRY_COUNT;
+    
+    @Value("${tts.retry.delay.ms:1000}")
+    private long TTS_RETRY_DELAY_MS;
+    
+    @Value("${tts.max.concurrent.per.session:3}")
+    private int MAX_CONCURRENT_PER_SESSION;
 
     @Resource
     private ChatService chatService;
@@ -703,14 +714,26 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         messageService.sendEmotion(task.session, "happy");
 
         if (task.retryCount <= MAX_RETRY_COUNT) {
-            // 标记为重试任务并重新提交
-            task.isRetry = true;
+            // 创建新的任务对象而不是重用原对象，避免数据污染
+            TtsTask retryTask = new TtsTask(
+                task.session, 
+                task.sessionId, 
+                task.sentence, 
+                task.emoSentence, 
+                task.isFirst, 
+                task.isLast, 
+                task.ttsConfig, 
+                task.voiceName
+            );
+            retryTask.retryCount = task.retryCount;
+            retryTask.isRetry = true;
+            
             logger.info("TTS任务重试 - 序号: {}, 重试次数: {}/{}, 内容: \"{}\", 原因: {}",
                     task.sentence.getSeq(), task.retryCount, MAX_RETRY_COUNT, task.sentence.getText(), reason);
 
             // 延迟后重试
-            CompletableFuture.delayedExecutor(500 * task.retryCount, TimeUnit.MILLISECONDS)
-                    .execute(() -> submitTtsTask(task));
+            CompletableFuture.delayedExecutor(TTS_RETRY_DELAY_MS * task.retryCount, TimeUnit.MILLISECONDS)
+                    .execute(() -> submitTtsTask(retryTask));
         } else {
             // 超过最大重试次数，标记为失败
             logger.error("TTS任务失败 - 序号: {}, 重试次数: {}/{}, 已达最大重试次数, 原因: {}",

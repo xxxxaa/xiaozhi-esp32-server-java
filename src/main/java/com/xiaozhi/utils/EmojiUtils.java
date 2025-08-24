@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -255,13 +256,13 @@ public class EmojiUtils {
     @Data
     public static class EmoSentence {
 
-        private String sentence;
+        private final String sentence;
 
-        private String ttsSentence;
+        private final String ttsSentence;
 
-        private List<String> moods;
+        private final List<String> moods;
 
-        private boolean audioCleanup = true;
+        private final boolean audioCleanup;
 
         /**
          * 构造函数
@@ -274,6 +275,7 @@ public class EmojiUtils {
             this.sentence = sentence;
             this.ttsSentence = ttsSentence;
             this.audioCleanup = audioCleanup;
+            this.moods = new ArrayList<>(); // 初始化空列表
         }
 
         /**
@@ -286,7 +288,15 @@ public class EmojiUtils {
         public EmoSentence(String sentence, String ttsSentence, List<String> moods) {
             this.sentence = sentence;
             this.ttsSentence = ttsSentence;
-            this.moods = moods;
+            this.moods = new ArrayList<>(moods); // 创建副本避免外部修改
+            this.audioCleanup = true;
+        }
+        
+        /**
+         * 获取情感词列表的不可修改副本
+         */
+        public List<String> getMoods() {
+            return Collections.unmodifiableList(moods);
         }
     }
 }

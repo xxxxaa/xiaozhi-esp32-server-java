@@ -38,6 +38,9 @@ public class AliyunTtsService implements TtsService {
     private static final long RETRY_DELAY_MS = 1000;
     // 添加TTS操作超时时间（秒）
     private static final long TTS_TIMEOUT_SECONDS = 5;
+    
+    // 使用共享的线程池，避免频繁创建和销毁
+    private static final ExecutorService sharedExecutor = Executors.newCachedThreadPool();
 
     // 阿里云配置
     private final String apiKey;
@@ -84,9 +87,8 @@ public class AliyunTtsService implements TtsService {
                         .voice(voice)
                         .build();
                 
-                // 使用线程池和Future实现超时控制
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                Future<MultiModalConversationResult> future = executor.submit(() -> {
+                // 使用共享线程池而不是每次创建新的
+                Future<MultiModalConversationResult> future = sharedExecutor.submit(() -> {
                     MultiModalConversation conv = new MultiModalConversation();
                     return conv.call(param);
                 });
@@ -101,15 +103,11 @@ public class AliyunTtsService implements TtsService {
                     attempts++;
                     if (attempts >= MAX_RETRY_ATTEMPTS) {
                         logger.error("语音合成aliyun - 使用{}模型多次超时，放弃重试", voiceName);
-                        executor.shutdownNow();
                         return StrUtil.EMPTY;
                     }
                     // 等待一段时间后重试
                     TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
-                    executor.shutdownNow();
                     continue;
-                } finally {
-                    executor.shutdownNow();
                 }
                 
                 // 检查结果是否有效
@@ -132,9 +130,8 @@ public class AliyunTtsService implements TtsService {
                 String outPath = outputPath + getAudioFileName();
                 File file = new File(outPath);
                 
-                // 下载音频文件到本地，也添加超时控制
-                executor = Executors.newSingleThreadExecutor();
-                Future<Boolean> downloadFuture = executor.submit(() -> {
+                // 下载音频文件到本地，也使用共享线程池
+                Future<Boolean> downloadFuture = sharedExecutor.submit(() -> {
                     try (InputStream in = new URL(audioUrl).openStream();
                             FileOutputStream out = new FileOutputStream(file)) {
                         byte[] buffer = new byte[1024];
@@ -159,15 +156,11 @@ public class AliyunTtsService implements TtsService {
                     attempts++;
                     if (attempts >= MAX_RETRY_ATTEMPTS) {
                         logger.error("语音合成aliyun - 使用{}模型多次下载超时，放弃重试", voiceName);
-                        executor.shutdownNow();
                         return StrUtil.EMPTY;
                     }
                     // 等待一段时间后重试
                     TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
-                    executor.shutdownNow();
                     continue;
-                } finally {
-                    executor.shutdownNow();
                 }
                 
                 return outPath;
@@ -220,9 +213,8 @@ public class AliyunTtsService implements TtsService {
                                 .format(com.alibaba.dashscope.audio.ttsv2.SpeechSynthesisAudioFormat.WAV_16000HZ_MONO_16BIT)
                                 .build();
                 
-                // 使用线程池和Future实现超时控制
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                Future<ByteBuffer> future = executor.submit(() -> {
+                // 使用共享线程池
+                Future<ByteBuffer> future = sharedExecutor.submit(() -> {
                     com.alibaba.dashscope.audio.ttsv2.SpeechSynthesizer synthesizer = 
                         new com.alibaba.dashscope.audio.ttsv2.SpeechSynthesizer(param, null);
                     return synthesizer.call(text);
@@ -238,15 +230,11 @@ public class AliyunTtsService implements TtsService {
                     attempts++;
                     if (attempts >= MAX_RETRY_ATTEMPTS) {
                         logger.error("语音合成aliyun - 使用{}模型多次超时，放弃重试", voiceName);
-                        executor.shutdownNow();
                         return StrUtil.EMPTY;
                     }
                     // 等待一段时间后重试
                     TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
-                    executor.shutdownNow();
                     continue;
-                } finally {
-                    executor.shutdownNow();
                 }
                 
                 // 检查返回的ByteBuffer是否为null
@@ -305,9 +293,8 @@ public class AliyunTtsService implements TtsService {
                         .format(SpeechSynthesisAudioFormat.WAV)
                         .build();
                 
-                // 使用线程池和Future实现超时控制
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                Future<ByteBuffer> future = executor.submit(() -> {
+                // 使用共享线程池
+                Future<ByteBuffer> future = sharedExecutor.submit(() -> {
                     SpeechSynthesizer synthesizer = new SpeechSynthesizer();
                     return synthesizer.call(param);
                 });
@@ -322,15 +309,11 @@ public class AliyunTtsService implements TtsService {
                     attempts++;
                     if (attempts >= MAX_RETRY_ATTEMPTS) {
                         logger.error("语音合成aliyun - 使用{}模型多次超时，放弃重试，文本：{}", voiceName, text);
-                        executor.shutdownNow();
                         return StrUtil.EMPTY;
                     }
                     // 等待一段时间后重试
                     TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
-                    executor.shutdownNow();
                     continue;
-                } finally {
-                    executor.shutdownNow();
                 }
                 
                 // 检查返回的ByteBuffer是否为null
