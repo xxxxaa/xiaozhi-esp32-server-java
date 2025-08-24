@@ -16,18 +16,18 @@
               <div class="system-logo">
                 <a-icon type="api" class="logo-icon" />
               </div>
-              <a-typography-title level={1} class="system-title">小智 ESP32</a-typography-title>
-              <a-typography-paragraph class="system-subtitle">智能物联网管理平台</a-typography-paragraph>
+              <h1 class="system-title">小智 ESP32</h1>
+              <p class="system-subtitle">智能物联网管理平台</p>
             </a-col>
             
             <!-- 注册表单区 -->
             <a-col :xs="24" :md="12" class="register-form-container">
               <div class="form-header">
-                <a-typography-title level={3} class="form-title">注册账号</a-typography-title>
-                <a-typography-paragraph class="form-subtitle">
+                <h3 class="form-title">注册账号</h3>
+                <p class="form-subtitle">
                   {{ currentStep === 1 ? '填写账号信息' : 
                      currentStep === 2 ? '验证邮箱' : '注册完成' }}
-                </a-typography-paragraph>
+                </p>
               </div>
               
               <!-- 步骤条 -->
@@ -274,6 +274,7 @@
 // 脚本部分保持不变
 import axios from "@/services/axios";
 import api from "@/services/api";
+import mixin from "@/mixins/index";
 
 // 密码强度级别
 const levelNames = {
@@ -296,6 +297,7 @@ const levelColor = {
 };
 
 export default {
+  mixins: [mixin],
   data() {
     // 确认密码验证
     const validateConfirmPassword = (rule, value, callback) => {

@@ -16,21 +16,15 @@
               <div class="system-logo">
                 <a-icon type="api" class="logo-icon" />
               </div>
-              <a-typography-title level="{1}" class="system-title"
-                >小智 ESP32</a-typography-title
-              >
-              <a-typography-paragraph class="system-subtitle"
-                >智能物联网管理平台</a-typography-paragraph
-              >
+              <h1 class="system-title">小智 ESP32</h1>
+              <p class="system-subtitle">智能物联网管理平台</p>
             </a-col>
 
             <!-- 忘记密码表单区 -->
             <a-col :xs="24" :md="12" class="login-form-container">
               <div class="form-header">
-                <a-typography-title level="{3}" class="form-title"
-                  >找回密码</a-typography-title
-                >
-                <a-typography-paragraph class="form-subtitle">
+                <h3 class="form-title">找回密码</h3>
+                <p class="form-subtitle">
                   {{
                     currentStep === 1
                       ? "请输入您的注册邮箱"
@@ -38,7 +32,7 @@
                       ? "请查看邮箱获取验证码"
                       : "请设置新密码"
                   }}
-                </a-typography-paragraph>
+                </p>
               </div>
 
               <!-- 步骤条 - 改用简化版本 -->
@@ -218,8 +212,10 @@
 <script>
 import axios from "@/services/axios";
 import api from "@/services/api";
+import mixin from "@/mixins/index";
 
 export default {
+  mixins: [mixin],
   data() {
     // 确认密码验证
     const validateConfirmPassword = (rule, value, callback) => {

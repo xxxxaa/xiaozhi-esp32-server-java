@@ -6,14 +6,16 @@ import router from "./router";
 import store from "./store";
 import axios from "axios";
 import Moment from "moment";
+import "moment/locale/zh-cn";
 import Antd from "ant-design-vue";
-// import 'ant-design-vue/dist/antd.css'
+import "ant-design-vue/dist/antd.css";
 import NProgress from "nprogress";
-// import 'nprogress/nprogress.css'
-// import VueCropper from 'vue-cropper'
-// import VCharts from 'v-charts'
+import "nprogress/nprogress.css";
+import VueCropper from "vue-cropper";
+import VCharts from "v-charts";
 import "static/css/main.css";
-Moment.locale("zh_CN");
+
+Moment.locale("zh-cn");
 
 Vue.use(NProgress);
 router.beforeEach((to, from, next) => {
@@ -25,7 +27,8 @@ router.afterEach(() => {
   NProgress.done();
 });
 Vue.use(Antd);
-Vue.use(window["vue-cropper"]);
+Vue.use(VueCropper);
+Vue.use(VCharts);
 Vue.prototype.moment = Moment;
 
 new Vue({

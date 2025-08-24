@@ -16,8 +16,8 @@
               <div class="system-logo">
                 <a-icon type="api" class="logo-icon" />
               </div>
-              <a-typography-title level={1} class="system-title">小智 ESP32</a-typography-title>
-              <a-typography-paragraph class="system-subtitle">智能物联网管理平台</a-typography-paragraph>
+              <h1 class="system-title">小智 ESP32</h1>
+              <p class="system-subtitle">智能物联网管理平台</p>
             </a-col>
             
             <!-- 登录表单区 -->
@@ -31,7 +31,7 @@
                 @submit="handleSubmit"
               >
                 <div class="form-header">
-                  <a-typography-paragraph class="form-subtitle">欢迎回来，请登录您的账户</a-typography-paragraph>
+                  <p class="form-subtitle">欢迎回来，请登录您的账户</p>
                 </div>
                 
                 <a-form-model-item prop="username">
@@ -93,9 +93,9 @@
               
               <a-divider style="margin-top: 25px; margin-bottom: 15px;" />
               
-              <a-typography-paragraph class="login-footer">
+              <p class="login-footer">
                 © {{ new Date().getFullYear() }} 小智ESP32物联网平台
-              </a-typography-paragraph>
+              </p>
             </a-col>
           </a-row>
         </a-card>
@@ -142,9 +142,11 @@
 import axios from '@/services/axios'
 import api from '@/services/api'
 import Cookies from 'js-cookie'
+import mixin from "@/mixins/index"
 import { encrypt, decrypt } from '@/utils/jsencrypt'
 
 export default {
+  mixins: [mixin],
   data() {
     return {
       loginForm: {

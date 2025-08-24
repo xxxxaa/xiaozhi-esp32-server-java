@@ -36,18 +36,18 @@
         <a-card title="查询表格" :bodyStyle="{ padding: 0 }" :bordered="false">
           <a-table rowKey="messageId" :columns="tableColumns" :data-source="data" :loading="loading"
             :pagination="pagination" :scroll="{ x: 800 }" size="middle">
-            <templace slot="roleName" slot-scope="text, record">
+            <template slot="roleName" slot-scope="text, record">
               <a-tooltip :title="record.roleDesc" :mouseEnterDelay="0.5" placement="leftTop">
                 <span v-if="text">{{ text }}</span>
                 <span v-else style="padding: 0 50px">&nbsp;&nbsp;&nbsp;</span>
               </a-tooltip>
-            </templace>
-            <templace slot="message" slot-scope="text, record">
+            </template>
+            <template slot="message" slot-scope="text, record">
               <a-tooltip :title="text" :mouseEnterDelay="0.5" placement="leftTop">
                 <span v-if="text">{{ text }}</span>
                 <span v-else style="padding: 0 50px">&nbsp;&nbsp;&nbsp;</span>
               </a-tooltip>
-            </templace>
+            </template>
             <template slot="audioPath" slot-scope="text, record">
               <div v-if="text && text.trim() && !record.audioLoadError" class="audio-player-container">
                 <audio-player :audio-url="text" @audio-load-error="handleAudioLoadError(record)" />
