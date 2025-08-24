@@ -163,12 +163,17 @@
                             <a-input v-decorator="[
                               field.name,
                               { rules: [{ required: field.required, message: `请输入${field.label}` }] }
-                            ]" :placeholder="`请输入${field.label}`" :type="field.inputType || 'text'"
+                            ]" :placeholder="field.placeholder || `请输入${field.label}`" :type="field.inputType || 'text'"
                              @change="getModelList()">
                               <template v-if="field.suffix" slot="suffix">
                                 <span style="color: #999">{{ field.suffix }}</span>
                               </template>
                             </a-input>
+                            <!-- 字段帮助提示 -->
+                            <div v-if="field.help" class="field-help">
+                              <a-icon type="question-circle" theme="twoTone" />
+                              {{ field.help }}
+                            </div>
                           </a-form-item>
                         </a-col>
                       </template>
@@ -455,6 +460,15 @@ export default {
           newValues.apiUrl = apiUrlField.defaultUrl;
         }
       }
+
+      // 为所有配置类型填写默认URL
+      const typeFields = this.configTypeInfo.typeFields || {};
+      const currentTypeFields = typeFields[value] || [];
+      currentTypeFields.forEach(field => {
+        if (field.defaultUrl && field.name === 'apiUrl') {
+          newValues[field.name] = field.defaultUrl;
+        }
+      });
 
       // 重置表单
       this.$nextTick(() => {
