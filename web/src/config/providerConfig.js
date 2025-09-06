@@ -312,7 +312,7 @@ export const configTypeMap = {
           label: 'App Key', 
           required: true, 
           span: 12,
-          help: '在 https://nls-portal.console.aliyun.com/applist 申请',
+          help: '在 https://bailian.console.aliyun.com/?apiKey=1#/api-key 申请',
           placeholder: 'your-app-key'
         }
       ],
@@ -370,7 +370,7 @@ export const configTypeMap = {
           label: 'API Key', 
           required: true, 
           span: 12,
-          help: '在 https://nls-portal.console.aliyun.com/applist 申请',
+          help: '在 https://bailian.console.aliyun.com/?apiKey=1#/api-key 申请',
           placeholder: 'your-api-key'
         }
       ],
