@@ -994,6 +994,21 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                     firstDone.set(false);
                 }
 
+                // 清理TTS任务队列和信号量
+                PriorityBlockingQueue<TtsTask> taskQueue = sessionTaskQueues.get(sessionId);
+                if (taskQueue != null) {
+                    taskQueue.clear();
+                    logger.info("已清空TTS任务队列 - SessionId: {}", sessionId);
+                }
+                
+                // 释放所有信号量许可，确保正在进行的TTS任务能够完成
+                Semaphore semaphore = sessionSemaphores.get(sessionId);
+                if (semaphore != null) {
+                    // 释放所有可能的许可，让正在进行的任务能够完成
+                    semaphore.release(MAX_CONCURRENT_PER_SESSION);
+                    logger.info("已释放TTS信号量许可 - SessionId: {}", sessionId);
+                }
+
                 // 终止语音发送
                 audioService.sendStop(session);
             } catch (Exception e) {

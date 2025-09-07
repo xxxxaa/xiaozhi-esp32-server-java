@@ -391,6 +391,13 @@ public class AudioService {
         cleanTimers(sessionId);
         cancelScheduledTask(sessionId);
         opusProcessor.cleanup(sessionId);
+        
+        // 清理音频发送任务
+        CompletableFuture<?> sendAudioTask = sendAudioTasks.remove(sessionId);
+        if (sendAudioTask != null && !sendAudioTask.isDone()) {
+            sendAudioTask.cancel(true);
+            logger.info("已取消音频发送任务 - SessionId: {}", sessionId);
+        }
     }
     
     /**
