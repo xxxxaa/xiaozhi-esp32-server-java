@@ -34,6 +34,9 @@ public class EmojiUtils {
             { 0x1F1E6, 0x1F1FF }, // 国旗表情
             { 0x1F700, 0x1F77F }, // 额外的表情符号
             { 0x20000, 0x2A6DF }, // 补充符号（更多表情）
+            { 0x1F3FB, 0x1F3FF }, // 表情符号修饰符
+            { 0x200D, 0x200D }, // 零宽连接符
+            { 0xFE0F, 0xFE0F }, // 变体选择器
     };
 
     private static final Pattern HTML_TAG_PATTERN = Pattern.compile("<[^>]+>");

@@ -17,13 +17,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 /**
  * 音频服务，负责处理音频的流式和非流式发送
@@ -61,8 +59,6 @@ public class AudioService {
     // 存储每个会话当前是否正在播放音频
     private final Map<String, AtomicBoolean> isPlaying = new ConcurrentHashMap<>();
     
-    // 存储首帧发送状态
-    private final Map<String, AtomicBoolean> firstFrameSent = new ConcurrentHashMap<>();
 
     // 存储每个会话的调度任务
     private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
@@ -182,28 +178,53 @@ public class AudioService {
 
         if (audioPath == null) {
             if(text != null && !text.isEmpty()) {
-                // 发送句子开始标记
-                CompletableFuture<Void> sentenceStartFuture = startFuture.thenRun(() -> sendSentenceStart(session, text + "--语音合成异常!!"));
+                // 检查是否是纯表情符号（通过检查句子是否有moods但没有实际文本内容）
+                boolean isOnlyEmoji = sentence.getMoods() != null && !sentence.getMoods().isEmpty() && 
+                                    (text.trim().length() <= 4); // 表情符号通常不超过4个字符
+                
+                if (isOnlyEmoji) {
+                    // 纯表情符号，只发送表情，不发送文本
+                    CompletableFuture<Void> emotionFuture = startFuture.thenRun(() -> sendSentenceEmotion(session, sentence, null));
+                    
+                    final AtomicBoolean finalPlayingState = playingState;
+                    
+                    return emotionFuture.thenCompose(v -> {
+                        finalPlayingState.set(false);
+                        try {
+                            TimeUnit.MILLISECONDS.sleep(ONLY_TEXT_SLEEP_TIME_MS);
+                        } catch (InterruptedException e) {
+                            logger.error("等待表情播放失败", e);
+                        }
 
-                // 发送句子表情
-                CompletableFuture<Void> emotionFuture = sentenceStartFuture.thenRun(() -> sendSentenceEmotion(session, sentence, null));
+                        if (isLast) {
+                            return sendStop(session);
+                        }
+                        return CompletableFuture.completedFuture(null);
+                    });
+                } else {
+                    // 有实际文本内容，发送异常提示
+                    CompletableFuture<Void> sentenceStartFuture = startFuture.thenRun(() -> sendSentenceStart(session, text));
 
-                // 使用单独的变量存储播放状态引用
-                final AtomicBoolean finalPlayingState = playingState;
+                    // 发送句子表情
+                    CompletableFuture<Void> emotionFuture = sentenceStartFuture.thenRun(() -> sendSentenceEmotion(session, sentence, null));
+                    
+                    // 使用单独的变量存储播放状态引用
+                    final AtomicBoolean finalPlayingState = playingState;
 
-                return emotionFuture.thenCompose(v -> {
-                    finalPlayingState.set(false);
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(ONLY_TEXT_SLEEP_TIME_MS);
-                    } catch (InterruptedException e) {
-                        logger.error("等待异常提示播放失败", e);
-                    }
+                    return emotionFuture.thenCompose(v -> {
+                        finalPlayingState.set(false);
+                        try {
+                            TimeUnit.MILLISECONDS.sleep(ONLY_TEXT_SLEEP_TIME_MS);
+                        } catch (InterruptedException e) {
+                            logger.error("等待异常提示播放失败", e);
+                        }
 
-                    if (isLast) {
-                        return sendStop(session);
-                    }
-                    return CompletableFuture.completedFuture(null);
-                });
+                        if (isLast) {
+                            return sendStop(session);
+                        }
+                        return CompletableFuture.completedFuture(null);
+                    });
+                }
             }
             // 如果没有音频路径但是结束消息，发送结束标记
             if (isLast) {

@@ -515,22 +515,27 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         }
         String voiceName = role.getVoiceName();
 
-        // 创建句子对象
-        Sentence sentence = new Sentence(seq, text, isFirst, isLast);
-        sentence.setModelResponseTime(responseTime); // 记录模型响应时间
-        sentence.setAssistantTimeMillis(assistantTimeMillis); // 设置对话ID
-        
-        logger.info("处理LLM返回的句子: seq={}, text={}, isFirst={}, isLast={}, responseTime={}s", seq, text, isFirst, isLast, responseTime);
+        // 处理表情符号
+        EmoSentence emoSentence = EmojiUtils.processSentence(text);
 
-        // 添加到句子队列
-        CopyOnWriteArrayList<Sentence> queue = sentenceQueue.get(sessionId);
-        if (queue == null) {return;}
-        queue.add(sentence);
-
-        // 如果句子为空且是结束状态，直接标记为准备好（不需要生成音频）
-        if ((text == null || text.isEmpty()) && isLast) {
+        // 检查处理后的文本是否为空（即只有表情符号）
+        if (emoSentence.getTtsSentence() == null || emoSentence.getTtsSentence().trim().isEmpty()) {
+            // 如果只有表情符号，直接标记为准备好但不生成音频
+            logger.info("跳过纯表情符号TTS处理 - 序号: {}, 内容: \"{}\"", seq, text);
+            
+            // 创建句子对象
+            Sentence sentence = new Sentence(seq, text, isFirst, isLast);
+            sentence.setModelResponseTime(responseTime / 1000.0);
+            sentence.setAssistantTimeMillis(assistantTimeMillis);
             sentence.setAudio(null);
-            sentence.setTtsGenerationTime(0); // 设置TTS生成时间为0
+            sentence.setTtsGenerationTime(0);
+            sentence.setMoods(emoSentence.getMoods());
+
+            // 添加到句子队列
+            CopyOnWriteArrayList<Sentence> queue = sentenceQueue.get(sessionId);
+            if (queue != null) {
+                queue.add(sentence);
+            }
 
             // 如果是首句，需要标记首句处理完成
             if (isFirst) {
@@ -542,15 +547,22 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             return;
         }
 
-        // 处理表情符号
-        EmoSentence emoSentence = EmojiUtils.processSentence(text);
+        // 创建句子对象
+        Sentence sentence = new Sentence(seq, text, isFirst, isLast);
+        sentence.setModelResponseTime(responseTime / 1000.0); // 记录模型响应时间
+        sentence.setAssistantTimeMillis(assistantTimeMillis); // 设置对话ID
 
-        // 检查处理后的文本是否为空（即只有表情符号）
-        if (emoSentence.getTtsSentence() == null || emoSentence.getTtsSentence().trim().isEmpty()) {
-            // 如果只有表情符号，直接标记为准备好但不生成音频
+        logger.info("处理LLM返回的句子: seq={}, text={}, isFirst={}, isLast={}, responseTime={}s", seq, text, isFirst, isLast, responseTime/1000);
+
+        // 添加到句子队列
+        CopyOnWriteArrayList<Sentence> queue = sentenceQueue.get(sessionId);
+        if (queue == null) {return;}
+        queue.add(sentence);
+
+        // 如果句子为空且是结束状态，直接标记为准备好（不需要生成音频）
+        if ((text == null || text.isEmpty()) && isLast) {
             sentence.setAudio(null);
             sentence.setTtsGenerationTime(0); // 设置TTS生成时间为0
-            sentence.setMoods(emoSentence.getMoods()); // 设置表情
 
             // 如果是首句，需要标记首句处理完成
             if (isFirst) {
