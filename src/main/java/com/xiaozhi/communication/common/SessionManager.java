@@ -5,6 +5,7 @@ import com.xiaozhi.entity.SysDevice;
 import com.xiaozhi.entity.SysRole;
 import com.xiaozhi.enums.ListenMode;
 import com.xiaozhi.event.ChatSessionCloseEvent;
+import com.xiaozhi.service.SysDeviceService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
@@ -48,11 +49,25 @@ public class SessionManager {
     @Resource
     private ApplicationContext applicationContext;
 
+    @Resource
+    private SysDeviceService deviceService;
+
     /**
      * 初始化方法，启动定时检查不活跃会话的任务
      */
     @PostConstruct
     public void init() {
+        // 项目启动时，将所有设备状态设置为离线
+        try {
+            SysDevice device = new SysDevice();
+            device.setState(SysDevice.DEVICE_STATE_OFFLINE);
+            // 不设置deviceId，这样会更新所有设备
+            int updatedRows = deviceService.update(device);
+            logger.info("项目启动，重置 {} 个设备状态为离线", updatedRows);
+        } catch (Exception e) {
+            logger.error("项目启动时设置设备状态为离线失败", e);
+        }
+        
         // 每10秒检查一次不活跃的会话
         scheduler.scheduleAtFixedRate(this::checkInactiveSessions, 10, 10, TimeUnit.SECONDS);
         logger.info("不活跃会话检查任务已启动，超时时间: {}秒", INACTIVITY_TIMEOUT_SECONDS);
@@ -63,6 +78,17 @@ public class SessionManager {
      */
     @PreDestroy
     public void destroy() {
+        // 项目终止时，将所有设备状态设置为离线
+        try {
+            SysDevice device = new SysDevice();
+            device.setState(SysDevice.DEVICE_STATE_OFFLINE);
+            // 不设置deviceId，这样会更新所有设备
+            int updatedRows = deviceService.update(device);
+            logger.info("项目终止，重置 {} 个设备状态为离线", updatedRows);
+        } catch (Exception e) {
+            logger.error("项目终止时设置设备状态为离线失败", e);
+        }
+        
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {

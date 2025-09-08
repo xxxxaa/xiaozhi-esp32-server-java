@@ -97,7 +97,7 @@
         WHERE
             1 = 1
             <if test="userId != null and userId != ''">AND userId = #{userId}</if>
-            AND deviceId = #{deviceId}
+            <if test="deviceId != null and deviceId != ''">AND deviceId = #{deviceId}</if>
     </update>
 
     <insert id="add" useGeneratedKeys="true" keyProperty="deviceName" parameterType="com.xiaozhi.entity.SysDevice">
