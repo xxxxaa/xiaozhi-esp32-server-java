@@ -545,6 +545,23 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         // 处理表情符号
         EmoSentence emoSentence = EmojiUtils.processSentence(text);
 
+        // 检查处理后的文本是否为空（即只有表情符号）
+        if (emoSentence.getTtsSentence() == null || emoSentence.getTtsSentence().trim().isEmpty()) {
+            // 如果只有表情符号，直接标记为准备好但不生成音频
+            sentence.setAudio(null);
+            sentence.setTtsGenerationTime(0); // 设置TTS生成时间为0
+            sentence.setMoods(emoSentence.getMoods()); // 设置表情
+
+            // 如果是首句，需要标记首句处理完成
+            if (isFirst) {
+                firstSentDone.get(sessionId).set(true);
+            }
+
+            // 尝试处理队列
+            processQueue(session, sessionId);
+            return;
+        }
+
         // 使用虚拟线程异步生成音频文件
         Thread.startVirtualThread(() -> {
             generateAudio(session, sessionId, sentence, emoSentence, isFirst, isLast, ttsConfig, voiceName);

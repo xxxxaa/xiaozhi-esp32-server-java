@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +55,7 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
     private SysConfigService configService;
 
     @Resource
-    private SessionManager sessionManager;
+    private ApplicationContext applicationContext;
 
     /**
      * 添加设备
@@ -186,6 +187,8 @@ public class SysDeviceServiceImpl extends BaseServiceImpl implements SysDeviceSe
         device = deviceMapper.selectDeviceById(device.getDeviceId());
         ChatSession session = null;
         if (device != null) {
+            // Use ApplicationContext to get SessionManager to avoid circular dependency
+            SessionManager sessionManager = applicationContext.getBean(SessionManager.class);
             session = sessionManager.getSessionByDeviceId(device.getDeviceId());
         }
         if (session != null) {
