@@ -12,6 +12,7 @@ import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Sinks;
 
@@ -50,6 +51,7 @@ public class SessionManager {
     private ApplicationContext applicationContext;
 
     @Resource
+    @Lazy
     private SysDeviceService deviceService;
 
     /**
@@ -58,15 +60,18 @@ public class SessionManager {
     @PostConstruct
     public void init() {
         // 项目启动时，将所有设备状态设置为离线
-        try {
-            SysDevice device = new SysDevice();
-            device.setState(SysDevice.DEVICE_STATE_OFFLINE);
-            // 不设置deviceId，这样会更新所有设备
-            int updatedRows = deviceService.update(device);
-            logger.info("项目启动，重置 {} 个设备状态为离线", updatedRows);
-        } catch (Exception e) {
-            logger.error("项目启动时设置设备状态为离线失败", e);
-        }
+        // 延迟执行设备状态重置，避免循环依赖
+        scheduler.schedule(() -> {
+            try {
+                SysDevice device = new SysDevice();
+                device.setState(SysDevice.DEVICE_STATE_OFFLINE);
+                // 不设置deviceId，这样会更新所有设备
+                int updatedRows = deviceService.update(device);
+                logger.info("项目启动，重置 {} 个设备状态为离线", updatedRows);
+            } catch (Exception e) {
+                logger.error("项目启动时设置设备状态为离线失败", e);
+            }
+        }, 1, TimeUnit.SECONDS);
         
         // 每10秒检查一次不活跃的会话
         scheduler.scheduleAtFixedRate(this::checkInactiveSessions, 10, 10, TimeUnit.SECONDS);
@@ -78,16 +83,6 @@ public class SessionManager {
      */
     @PreDestroy
     public void destroy() {
-        // 项目终止时，将所有设备状态设置为离线
-        try {
-            SysDevice device = new SysDevice();
-            device.setState(SysDevice.DEVICE_STATE_OFFLINE);
-            // 不设置deviceId，这样会更新所有设备
-            int updatedRows = deviceService.update(device);
-            logger.info("项目终止，重置 {} 个设备状态为离线", updatedRows);
-        } catch (Exception e) {
-            logger.error("项目终止时设置设备状态为离线失败", e);
-        }
         
         scheduler.shutdown();
         try {
