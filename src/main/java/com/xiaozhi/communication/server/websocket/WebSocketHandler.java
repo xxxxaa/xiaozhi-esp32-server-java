@@ -10,6 +10,7 @@ import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -87,6 +88,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
                 if (device == null || device.getRoleId() == null) {
                     // 设备未绑定，处理未绑定设备的消息
                     messageHandler.handleUnboundDevice(sessionId, device);
+                    return;
                 }
                 messageHandler.handleMessage(msg, sessionId);
             }
