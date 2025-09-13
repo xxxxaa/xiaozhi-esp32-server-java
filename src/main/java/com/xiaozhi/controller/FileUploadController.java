@@ -2,14 +2,15 @@ package com.xiaozhi.controller;
 
 import com.xiaozhi.common.web.AjaxResult;
 import com.xiaozhi.utils.FileUploadUtils;
+import com.xiaozhi.utils.CmsUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +32,9 @@ public class FileUploadController {
 
     @Value("${xiaozhi.upload-path:uploads}")
     private String uploadPath;
+
+    @Autowired
+    private CmsUtils cmsUtils;
 
     /**
      * 通用文件上传方法
@@ -70,9 +74,10 @@ public class FileUploadController {
 
             // 如果是本地URL，需要调整格式
             if (!isCosUrl) {
-                // 将本地路径转换为访问URL格式
-                String accessUrl = "uploads/" + relativePath + "/" + fileName;
-                result.put("url", accessUrl);
+                // 将本地路径转换为完整的访问URL格式
+                String relativeUrl = "uploads/" + relativePath + "/" + fileName;
+                String fullUrl = cmsUtils.getServerAddress() + "/" + relativeUrl;
+                result.put("url", fullUrl);
             }
 
             return result;
