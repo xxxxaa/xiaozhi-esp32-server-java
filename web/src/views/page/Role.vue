@@ -17,7 +17,7 @@
         <!-- 表格数据 -->
         <a-card :bodyStyle="{ padding: 0 }" :bordered="false">
           <a-tabs defaultActiveKey="1" :activeKey="activeTabKey" @change="handleTabChange"
-            tabBarStyle="margin: 0 0 0 15px">
+            :tabBarStyle="{ margin: '0 0 0 15px' }">
             <a-tab-pane key="1" tab="角色列表">
               <a-table :columns="columns" :dataSource="roleItems" :loading="loading" :pagination="pagination"
                 rowKey="roleId" :scroll="{ x: 1000 }" size="middle">
