@@ -62,8 +62,10 @@
                   <span v-else>-</span>
                 </template>
                 <!-- 添加默认标识列的自定义渲染 -->
-                <template slot="isDefault" slot-scope="text">
-                  <a-tag v-if="text == 1" color="green">默认</a-tag>
+                <template slot="isDefault" slot-scope="text, record">
+                  <a-tag v-if="text == 1" :color="getDefaultTagColor(record)">
+                    {{ getDefaultTagText(record) }}
+                  </a-tag>
                   <span v-else>-</span>
                 </template>
                 <template slot="operation" slot-scope="text, record">
@@ -807,6 +809,50 @@ export default {
         .finally(() => {
           this.loading = false
         })
+    },
+
+    // 获取默认标签颜色
+    getDefaultTagColor(record) {
+      if (this.configType === 'llm') {
+        const modelType = record.modelType;
+        switch (modelType) {
+          case 'chat':
+            return 'blue';
+          case 'vision':
+            return 'purple';
+          case 'intent':
+            return 'orange';
+          case 'embedding':
+            return 'green';
+          default:
+            return 'green';
+        }
+      } else if (this.configType === 'stt') {
+        return 'cyan';
+      }
+      return 'green';
+    },
+
+    // 获取默认标签文本
+    getDefaultTagText(record) {
+      if (this.configType === 'llm') {
+        const modelType = record.modelType;
+        switch (modelType) {
+          case 'chat':
+            return '默认对话';
+          case 'vision':
+            return '默认视觉';
+          case 'intent':
+            return '默认意图';
+          case 'embedding':
+            return '默认向量';
+          default:
+            return '默认';
+        }
+      } else if (this.configType === 'stt') {
+        return '默认语音识别';
+      }
+      return '默认';
     },
 
     // 重置表单
