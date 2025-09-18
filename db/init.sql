@@ -58,6 +58,7 @@ CREATE TABLE `xiaozhi`.`sys_device` (
   `roleId` int unsigned DEFAULT NULL COMMENT '角色ID，主键',
   `function_names` varchar(250) NULL COMMENT '可用全局function的名称列表(逗号分割)，为空则使用所有全局function',
   `ip` varchar(45) DEFAULT NULL COMMENT 'IP地址',
+  `location` varchar(255) DEFAULT NULL COMMENT '地理位置',
   `wifiName` varchar(100) DEFAULT NULL COMMENT 'WiFi名称',
   `chipModelName` varchar(100) DEFAULT NULL COMMENT '芯片型号',
   `type` varchar(50) DEFAULT NULL COMMENT '设备类型',

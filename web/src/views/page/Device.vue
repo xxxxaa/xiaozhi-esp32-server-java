@@ -197,8 +197,8 @@ export default {
           ellipsis: true,
         },
         {
-          title: "IP地址",
-          dataIndex: "ip",
+          title: "地理位置",
+          dataIndex: "location",
           width: 180,
           align: "center",
           ellipsis: true,

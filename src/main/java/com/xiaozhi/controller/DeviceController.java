@@ -235,7 +235,12 @@ public class DeviceController extends BaseController {
             device.setLastLogin(new Date().toString());
 
             // 设置设备IP地址
-            device.setIp(cmsUtils.getClientIp(request));
+            device.setIp(CmsUtils.getClientIp(request));
+            // 根据设备的IP地址获取地理位置信息
+            var ipInfo = CmsUtils.getIPInfoByAddress(device.getIp());
+            if (ipInfo != null && ipInfo.getLocation() != null && !ipInfo.getLocation().isEmpty()) {
+                device.setLocation(ipInfo.getLocation());
+            }
 
             // 查询设备是否已绑定
             List<SysDevice> queryDevice = deviceService.query(device, new PageFilter());

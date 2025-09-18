@@ -696,7 +696,7 @@ public class CmsUtils {
     /**
      * IP信息类
      */
-    private static class IPInfo {
+    public static class IPInfo {
         private String ip;
         private String location;
         private String isp;
@@ -797,7 +797,95 @@ public class CmsUtils {
     }
 
     /**
-     * 获取IP信息
+     * 根据指定IP地址获取地理位置信息
+     */
+    public static IPInfo getIPInfoByAddress(String ipAddress) {
+        if (ipAddress == null || ipAddress.isEmpty() || "127.0.0.1".equals(ipAddress) || "0:0:0:0:0:0:0:1".equals(ipAddress)) {
+            return null;
+        }
+
+        // 对于私有IP地址，不进行地理位置查询
+        if (isPrivateIp(ipAddress)) {
+            return new IPInfo(ipAddress, "内网地址", "内网");
+        }
+
+        // 首先尝试使用现有的IP_INFO_SERVICES（优先使用已有服务）
+        HttpURLConnection connection = null;
+        BufferedReader reader = null;
+
+        try {
+            String queryUrl = IP_INFO_SERVICES[0];
+            // cip.cc 支持直接在URL后添加IP参数
+            queryUrl = queryUrl + ipAddress;
+
+            URL url = new URL(queryUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(3000);
+            connection.setReadTimeout(3000);
+            connection.setRequestProperty("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+
+            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line).append("\n");
+                }
+
+                String content = response.toString();
+                IPInfo ipInfo = parseIPInfo(queryUrl, content);
+                if (ipInfo != null) {
+                    // 强制设置IP地址为指定的IP（因为服务可能返回的是其他IP）
+                    return new IPInfo(ipAddress, ipInfo.getLocation(), ipInfo.getIsp());
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("查询IP {} 失败: {}", ipAddress, e.getMessage());
+        } finally {
+            try {
+                if (reader != null) reader.close();
+                if (connection != null) connection.disconnect();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+        // 如果现有服务都无法查询，返回基本的IP信息
+        return new IPInfo(ipAddress, "未知位置", "未知运营商");
+    }
+
+    /**
+     * 检查是否为私有IP
+     */
+    private static boolean isPrivateIp(String ip) {
+        if (ip == null) return false;
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4) return false;
+
+        try {
+            int first = Integer.parseInt(parts[0]);
+            int second = Integer.parseInt(parts[1]);
+
+            // 10.0.0.0/8
+            if (first == 10) return true;
+            // 172.16.0.0/12
+            if (first == 172 && second >= 16 && second <= 31) return true;
+            // 192.168.0.0/16
+            if (first == 192 && second == 168) return true;
+            // 127.0.0.0/8 (loopback)
+            if (first == 127) return true;
+
+            return false;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+
+    /**
+     * 获取IP信息（服务器公网IP）
      */
     private static IPInfo getIPInfo() {
         for (String service : IP_INFO_SERVICES) {
