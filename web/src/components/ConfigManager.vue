@@ -96,6 +96,20 @@
                       </a-select>
                     </a-form-item>
                   </a-col>
+                  <!-- 添加模型类型选择，仅在LLM配置时显示 -->
+                  <a-col :xl="8" :lg="12" :xs="24" v-if="configType === 'llm'">
+                    <a-form-item label="模型类型">
+                      <a-select v-decorator="[
+                        'modelType',
+                        { initialValue: 'chat', rules: [{ required: true, message: '请选择模型类型' }] }
+                      ]" placeholder="请选择模型类型" @change="handleModelTypeChange">
+                        <a-select-option value="chat">对话模型</a-select-option>
+                        <a-select-option value="vision">视觉模型</a-select-option>
+                        <a-select-option value="intent">意图模型</a-select-option>
+                        <a-select-option value="embedding">向量模型</a-select-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
                   <a-col :xl="8" :lg="12" :xs="24">
                     <a-form-item :label="`${configTypeInfo.label}名称`">
                       <!-- 如果是 llm 且有 currentType，变为可输入的下拉框 -->
@@ -121,20 +135,6 @@
                         ]"
                         autocomplete="off"
                         :placeholder="`请输入${configTypeInfo.label}名称`" />
-                    </a-form-item>
-                  </a-col>
-                  <!-- 添加模型类型选择，仅在LLM配置时显示 -->
-                  <a-col :xl="8" :lg="12" :xs="24" v-if="configType === 'llm'">
-                    <a-form-item label="模型类型">
-                      <a-select v-decorator="[
-                        'modelType',
-                        { initialValue: 'chat', rules: [{ required: true, message: '请选择模型类型' }] }
-                      ]" placeholder="请选择模型类型">
-                        <a-select-option value="chat">对话模型</a-select-option>
-                        <a-select-option value="vision">视觉模型</a-select-option>
-                        <a-select-option value="intent">意图模型</a-select-option>
-                        <a-select-option value="embedding">向量模型</a-select-option>
-                      </a-select>
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -206,6 +206,7 @@ import axios from '@/services/axios'
 import api from '@/services/api'
 import mixin from '@/mixins/index'
 import { configTypeMap } from '@/config/providerConfig'
+import llmFactories from '@/config/llm_factories.json'
 
 export default {
   name: 'ConfigManager',
@@ -240,6 +241,10 @@ export default {
       loading: false,
 
       modelOptions: [], // 存储模型下拉框选项
+
+      // 从 llm_factories.json 解析的数据
+      llmFactoryData: {}, // 按 provider 分组的模型数据
+      availableProviders: [], // 可用的 provider 列表
 
       columns: [
         {
@@ -313,11 +318,22 @@ export default {
     },
     // 当前配置类型的选项
     typeOptions() {
+      // 对于 LLM 配置，使用从 llm_factories.json 解析出的 providers
+      if (this.configType === 'llm') {
+        return this.availableProviders;
+      }
+      // 其他配置类型使用原有的逻辑
       return this.configTypeInfo.typeOptions || [];
     },
     // 当前选择的类别对应的参数字段
     currentTypeFields() {
       const typeFieldsMap = this.configTypeInfo.typeFields || {};
+
+      // 对于 LLM 配置，如果没有找到特定的 provider 配置，使用默认配置
+      if (this.configType === 'llm' && this.currentType && !typeFieldsMap[this.currentType]) {
+        return typeFieldsMap['default'] || [];
+      }
+
       return typeFieldsMap[this.currentType] || [];
     },
     // 根据配置类型获取适当的列
@@ -332,6 +348,9 @@ export default {
     }
   },
   created() {
+    // 初始化 llm_factories 数据
+    this.initLlmFactoriesData();
+
     // 创建表单实例
     this.configForm = this.$form.createForm(this, {
       onValuesChange: (props, values) => {
@@ -345,6 +364,85 @@ export default {
     this.getData()
   },
   methods: {
+    // 初始化 llm_factories 数据
+    initLlmFactoriesData() {
+      if (!llmFactories || !llmFactories.factory_llm_infos) {
+        console.warn('llm_factories.json 数据格式不正确');
+        return;
+      }
+
+      const factoryData = {};
+      const providers = [];
+
+      llmFactories.factory_llm_infos.forEach(factory => {
+        const providerName = factory.name;
+        providers.push({
+          value: providerName,
+          label: providerName
+        });
+
+        // 按模型类型分组存储模型
+        const modelsByType = {
+          chat: [],
+          embedding: [],
+          vision: [] // speech2text 和 image2text 都映射为 vision
+        };
+
+        if (factory.llm && Array.isArray(factory.llm)) {
+          factory.llm.forEach(llm => {
+            let mappedModelType = llm.model_type;
+
+            // 映射模型类型
+            if (mappedModelType === 'speech2text' || mappedModelType === 'image2text') {
+              mappedModelType = 'vision';
+            }
+
+            // 只保留我们需要的模型类型
+            if (['chat', 'embedding', 'vision'].includes(mappedModelType)) {
+              modelsByType[mappedModelType].push({
+                llm_name: llm.llm_name,
+                model_type: mappedModelType,
+                max_tokens: llm.max_tokens,
+                is_tools: llm.is_tools || false,
+                tags: llm.tags || ''
+              });
+            }
+          });
+        }
+
+        factoryData[providerName] = modelsByType;
+      });
+
+      this.llmFactoryData = factoryData;
+      this.availableProviders = providers;
+    },
+
+    // 根据 provider 和 modelType 获取模型列表
+    getModelsByProviderAndType(provider, modelType) {
+      if (!this.llmFactoryData[provider]) {
+        return [];
+      }
+      return this.llmFactoryData[provider][modelType] || [];
+    },
+
+    // 更新模型选项列表
+    updateModelOptions(provider, modelType) {
+      if (this.configType !== 'llm') {
+        return;
+      }
+
+      const models = this.getModelsByProviderAndType(provider, modelType);
+      this.modelOptions = models.map(model => ({
+        value: model.llm_name,
+        label: model.llm_name
+      }));
+    },
+
+    // 模型选项过滤方法
+    modelFilterOption(input, option) {
+      return option.label.toLowerCase().includes(input.toLowerCase());
+    },
+
     getModelList() {
 
       const formValues = this.configForm.getFieldsValue();
@@ -418,6 +516,20 @@ export default {
       });
     },
 
+    // 处理模型类型变化
+    handleModelTypeChange(value) {
+      // 当模型类型改变时，如果已经选择了provider，更新模型选项
+      if (this.currentType) {
+        this.updateModelOptions(this.currentType, value);
+        // 清空当前选择的模型名称，但保持其他字段的值
+        const formValues = this.configForm.getFieldsValue();
+        this.configForm.setFieldsValue({
+          ...formValues,
+          configName: undefined
+        });
+      }
+    },
+
     // 处理标签页切换
     handleTabChange(key) {
       this.activeTabKey = key;
@@ -437,7 +549,8 @@ export default {
       // 创建一个新的表单值对象，只保留基本信息
       const newValues = {
         provider: value,
-        configName: formValues.configName,
+        // 对于 LLM 配置，切换类别时需要清空模型名称，因为不同类别的模型完全不同
+        configName: this.configType === 'llm' ? undefined : formValues.configName,
         configDesc: formValues.configDesc
       };
 
@@ -452,20 +565,23 @@ export default {
         newValues[field] = undefined;
       });
 
-      //填写llm默认url
+      // 对于 LLM 配置，从 llm_factories.json 更新模型选项
       if (this.configType === 'llm') {
         newValues.modelType = formValues.modelType || 'chat';
-        const apiUrlField = configTypeMap.llm.typeFields[value].find(item => item.name === 'apiUrl');
-        if (apiUrlField && apiUrlField.defaultUrl) {
-          newValues.apiUrl = apiUrlField.defaultUrl;
-        }
+
+        // 更新模型选项列表
+        this.updateModelOptions(value, newValues.modelType);
       }
 
-      // 为所有配置类型填写默认URL
+      // 为所有配置类型填写默认URL（从 providerConfig.js 中获取）
       const typeFields = this.configTypeInfo.typeFields || {};
       const currentTypeFields = typeFields[value] || [];
       currentTypeFields.forEach(field => {
-        if (field.defaultUrl && field.name === 'apiUrl') {
+        if (field.name === 'apiUrl' && field.placeholder && !newValues[field.name]) {
+          newValues[field.name] = field.placeholder;
+        }
+        // 兼容旧的 defaultUrl 属性
+        if (field.name === 'apiUrl' && field.defaultUrl && !newValues[field.name]) {
           newValues[field.name] = field.defaultUrl;
         }
       });
@@ -520,6 +636,16 @@ export default {
             const containsChineseRegex = /[\u4e00-\u9fa5]/; // 检测是否包含中文字符
             if (containsChineseRegex.test(configName)) {
               this.$message.error('模型名称不能随意输入，请输入正确的模型名称，例如：deepseek-chat、qwen-plus官方名称');
+              return;
+            }
+
+            // 验证选择的模型是否在有效的模型列表中
+            const provider = values.provider;
+            const modelType = values.modelType;
+            const validModels = this.getModelsByProviderAndType(provider, modelType);
+            const isValidModel = validModels.some(model => model.llm_name === configName);
+            if (!isValidModel) {
+              this.$message.error(`选择的模型名称 "${configName}" 在 ${provider} 的 ${modelType} 模型列表中不存在，请重新选择`);
               return;
             }
           }
@@ -604,7 +730,13 @@ export default {
           }
 
           configForm.setFieldsValue(formValues);
-          this.getModelList();
+
+          // 对于 LLM 配置，更新模型选项列表
+          if (this.configType === 'llm') {
+            this.updateModelOptions(record.provider, record.modelType || 'chat');
+          } else {
+            this.getModelList();
+          }
         }, 0);
       })
     },
