@@ -906,7 +906,7 @@ export default {
     // 加载TTS配置
     loadTtsConfigs(provider) {
       this.ttsConfigLoading = true;
-      
+
       axios
         .get({
           url: api.config.query,
@@ -918,17 +918,15 @@ export default {
         .then(res => {
           if (res.code === 200) {
             this.ttsConfigs = res.data.list;
-            
-            // 如果有配置项，默认选择第一个
-            if (this.ttsConfigs.length > 0) {
+
+            // 如果不在编辑模式且有配置项，默认选择第一个
+            if (!this.editingRoleId && this.ttsConfigs.length > 0) {
               this.selectedTtsId = this.ttsConfigs[0].configId;
               this.$nextTick(() => {
                 this.roleForm.setFieldsValue({
                   ttsId: this.selectedTtsId
                 });
               });
-            } else {
-              this.selectedTtsId = null;
             }
           } else {
             this.showError(res.message);
