@@ -33,9 +33,6 @@ public class AudioService {
     // 帧发送时间间隔略小于OPUS_FRAME_DURATION_MS，避免因某些调度原因，导致没能在规定时间内发送，设备出现杂音
     private static final long OPUS_FRAME_SEND_INTERVAL_MS = AudioUtils.OPUS_FRAME_DURATION_MS;
     
-    // 预缓冲帧数量
-    private static final int PRE_BUFFER_FRAMES = 3;
-
     // 仅播放文本的 Sleep 时长
     private static final long ONLY_TEXT_SLEEP_TIME_MS = 1000;
 
@@ -115,7 +112,10 @@ public class AudioService {
             // 清理播放时间信息
             cleanTimers(sessionId);
             
-            CompletableFuture<Void> sendTtsMessageFuture = CompletableFuture.runAsync(()->messageService.sendTtsMessage(session, null, "stop"));
+            // 延迟500ms后发送stop消息，确保设备完成音频播放
+            CompletableFuture<Void> sendTtsMessageFuture = CompletableFuture.runAsync(() -> {
+                messageService.sendTtsMessage(session, null, "stop");
+            }, CompletableFuture.delayedExecutor(500, TimeUnit.MILLISECONDS));
             // 检查是否需要关闭会话
             if (sessionManager.isCloseAfterChat(sessionId)) {
                 sendTtsMessageFuture.thenRun(() -> {
@@ -289,16 +289,8 @@ public class AudioService {
                 playStartTimes.put(sessionId, System.nanoTime());
                 playPositions.put(sessionId, 0L);
                 
-                // 预缓冲处理
-                int preBufferCount = Math.min(PRE_BUFFER_FRAMES, opusFrames.size());
-                for (int i = 0; i < preBufferCount; i++) {
-                    sendOpusFrame(session, opusFrames.get(i));
-                    // 更新播放位置
-                    playPositions.put(sessionId, (i + 1) * OPUS_FRAME_SEND_INTERVAL_MS);
-                }
-                
-                // 创建帧发送任务
-                final int[] frameIndex = {preBufferCount};
+                // 创建帧发送任务，从第一帧开始通过调度器发送
+                final int[] frameIndex = {0};
                 
                 Runnable frameTask = new Runnable() {
                     @Override
@@ -339,11 +331,11 @@ public class AudioService {
                     }
                 };
                 
-                // 如果还有帧需要发送，启动精确时间调度
-                if (frameIndex[0] < opusFrames.size()) {
+                // 启动帧发送调度
+                if (opusFrames.size() > 0) {
                     scheduleNextFrame(sessionId, frameTask);
                 } else {
-                    // 所有帧已在预缓冲中发送完毕
+                    // 没有帧需要发送
                     endTask(sessionId, sendFramesFuture);
                 }
                 

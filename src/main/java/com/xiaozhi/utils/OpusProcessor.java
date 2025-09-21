@@ -34,8 +34,6 @@ public class OpusProcessor {
     public static final int OPUS_FRAME_DURATION_MS = AudioUtils.OPUS_FRAME_DURATION_MS;
     private static final int MAX_SIZE = 1275;
 
-    // 预热帧数量 - 添加几个静音帧来预热编解码器
-    private static final int PRE_WARM_FRAMES = 2;
 
     /**
      * 残留数据状态类
@@ -693,16 +691,11 @@ public class OpusProcessor {
             } else {
                 combined = new short[totalInputSamples];
                 inputShorts.get(combined);
-                // 如果是流式第一次处理数据，添加预热帧
-                if (state.isFirst) {
-                    addPreWarmFrames(frames, encoder, frameSize, opusBuf);
-                    state.isFirst = false;
-                }
+                state.isFirst = false;
             }
         } else {
             combined = new short[totalInputSamples];
             inputShorts.get(combined);
-            addPreWarmFrames(frames, encoder, frameSize, opusBuf);
         }
 
         int availableSamples = combined.length;
@@ -774,28 +767,6 @@ public class OpusProcessor {
         return frames;
     }
 
-    /**
-     * 添加预热帧 - 解决开头破音问题
-     */
-    private void addPreWarmFrames(List<byte[]> frames, OpusEncoder encoder, int frameSize, byte[] opusBuf) {
-        // 创建静音帧
-        short[] silenceBuf = new short[frameSize];
-        Arrays.fill(silenceBuf, (short) 0);
-
-        // 添加几个静音帧来预热编码器
-        for (int i = 0; i < PRE_WARM_FRAMES; i++) {
-            try {
-                int opusLen = encoder.encode(silenceBuf, 0, frameSize, opusBuf, 0, opusBuf.length);
-                if (opusLen > 0) {
-                    byte[] frame = new byte[frameSize];
-                    System.arraycopy(opusBuf, 0, frame, 0, frameSize);
-                    frames.add(frame);
-                }
-            } catch (OpusException e) {
-                logger.warn("预热帧 #{} 编码失败: {}", i, e.getMessage());
-            }
-        }
-    }
 
     /**
      * 清理会话
