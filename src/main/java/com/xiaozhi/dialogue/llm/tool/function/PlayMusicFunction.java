@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-@Component
+// @Component  // 音乐服务已停用，暂时禁用此功能
 public class PlayMusicFunction implements ToolsGlobalRegistry.GlobalFunction {
     private static final Logger logger = LoggerFactory.getLogger(PlayMusicFunction.class);
 

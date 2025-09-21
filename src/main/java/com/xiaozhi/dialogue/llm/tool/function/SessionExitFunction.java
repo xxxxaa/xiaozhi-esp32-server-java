@@ -24,20 +24,20 @@ public class SessionExitFunction implements ToolsGlobalRegistry.GlobalFunction {
                 ChatSession chatSession = (ChatSession)toolContext.getContext().get(ChatService.TOOL_CONTEXT_SESSION_KEY);
                 sessionManager.setCloseAfterChat(chatSession.getSessionId(), true);
                 String sayGoodbye = params.get("sayGoodbye");
-                if(sayGoodbye == null){
-                    sayGoodbye = "拜拜哟！";
+                if(sayGoodbye == null || sayGoodbye.trim().isEmpty()){
+                    sayGoodbye = "好的，再见！期待下次聊天哦！";
                 }
                 return sayGoodbye;
             })
-            .toolMetadata(ToolMetadata.builder().returnDirect(true).build())
-            .description("当用户想结束对话或需要退出时调用function：func_exitSession")
+            .toolMetadata(ToolMetadata.builder().returnDirect(false).build())
+            .description("当用户明确表达要离开/结束对话时调用此函数。触发词汇：'拜拜'、'再见'、'退下'、'走了'、'结束对话'、'退出'、'我要走了'、'goodbye'、'bye'。重要：检测到这些词汇时必须调用此函数来正确结束会话，不要只是普通回复。")
             .inputSchema("""
                         {
                             "type": "object",
                             "properties": {
                                 "sayGoodbye": {
                                     "type": "string",
-                                    "description": "与用户友好结束对话的告别语"
+                                    "description": "告别语"
                                 }
                             },
                             "required": ["sayGoodbye"]

@@ -30,7 +30,7 @@ public class MusicService {
     private static final Logger logger = LoggerFactory.getLogger(MusicService.class);
 
     private static final long OPUS_FRAME_INTERVAL_MS = AudioUtils.OPUS_FRAME_DURATION_MS;
-    private static final String API_BASE_URL = "http://www.jsrc.top:5566";
+    private static final String API_BASE_URL = ""; // 服务已停用
 
     // 使用OkHttp3替代JDK HttpClient
     private static final OkHttpClient okHttpClient = new OkHttpClient.Builder()

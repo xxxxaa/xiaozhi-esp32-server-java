@@ -206,11 +206,12 @@ public class MessageHandler {
     }
 
     public void handleUnboundDevice(String sessionId, SysDevice device) {
-        String deviceId = device.getDeviceId();
-        if (device == null || deviceId == null) {
+        String deviceId;
+        if (device == null || device.getDeviceId() == null) {
             logger.error("设备或设备ID为空，无法处理未绑定设备");
             return;
         }
+        deviceId = device.getDeviceId();
         ChatSession chatSession = sessionManager.getSession(sessionId);
         if (chatSession == null || !chatSession.isOpen()) {
             return;
