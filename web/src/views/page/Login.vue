@@ -81,9 +81,7 @@
             
             <!-- 分割线 -->
             <a-divider>
-              <a-typography-text type="secondary" style="font-size: 12px;">
-                其他方式登录
-              </a-typography-text>
+              <span class="divider-text">其他方式登录</span>
             </a-divider>
             
             <!-- 第三方登录 -->
@@ -438,6 +436,12 @@ export default {
 
 >>> .ant-divider-inner-text {
   color: rgba(255, 255, 255, 0.6) !important;
+}
+
+// 分割线文本样式
+.divider-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
 }
 
 >>> .ant-divider-horizontal.ant-divider-with-text::before,
