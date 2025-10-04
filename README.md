@@ -221,6 +221,13 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 | 音频帧平均间隔 | 58.07ms | 音频帧发送间隔 |
 | 帧延迟率 | 8.47% (4226/49918) | >65ms |
 
+### 测试结果可视化
+
+<div align="center">
+    <img src="docs/images/xiaozhi_test.png" alt="性能测试结果" width="800" style="margin: 10px;" />
+    <p><strong>并发测试数据可视化</strong> - 时延分布与性能指标统计</p>
+</div>
+
 ---
 
 ## 开发路线图 🗺️
